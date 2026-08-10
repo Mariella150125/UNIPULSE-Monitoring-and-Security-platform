@@ -2,10 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class usere extends Model
+class User extends Authenticatable
 {
-    protected $table ='users';
-    protected $fillable = ['name', 'email', 'telephone', 'email_verified_at', 'role', 'department','password','status'];
+    use HasFactory, Notifiable;
+
+    // Les colonnes que Laravel a le droit de modifier
+    protected $fillable = [
+        'name', 'email', 'telephone', 'role', 'department', 'password', 'status',
+    ];
+
+    // Ce qui est caché quand on affiche l'utilisateur
+    protected $hidden = [
+        'password',
+    ];
 }
