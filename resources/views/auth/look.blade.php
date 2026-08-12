@@ -8,7 +8,7 @@
         @csrf
         <p> Un lien a été envoyé au </p>
         <a href="login" class="create-look">
-            <button type="submit" class="login-btnn" id="btn-login">
+            <button type="submit" class="link-btnn" id="btn-login">
                     Me renvoyer le lien
             </button>
     </form>
