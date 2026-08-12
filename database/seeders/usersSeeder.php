@@ -15,11 +15,11 @@ class usersSeeder extends Seeder
         users:: create([
             'name' => 'ori';
             'email' => 'ngwambem@gmail.com';
-            'telephone' => '65918943';
+            'telephone' => '659189043';
             'email_verified_at' => now();
             'role' => 'dev';
             'department' => 'devops';
-            'password'=> bcrypt('1234567')
+            'password'=> bcrypt('Louis@111')
             'status' => 'actif';
 
         ]);
