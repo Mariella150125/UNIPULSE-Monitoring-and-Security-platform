@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ asset('style/login.css') }}">
 </head>
 
-<body>   
+<body class="auth-body">   
     <div class="background @yield('background-class')">
         <div class="login-card">
             @yield('content')

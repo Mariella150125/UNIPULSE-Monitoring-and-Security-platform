@@ -69,9 +69,12 @@
 
         </nav>
 
-        <a href="#" class="sidebar-logout">
+        <a href="#" class="sidebar-logout" id="logout-link">
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>Se déconnecter</span>
         </a>
+        <form id="logout-form" action="{{ route('logout') }}" method="POST">
+            @csrf
+        </form>
     </aside>
 </div>

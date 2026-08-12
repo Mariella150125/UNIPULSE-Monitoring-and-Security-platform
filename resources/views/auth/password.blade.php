@@ -2,9 +2,8 @@
 @section('title', 'Activation')
 @section('content')
 
-   <form action="{{ route('password') }}" id="activation-form">
+   <form action="{{ route('password.update') }}" id="activation-form">
         @csrf
-        
         <div class="input-group password">
             <label>Nouveau mot de passe</label>
             <input type="password"
