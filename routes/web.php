@@ -1,15 +1,35 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
+// 1. Afficher la page (GET)
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+
+// 2. Traiter le bouton Se connecter (POST)
+Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+
+// 3. Déconnexion
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// 4. Le dashboard (protégé)
+Route::get('/content', function () {
+    return view('content');
+})->middleware('layout')->name('dashboard');
+
+Route::get('/forget', [AuthController::class, 'showForgotPassword'])
+    ->name('password.request');
+Route::post('/forget', [AuthController::class, 'sendResetLink'])
+    ->name('password.email');
+Route::get('/password/{token}', [AuthController::class, 'showResetPassword'])
+    ->name('password.reset');
+Route::post('/password', [AuthController::class, 'resetPassword'])
+    ->name('password.update');
+
 
 Route::get('/sign', function () {
     return view('auth.sign');
 })->name('sign');
-
 Route::get('/forget', function () {
     return view('auth.forget');
 })->name('forget');
