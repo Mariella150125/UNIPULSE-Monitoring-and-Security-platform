@@ -230,7 +230,7 @@ body.auth-body {
     font-family: inherit;
     font-weight: 600;
     margin-top: 30px auto 0;
-    align-items: center;
+    
     letter-spacing: 1px;
     cursor: pointer;
     transition: opacity 0.15s ease;
@@ -1170,4 +1170,10 @@ thead {
 }
 br{
   max-width: 10%;  
+}
+
+/* pour le statut*/
+.status-color{
+    color: var(--sage-green);
+    margin-bottom: 15px;
 }

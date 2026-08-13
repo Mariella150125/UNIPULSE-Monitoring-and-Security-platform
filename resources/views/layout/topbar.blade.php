@@ -33,7 +33,14 @@
         </div>
 
         <div class="user-menu">
-            <div class="user-avatar-sm user-initials">MN</div>
+            <div class="user-avatar-sm user-initials">
+                  {{ collect(explode(' ', trim(Auth::user()->name)))
+                    ->filter()
+                    ->map(fn($word) => strtoupper(substr($word, 0, 1)))
+                    ->take(2)
+                    ->join('') 
+                  }}
+            </div>
             <i class="fa-solid fa-chevron-down"></i>
         </div>
     </header>

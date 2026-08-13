@@ -4,6 +4,11 @@
 
 @section('content')
 
+@if(session('status'))
+    <div class="status-color">
+         {{ session('status') }}
+    </div>   
+@endif
 <form id="login-form" method="POST" action="{{ route('login') }}">
 
     @csrf
@@ -113,7 +118,7 @@
     </div>
 
     <div class="forgot">
-        <a href="{{ route('forget') }}">
+        <a href="{{ route('password.request') }}">
             Forgot password?
         </a>
     </div>

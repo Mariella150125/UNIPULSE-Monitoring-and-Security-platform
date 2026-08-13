@@ -11,11 +11,20 @@
             
             {{-- 4. Le titre divisé en deux avec un saut de ligne <br> --}}
             <h2>
-                <br>Forget</br>
-                <span class="forget">Your Password</span>
+                Mot de passe oublié?
             </h2>
+            @if(session('status'))
+                <div class="status-color">
+                    {{ session('status') }}
+                </div>
+            @endif
+            @error('email')
+                <div class="status-color">
+                    {{ $message }}
+                </div>
+            @enderror
 
-            <form action="" method="POST">
+            <form action="{{ route('password.email') }}" method="POST">
                 
                 @csrf {{-- Sécurité Laravel obligatoire --}}
                 
@@ -24,17 +33,20 @@
                     <input type="email" name="email" required value="{{ old('email') }}">
                 </div>
 
-                {{-- 5. Un petit div pour forcer le centrage du bouton --}}
-                
+                @if(session('status'))
                     <button type="submit" class="link-btn">
-                        Envoyer le lien
+                         Me renvoyer le lien
                     </button>
-                </div>
+                @else
+                    <button type="submit" class="link-btn">
+                        M'envoyer le lien
+                    </button>
+                @endif
+                    
+            
 
             </form>
-        </div>
 
-    </div>
 
 @endsection
             

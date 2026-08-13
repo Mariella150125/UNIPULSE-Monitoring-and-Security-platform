@@ -4,7 +4,9 @@
     
 
         <div class="page-title">
-            <h1><span class="pacifico"> Bonjour,</span>Mariella 👋</h1>
+            <h1><span class="pacifico"> Bonjour,</span> 
+                 {{ Auth::user()->name }}👋
+            </h1>
         </div>
 
         {{-- Rangée de 12 KPI, une seule ligne, défilement horizontal --}}

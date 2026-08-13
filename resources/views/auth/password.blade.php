@@ -1,7 +1,7 @@
 @extends('layout.auth')
 @section('title', 'Activation')
 @section('content')
-
+    <h4>Créer mon mot de passe</h4>
    <form action="{{ route('password.update') }}" id="activation-form">
         @csrf
         <div class="input-group password">

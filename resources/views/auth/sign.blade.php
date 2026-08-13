@@ -40,24 +40,21 @@
                 <h3>Affectation</h3>
 
                 <div class="input-group">
-                    <label>Fonction</label>
-                    <input type="text" name="Fonction">
+                    <label>Fonction*</Fonction></label>
+                    <input type="text" name="role" required>
                 </div>
 
                 <div class="input-group">
-                    <label>Département</label>
-                    <select name="département">
-                        <option>Application Support</option>
-                        <option>Software Development</option>
-                        <option>DevOps</option>
-                        <option>Sécurité de l'information</option>
+                    <label>Département*</partement></label>
+                    <select name="départment" required>
+                        <option value="">Application Support</option>
+                        <option value="">Software Development</option>
+                        <option value="">DevOps</option>
+                        <option value="">Sécurité de l'information</option>
                     </select>
                 </div>
 
-                <label class="checkbox">
-                    <input type="checkbox" checked name="send_link">
-                    Envoyer un lien d'activation
-                </label>
+               
                 
             </div>
             <div class="form-navigation">
