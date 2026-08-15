@@ -63,7 +63,8 @@
                 </button>
                 <button type="submit" class="login-btn" id="btn-login">
                     Créer
-                </button>    
+                </button> 
+               
             </div>
         </div>                 
     </form>

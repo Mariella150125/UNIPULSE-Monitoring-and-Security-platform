@@ -12,12 +12,10 @@ class User extends Authenticatable
 
     // Les colonnes que Laravel a le droit de modifier
     protected $fillable = [
-        'name', 'email', 'telephone', 'role', 'department', 'password', 'status',
-    ];
+        'name', 'email', 'telephone', 'role', 'department', 'password', 'status'];
 
     // Ce qui est caché quand on affiche l'utilisateur
     protected $hidden = [
         'password',
     ];
 }
-?>

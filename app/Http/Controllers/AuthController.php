@@ -1,25 +1,23 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password as PasswordFacade; // <--- LE SURNOM CORRIGE TOUT
 use App\Models\User;
-
-
-
+use App\Mail\WelcomeMail; // <--- AJOUT MANQUANT
 
 class AuthController extends Controller 
 {
-
     public function showLoginForm(Request $request){
         return view('auth.login');
     }
-
 
     public function signup(Request $request){
         return view('auth.sign');
@@ -29,72 +27,93 @@ class AuthController extends Controller
     {
         $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => [
-                'required',
-                'string',
-            ],
-
+            'password' => 'required|string',
         ]);
+        
         if (Auth::attempt($credentials, $request->boolean('remember'))){
             $request->session()->regenerate();
-
             return redirect()->route('dashboard');
         }
+        
         throw ValidationException::withMessages([
             'email' => 'Identifiants incorrects.',
         ]);
-        
     }
 
-
-    //Déconnexion
     public function logout(Request $request)
     {
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return redirect()->route('login');
     }
 
-    //forget password
-   
+    // --- FORGET PASSWORD ---
 
-    // ---------------------------------------------------------
-    // 1. Afficher la page où l'on entre l'email (forget.blade.php)
-    // ---------------------------------------------------------
     public function showForgetPassword()
     {
         return view('auth.forget');
     }
 
-    // ---------------------------------------------------------
-    // 2. Traiter l'envoi de l'email avec le lien sécurisé
-    // ---------------------------------------------------------
     public function sendResetLink(Request $request)
     {
-        // On vérifie que l'email est valide
-        $request->validate([
-            'email' => ['required', 'email'],
-        ]);
+        $request->validate(['email' => ['required', 'email']]);
 
-        // LA MAGIE DE LARAVEL : Cette fonction vérifie si l'email existe en base de données.
-        // Si oui, elle génère un token, le sauvegarde, et ENVOIE UN EMAIL TOUT SEULE.
-        // (Elle utilise l'email par défaut de Laravel, pas besoin de créer de Mailable ici !)
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        // On utilise PasswordFacade (le système d'email de Laravel)
+        $status = PasswordFacade::sendResetLink($request->only('email'));
 
-        // Si l'email a bien été envoyé (ou si l'email n'existe pas, Laravel ment pour des raisons de sécurité)
-        if ($status === Password::RESET_LINK_SENT) {
+        if ($status === PasswordFacade::RESET_LINK_SENT) {
             return redirect()->route('look')
-                ->with('status', 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.')
+                ->with('status', 'Si un compte existe avec cet email, un lien a été envoyé.')
                 ->with('email', $request->email)
                 ->with('type', 'forgot'); 
         }
 
-        // S'il y a une autre erreur (ex: trop de demandes)
-        return back()
-            ->withErrors(['email' => __($status)])
-            ->withInput();
+        return back()->withErrors(['email' => __($status)])->withInput();
     }
+
+    // --- SIGN UP (INSCRIPTION) ---
+
+    public function register()
+    {
+        return view('auth.sign');
+    }
+
+    public function store(Request $request)
+    {
+        // Plus de 'password' dans la validation
+        $request->validate([
+            'name'      => 'required|string',
+            'telephone' => 'required|string|max:9',
+            'email'     => 'required|email|unique:users,email',
+            'role'      => 'required',
+            'department'=> 'required',
+        ]);
+        
+        $user = new User();
+        $user->name = $request->name;
+        $user->telephone = $request->telephone;
+        $user->email = $request->email;
+        $user->role = $request->role;
+        $user->department = $request->department;
+        
+        // On met un mot de passe temporaire absurde (il sera écrasé quand il cliquera sur le lien)
+        $user->password = Hash::make(Str::random(32)); 
+        $user->save();
+
+        // On utilise PasswordFacade pour créer le token
+        $token = PasswordFacade::createToken($user);
+
+        // Envoi de l'email personnalisé
+        Mail::to($user->email)->send(new WelcomeMail($user, $token));
+
+        // ON NE CONNECTE PAS L'UTILISATEUR ICI ! On l'envoie sur la page 'look'
+        return redirect()->route('look')
+            ->with('status', 'Votre compte a été créé !')
+            ->with('email', $user->email)
+            ->with('type', 'register');
+    }
+
     public function resendWelcomeLink(Request $request)
     {
         $request->validate(['email' => 'required|email']);
@@ -102,63 +121,52 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
         
         if ($user) {
-            // On recrée un token et on renvoie le mail personnalisé
-            $token = Password::createToken($user);
+            $token = PasswordFacade::createToken($user);
             Mail::to($user->email)->send(new WelcomeMail($user, $token));
         }
 
         return redirect()->route('look')
-            ->with('status', 'Créer votre mot de passe')
+            ->with('status', 'Le lien de création de mot de passe a été renvoyé.')
             ->with('email', $request->email)
             ->with('type', 'register');
     }     
 
-    // ---------------------------------------------------------
-    // 3. Afficher la page pour taper le nouveau mot de passe
-    // ---------------------------------------------------------
+    // --- RESET PASSWORD (MARCHE POUR LES DEUX LIENS) ---
+
     public function showResetPassword(Request $request, string $token)
     {
         return view('auth.password', [
-            'token' => $token,       // On passe le token à la vue pour le mettre dans un champ caché (hidden)
-            'email' => $request->email, // On passe l'email pour le pré-remplir
+            'token' => $token,
+            'email' => $request->email,
         ]);
     }
-    // SIGN UP
-    public function register()
-    {
-        return view('auth.sign');
-    }
-    public function store(Request $request)
+
+    // LA MÉTHODE QUI MANQUAIT ET QUI ENREGISTRE LE VRAI MOT DE PASSE
+    public function resetPassword(Request $request)
     {
         $request->validate([
-            'name'      =>  'required | string',
-            'telephone' =>  'required | string | max:9',
-            'email'     =>  'required | email | unique:users,email',
-            'role'      =>  'required',
-            'department'=>  'required',
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => ['required', 'confirmed', Password::min(8)], // Ici on utilise la classe Password de validation
         ]);
-        $user=new User();
-        $user->name=$request->name;
-        $user->telephone=$request->telephone;
-        $user->email=$request->email;
-        $user->role=$request->role;
-        $user->department=$request->department;
-        $user->password=Hash::make($request->password);
-        $user->save();
 
-        Auth::login($user);
-        // 3. Générer un token sécurisé (Laravel le stocke dans la table password_reset_tokens)
-        $token = Password::createToken($user);
+        // On utilise PasswordFacade pour vérifier le token et réinitialiser
+        $status = PasswordFacade::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password) // On sauvegarde le VRAI mot de passe
+                ])->setRememberToken(Str::random(60));
+                
+                $user->save();
 
-        // 4. Envoyer l'e-mail avec le token
-        Mail::to($user->email)->send(new WelcomeMail($user, $token));
+                // C'EST ICI QU'ON LE CONNECTE POUR LA PREMIÈRE FOIS !
+                Auth::login($user); 
+            }
+        );
 
-        // 5. Rediriger vers la page de connexion avec un message de succès
-        return redirect()->route('look')
-            ->with('status', 'Votre compte a été créé!')
-            ->with('email', $user->email)
-            ->with('type', 'register') ;
+        return $status === PasswordFacade::PASSWORD_RESET
+            ? redirect()->route('dashboard') // Mot de passe créé avec succès -> Dashboard
+            : back()->withErrors(['email' => [__($status)]]);
     }
-
 }
-?>

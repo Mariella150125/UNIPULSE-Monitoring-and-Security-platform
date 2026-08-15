@@ -2,11 +2,10 @@
 @section('title', 'Vérification')
 @section('content')
 
-
     <h2 class="look">Vérifier votre boite mail</h2>
     @php
         $fullEmail = session('email'); 
-        $type = session('type', 'forgot'); // Par défaut, on considère que c'est un forgot
+        $type = session('type', 'forgot');
         $maskedEmail = '***@***.***'; 
 
         if ($fullEmail) {
@@ -22,34 +21,31 @@
                         . $tld;
         }
     @endphp
-    <form action="{{ route('look') }}" method="POST" id="signup-form">
-        @csrf
-        <p> Un lien a été envoyé au <strong>{{ $maskedEmail }}</strong></p>
-        @if(session('status'))
-            <div class="status-color">
-                {{ session('status') }}
-            </div>
-        @endif
-        @if($type === 'register')
-    {{-- Formulaire si c'est une inscription (utilise ta fonction personnalisée) --}}
-    <form action="{{ route('resend.welcome') }}" method="POST">
-        @csrf
-        <input type="hidden" name="email" value="{{ $fullEmail }}">
-        <button type="submit" class="link-btnn" id="btn-login">
-            Me renvoyer le lien d'inscription
-        </button>
-    </form>
+    
+    <p>Un lien a été envoyé au <strong>{{ $maskedEmail }}</strong></p>
+    
+    @if(session('status'))
+        <div class="status-color">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    @if($type === 'register')
+        <form action="{{ route('resend.welcome') }}" method="POST">
+            @csrf
+            <input type="hidden" name="email" value="{{ $fullEmail }}">
+            <button type="submit" class="link-btnn" id="btn-login">
+                Me renvoyer le lien d'inscription
+            </button>
+        </form>
     @else
-    {{-- Formulaire si c'est un mot de passe oublié (utilise la fonction de base Laravel) --}}
-    <form action="{{ route('password.email') }}" method="POST">
-        @csrf
-        <input type="hidden" name="email" value="{{ $fullEmail }}">
-        <button type="submit" class="link-btnn" id="btn-login">
-            Me renvoyer le lien
-        </button>
-    </form>
+        <form action="{{ route('password.email') }}" method="POST">
+            @csrf
+            <input type="hidden" name="email" value="{{ $fullEmail }}">
+            <button type="submit" class="link-btnn" id="btn-login">
+                Me renvoyer le lien
+            </button>
+        </form>
     @endif  
-    </form>
-            
+
 @endsection
- 

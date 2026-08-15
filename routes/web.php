@@ -26,7 +26,7 @@ Route::get('/password/{token}', [AuthController::class, 'showResetPassword'])
     ->name('password.reset');
 Route::post('/password', [AuthController::class, 'resetPassword'])
     ->name('password.update');
-
+Route::post('/resend-welcome', [AuthController::class, 'resendWelcomeLink'])->name('resend.welcome');
 // créer un user
 Route::get('/sign', [AuthController::class, 'register'])->name('sign');
 Route::post('/sign', [AuthController::class, 'store'])->name('sign.store');
