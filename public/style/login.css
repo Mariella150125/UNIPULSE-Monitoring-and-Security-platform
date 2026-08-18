@@ -356,9 +356,8 @@ body.auth-body {
 }
 h2 { 
     text-align: left; 
-    font-size: 32px; 
-    width: 30%; 
-    margin: 0 0 20 px 0;
+    display: flex;
+    flex-direction: column;
     line-height: 1.2; 
 }
 .look{

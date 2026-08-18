@@ -3,7 +3,7 @@
 @section('content')
 
         <div class="page-title">
-            <h1>Agents Python</h1>
+            <h1>Connecteurs</h1>
             <p>Gérez et surveillez vos agents de collecte déployés sur vos serveurs.</p>
         </div>
         <button class= "usr-btn">

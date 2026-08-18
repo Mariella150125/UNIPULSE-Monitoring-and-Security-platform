@@ -9,7 +9,7 @@
 
     <div class="form-section">
         
-        <h2>Mot de passe oublié?</h2>
+        <h2><br>Forget </br> Your Password?</h2>
 
         @if(session('status'))
             <div class="status-color">
@@ -34,11 +34,11 @@
 
             @if(session('status'))
                 <button type="submit" class="link-btn">
-                     Me renvoyer le lien
+                      Renvoyer le lien
                 </button>
             @else
                 <button type="submit" class="link-btn">
-                    M'envoyer le lien
+                    Envoyer le lien
                 </button>
             @endif
                 

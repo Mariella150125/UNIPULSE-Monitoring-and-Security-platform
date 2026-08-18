@@ -24,18 +24,13 @@
     
     <p>Un lien a été envoyé au <strong>{{ $maskedEmail }}</strong></p>
     
-    @if(session('status'))
-        <div class="status-color">
-            {{ session('status') }}
-        </div>
-    @endif
 
     @if($type === 'register')
         <form action="{{ route('resend.welcome') }}" method="POST">
             @csrf
             <input type="hidden" name="email" value="{{ $fullEmail }}">
             <button type="submit" class="link-btnn" id="btn-login">
-                Me renvoyer le lien d'inscription
+                Renvoyer le lien d'inscription
             </button>
         </form>
     @else
@@ -43,7 +38,7 @@
             @csrf
             <input type="hidden" name="email" value="{{ $fullEmail }}">
             <button type="submit" class="link-btnn" id="btn-login">
-                Me renvoyer le lien
+                Renvoyer le lien
             </button>
         </form>
     @endif  

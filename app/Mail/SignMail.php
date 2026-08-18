@@ -9,12 +9,12 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\User;
 
-class WelcomeMail extends Mailable
+class SignMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $user;
-    public $token; // <--- ON AJOUTE LE TOKEN
+    public $token; // 
 
     public function __construct(User $user, string $token)
     {
@@ -32,7 +32,7 @@ class WelcomeMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.welcome',
+            view: 'emails.validate',
         );
     }
 }

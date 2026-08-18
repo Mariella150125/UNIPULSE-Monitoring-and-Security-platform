@@ -2,8 +2,11 @@
 @section('title', 'Activation')
 @section('content')
     <h4>Créer mon mot de passe</h4>
-   <form action="{{ route('password.update') }}" id="activation-form">
+   <form action="{{ route('password.update') }}" method="POST" id="activation-form">
         @csrf
+        <input type="hidden" name="token" value="{{ $token }}">
+        <input type="hidden" name="email" value="{{ $email }}">
+
         <div class="input-group password">
             <label>Nouveau mot de passe</label>
             <input type="password"
@@ -39,7 +42,7 @@
 
             <i class="fa-solid fa-eye" id="confirmation-toggle-password"></i>
 
-            @error('password')
+            @error('password_confirmation')
                 <span class="field-error">{{ $message }}</span>
             @enderror
         </div>

@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Password as PasswordFacade; // <--- LE SURNOM CORRIGE TOUT
 use App\Models\User;
-use App\Mail\WelcomeMail; // <--- AJOUT MANQUANT
+use App\Mail\SignMail; 
 
 class AuthController extends Controller 
 {
@@ -96,16 +96,20 @@ class AuthController extends Controller
         $user->email = $request->email;
         $user->role = $request->role;
         $user->department = $request->department;
-        
+
+        // utilisateur inactif 
+        $user->status = 'inactif';
         // On met un mot de passe temporaire absurde (il sera écrasé quand il cliquera sur le lien)
         $user->password = Hash::make(Str::random(32)); 
         $user->save();
 
-        // On utilise PasswordFacade pour créer le token
+        // PasswordFacade pour créer le token
         $token = PasswordFacade::createToken($user);
 
         // Envoi de l'email personnalisé
-        Mail::to($user->email)->send(new WelcomeMail($user, $token));
+        Mail::to($user->email)->send(
+            new SignMail($user, $token)
+        );
 
         // ON NE CONNECTE PAS L'UTILISATEUR ICI ! On l'envoie sur la page 'look'
         return redirect()->route('look')
@@ -135,6 +139,18 @@ class AuthController extends Controller
 
     public function showResetPassword(Request $request, string $token)
     {
+        // validité du lien
+        $user= User::where("email", $request->email)->first();
+
+        if (!$user) {
+            abort(403, 'User Not Found');
+        }
+
+        $is_valid = PasswordFacade::getRepository()->exists($user, $token);
+
+        if (!$is_valid) {
+            abort(403, 'Invalid Link');
+        }
         return view('auth.password', [
             'token' => $token,
             'email' => $request->email,
@@ -155,18 +171,17 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password) // On sauvegarde le VRAI mot de passe
+                    'password' => Hash::make($password), // On sauvegarde le VRAI mot de passe
+                    'status' => 'actif',
                 ])->setRememberToken(Str::random(60));
+
                 
                 $user->save();
-
-                // C'EST ICI QU'ON LE CONNECTE POUR LA PREMIÈRE FOIS !
-                Auth::login($user); 
             }
         );
 
         return $status === PasswordFacade::PASSWORD_RESET
-            ? redirect()->route('dashboard') // Mot de passe créé avec succès -> Dashboard
+            ? redirect()->route('login') // Mot de passe créé avec succès -> LOGIN
             : back()->withErrors(['email' => [__($status)]]);
     }
 }

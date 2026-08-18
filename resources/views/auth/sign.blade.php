@@ -4,7 +4,7 @@
 
     <h1>Créer un compte</h1>
 
-    <form action="{{ route('sign') }}" method="POST" id="signup-form">
+    <form action="{{ route('sign.store') }}" method="POST" id="signup-form">
         @csrf
         
         {{-- ==================== ÉTAPE 1 ==================== --}}
@@ -14,7 +14,7 @@
 
                 <div class="input-group">
                     <label>Nom *</label>
-                    <input type="text" name="last_name" placeholder="Full Name" required>
+                    <input type="text" name="name" placeholder="Full Name" required>
                 </div>
 
                 <div class="input-group">
@@ -24,7 +24,7 @@
 
                 <div class="input-group">
                     <label>Téléphone</label>
-                    <input type="text" name="phone">
+                    <input type="text" name="telephone">
                 </div>
             </div>
             <div class="form-navigation">
@@ -46,11 +46,11 @@
 
                 <div class="input-group">
                     <label>Département*</partement></label>
-                    <select name="départment" required>
-                        <option value="">Application Support</option>
-                        <option value="">Software Development</option>
-                        <option value="">DevOps</option>
-                        <option value="">Sécurité de l'information</option>
+                    <select name="department" required>
+                        <option>Application Support</option>
+                        <option>Software Development</option>
+                        <option>DevOps</option>
+                        <option>Sécurité de l'information</option>
                     </select>
                 </div>
 
