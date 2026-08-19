@@ -1,7 +1,9 @@
 <div class="app-layout">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+            <div class="logo-icon">
+                <i class="fa-solid fa-heart-pulse"></i>
+            </div>
             <div class="logo-text">
                 <p class="logo-title"><span class="pacifico">UniPulse</span></p>
                 <p class="logo-subtitle">Monitor. Secure. Perform.</p>

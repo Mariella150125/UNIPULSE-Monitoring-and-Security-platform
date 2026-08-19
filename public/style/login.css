@@ -349,9 +349,13 @@ body.auth-body {
     margin-top: 16px;
 }
 
-.form-navigation .login-btn{
-    flex: 1;
+.form-navigation .login-btn
+.form-navigation .buttons{
+    flex: 0;
     width: auto;
+    padding: 8px 24px;
+    font-size: 13px;
+    letter-spacing: 0;
 
 }
 h2 { 
@@ -364,6 +368,9 @@ h2 {
     text-align: center;
     white-space: nowrap;   /* empêche le texte de passer à la ligne */
     width: 650px;        
+}
+.lookpage{
+    align-items: center;
 }
 .image-left .shap { left: 0; right: auto; object-position: left center; }
 .image-left .login-card { padding: 32px 40px 32px 58%; }

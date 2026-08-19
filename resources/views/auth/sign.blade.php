@@ -20,11 +20,17 @@
                 <div class="input-group">
                     <label>Email *</label>
                     <input type="email" name="email" required>
+                    @error('email')
+                         <span class="field-error">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div class="input-group">
                     <label>Téléphone</label>
-                    <input type="text" name="telephone">
+                    <input type="text" name="telephone" value={{ old('telephone')}}>
+                    @error('telephone')
+                         <span class="field-error">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
             <div class="form-navigation">

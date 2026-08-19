@@ -100,7 +100,18 @@ class AuthController extends Controller
         // utilisateur inactif 
         $user->status = 'inactif';
         // On met un mot de passe temporaire absurde (il sera écrasé quand il cliquera sur le lien)
-        $user->password = Hash::make(Str::random(32)); 
+        $user->password = Hash::make(Str::random(32));
+        
+        // pour afficher les erreurs 
+        try {
+            $user->save(); // On essaie de sauvegarder
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Si c'est une erreur de doublon (téléphone ou email), on renvoie une erreur propre
+            if ($e->getCode() == 23505) { // Code PostgreSQL pour "Unique violation"
+                return back()->withErrors(['telephone' => 'Ce numéro de téléphone ou cet email est déjà utilisé.'])->withInput();
+            }
+            throw $e; // Si c'est une autre erreur, on la relance normalement
+        }
         $user->save();
 
         // PasswordFacade pour créer le token

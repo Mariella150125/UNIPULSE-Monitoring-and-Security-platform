@@ -22,7 +22,7 @@
         }
     @endphp
     
-    <p>Un lien a été envoyé au <strong>{{ $maskedEmail }}</strong></p>
+     <h4 class="lookpage"> Un lien a été envoyé au <strong>{{ $maskedEmail }}</strong></h4>
     
 
     @if($type === 'register')
