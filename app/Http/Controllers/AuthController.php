@@ -112,7 +112,7 @@ class AuthController extends Controller
             }
             throw $e; // Si c'est une autre erreur, on la relance normalement
         }
-        $user->save();
+        
 
         // PasswordFacade pour créer le token
         $token = PasswordFacade::createToken($user);

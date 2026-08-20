@@ -3,6 +3,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+
 
 // 1. Afficher la page (GET)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -40,10 +42,31 @@ Route::get('/password', function () {
     return view('auth.password');
 })->name('password');
 
+// CRUD USERS
 
-Route::get('/users', function () {
-    return view('administration.user');
-});
+Route::get('/users', [UserController::class, 'index'])
+    ->middleware('auth')
+    ->name('users');
+
+Route::get('/users/{id}', [UserController::class, 'show'])
+    ->middleware('auth')
+    ->name('users.show');
+
+Route::get('/users/{id}/edit', [UserController::class, 'edit'])
+    ->middleware('auth')
+    ->name('users.edit');
+
+Route::put('/users/{id}', [UserController::class, 'update'])
+    ->middleware('auth')
+    ->name('users.update');
+
+Route::get('/users/{id}/delete', [UserController::class, 'delete'])
+    ->middleware('auth')
+    ->name('users.delete');
+
+Route::delete('/users/{id}', [UserController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('users.destroy');
 
 Route::get('/server', function () {
     return view('administration.serveur');

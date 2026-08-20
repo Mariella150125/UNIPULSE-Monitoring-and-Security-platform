@@ -754,9 +754,15 @@ h2 {
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.15s ease, transform 0.15s ease;
-    align-items: right;
-    gap: 100px;
-    margin-left: 1000px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    text-decoration: none;
+
+    float: right;
     margin-bottom: 10px;
 }
 .usr-btn:hover {

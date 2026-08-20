@@ -5,27 +5,27 @@
             <div class="page-title">
                 <h1>Gestion des Utilisateurs</h1>
             </div>
-            <button class= "usr-btn">
+            <a href="{{  route('sign') }}" class="usr-btn">
                 <i class="fa-solid fa-user-plus"></i>
                  Add User
-            </button>
+            </a>
             {{-- Rangée de 12 KPI, une seule ligne, défilement horizontal --}}
             <div class="usr-kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-icon c-teal"><i class="fa-solid fa-user"></i></div>
-                    <p class="kpi-label">Nombre d'utilisateurs</p><p class="kpi-value">13</p>
+                    <p class="kpi-label">Nombre d'utilisateurs</p><p class="kpi-value">{{ $totalUsers }}</p>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon c-sage"><i class="fa-solid fa-user-check"></i></div>
-                    <p class="kpi-label">Utilisateurs Actifs</p><p class="kpi-value">15</p>
+                    <p class="kpi-label">Utilisateurs Actifs</p><p class="kpi-value">{{ $activeUsers }}</p>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon c-teal"><i class="fa-solid fa-user-shield"></i></div>
-                    <p class="kpi-label">Administrateurs</p><p class="kpi-value">35</p>
+                    <p class="kpi-label">Administrateurs</p><p class="kpi-value">{{ $admins}}</p>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon c-sage"><i class="fa-solid fa-user-xmark"></i></div>
-                    <p class="kpi-label">Utilisateurs Inactifs</p><p class="kpi-value">30</p>
+                    <p class="kpi-label">Utilisateurs Inactifs</p><p class="kpi-value">{{ $inactiveUsers }}</p>
                 </div>
             </div>
 
@@ -67,20 +67,34 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Mariella Ngwambe</td>
-                            <td>mariella@entreprise.com</td>
-                            <td>Développeuse</td>
-                            <td>Software Dev</td>
-                            <td><span class="status-dot online"></span>Actif</td>
-                            <td>Il y a 2 min</td>
-                            <td class="grid-6">
-                                <button class="icon-btn"><i class="fa-solid fa-pen"></i></button>
-                                <button class="icon-btn"><i class="fa-solid fa-trash"></i></button>
-                                <button class="icon-btn"><i class="fa-solid fa-ellipsis"></i></button>
-                            </td>
-                            </td>
-                        </tr>
+                        @foreach ($users as $user)
+                            
+                            <tr>
+                                <td>{{ $user->name }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->role }}</td>
+                                <td>{{ $user->department }}</td>
+                                <td><span class="status-dot online"></span>Actif</td>
+                                <td>--</td>
+                                <td class="grid-6">
+                                    <a href="{{ route('users.show' , $user->id) }}" class="icon-btn">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a href= "{{ route('users.edit' , $user->id) }}" class="icon-btn">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit" class="icon-btn">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                    
+                                </td>
+                            </tr>
+                         @endforeach
                     </tbody>
                 </table>
 
