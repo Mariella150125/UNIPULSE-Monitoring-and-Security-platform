@@ -53,9 +53,9 @@
                 <div class="input-group">
                     <label>Département*</partement></label>
                     <select name="department" required>
+                        <option>QAT</option>
+                        <option>Technologie</option>
                         <option>Application Support</option>
-                        <option>Software Development</option>
-                        <option>DevOps</option>
                         <option>Sécurité de l'information</option>
                     </select>
                 </div>

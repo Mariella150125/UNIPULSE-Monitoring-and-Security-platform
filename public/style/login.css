@@ -482,6 +482,7 @@ h2 {
     width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border-color);
     background: #fff; display: flex; align-items: center; justify-content: center;
     color: var(--text-dark); cursor: pointer; position: relative;
+    text-decoration: none;
 }
 .search-bar {
     flex: 1; display: flex; align-items: center; gap: 8px;
@@ -688,11 +689,22 @@ h2 {
 .badge-critical { background: var(--red); color: black; }
 .badge-major { background: var(--orange); }
 
-.server-table { width: 100%; border-collapse: separate; font-size: 13px;  border-spacing: 0; border-radius: 12px; overflow: hidden;}
-.server-table th { text-align: left; color: var(--text-muted); font-weight: 500; padding-bottom: 10px; }
-.server-table td { padding: 8px 0; border-top: 1px solid var(--border-color); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.server-table { width: 100%; border-collapse: separate; table-layout: fixed;  border-spacing: 0 8px; border-radius: 12px; overflow: hidden;}
+.server-table th { text-align: left; color: var(--text-muted); font-weight: 500; padding-bottom: 0 16px 10px 16px; }
+.server-table td { padding: 12px 16px; border-top: 1px solid var(--border-color); vertical-align: middle; }
+/* Alignement des colonnes */
+.server-table th:first-child,
+.server-table td:first-child {
+    text-align: left;
+}
+
+.server-table th:not(:first-child),
+.server-table td:not(:first-child) {
+    text-align: left;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
 .status-dot.online { background: var(--sage-green); }
+.status-dot.offline { background: var(--red); }
 .status-dot.warning { background: var(--orange); }
 .status-dot.critical { background: var(--red); }
 
@@ -762,7 +774,7 @@ h2 {
 
     text-decoration: none;
 
-    float: right;
+    margin-left: auto;
     margin-bottom: 10px;
 }
 .usr-btn:hover {
@@ -1188,4 +1200,120 @@ br{
 .status-color{
     color: var(--sage-green);
     margin-bottom: 15px;
+}
+
+/* show,delete,edit*/
+
+/* ==========================================================
+   BOUTONS GENERIQUES DU DASHBOARD (À utiliser à la place de login-btn)
+   ========================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    /* PLUS DE WIDTH: 100% ICI */
+}
+
+.btn-primary { background: var(--dark-teal); color: #fff; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { opacity: 0.85; }
+
+.btn-cancel { 
+    background: transparent; 
+    color: var(--text-muted); 
+    border: 1px solid var(--border-color); 
+}
+.btn-cancel:hover { 
+    background: var(--page-bg); 
+    color: var(--text-dark); 
+}
+
+/* Mise en forme de la modal de suppression */
+.delete-modal {
+    background: #fff;
+    border-radius: var(--radius-card);
+    padding: 32px;
+    max-width: 450px;
+    margin: 40px auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    text-align: center;
+}
+.delete-modal h2 { color: var(--red); margin: 0 0 16px; font-size: 20px; }
+.delete-modal p { color: var(--text-dark); font-size: 14px; margin: 0 0 8px; }
+.delete-modal form { display: flex; justify-content: center; gap: 12px; margin-top: 24px; }
+
+/* Mise en forme des actions de formulaire */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+
+/* ==========================================================
+   MISE EN FORME DE LA PAGE "VOIR" (Show)
+   ========================================================== */
+.entity-details {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+}
+
+.entity-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+.entity-details-header h2 { margin: 0; font-size: 20px; color: var(--text-dark); }
+.entity-details-header p { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
+
+.entity-details-body {
+    padding: 24px;
+}
+
+/* La grille pour afficher les détails proprement */
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 colonnes */
+    gap: 24px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-label { 
+    font-size: 12px; 
+    color: var(--text-muted); 
+    font-weight: 600; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+}
+
+.detail-value { 
+    font-size: 15px; 
+    color: var(--text-dark); 
+    font-weight: 500; 
 }

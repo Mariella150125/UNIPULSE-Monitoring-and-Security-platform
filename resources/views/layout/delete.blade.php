@@ -16,11 +16,11 @@
         @csrf
         @method('DELETE')
 
-        <button type="button" class="login-btn" >
+        <button type="button" class="btn btn-cancel" >
             Annuler
         </button>
 
-        <button type="submit" class="login-btn">
+        <button type="submit" class="btn btn-danger">
             Supprimer
         </button>
 

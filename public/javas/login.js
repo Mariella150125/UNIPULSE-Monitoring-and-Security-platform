@@ -504,24 +504,38 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
+        /* ------------------------------------------------------
        Déconnexion
        ------------------------------------------------------ */
 
-    const logoutLink =
-        document.getElementById('logout-link');
-
-    const logoutForm =
-        document.getElementById('logout-form');
+    const logoutLink = document.getElementById('logout-link');
+    const logoutForm = document.getElementById('logout-form');
 
     if (logoutLink && logoutForm) {
-
         logoutLink.addEventListener('click', function (e) {
-
             e.preventDefault();
-
             logoutForm.submit();
         });
     }
 
-});
+
+    /* ------------------------------------------------------
+       Recherche en temps réel (Utilisateurs)
+       ------------------------------------------------------ */
+    const searchInput = document.querySelector('input[name="search"]');
+
+    // LE "if (searchInput)" EST OBLIGATOIRE : 
+    // Il empêche le script de planter sur les pages qui n'ont pas de barre de recherche
+    if (searchInput) {
+        let timer;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timer);
+            
+            timer = setTimeout(function() {
+                searchInput.closest('form').submit();
+            }, 500);
+        });
+    }
+
+}); // <--- C'est la fermeture de votre VRAI premier "DOMContentLoaded"

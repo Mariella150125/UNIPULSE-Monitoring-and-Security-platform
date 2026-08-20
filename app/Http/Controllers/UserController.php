@@ -9,9 +9,37 @@ use App\Models\User;
 class UserController extends Controller
 {
     //recupérer tous les users
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::all();
+
+        $query = User::query();
+
+        // Recherche
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%")
+                ->orWhere('email', 'ILIKE', "%{$search}%")
+                ->orWhere('telephone', 'ILIKE', "%{$search}%");
+            });
+        }
+        // Filtre rôle
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        // Filtre statut
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filtre département
+        if ($request->filled('department')) {
+            $query->where('department', $request->department);
+        }
+
+        $users = $query->paginate(10);
 
         $totalUsers = User::count();
         $activeUsers = User::where('status' , 'actif')->count();

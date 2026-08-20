@@ -1,108 +1,415 @@
 @extends('layout.app')
+
 @section('Utilisateurs')
+
 @section('content')
 
-            <div class="page-title">
-                <h1>Gestion des Utilisateurs</h1>
+<div class="page-title">
+    <h1>Gestion des Utilisateurs</h1>
+</div>
+<a href="{{ route('sign') }}" class="usr-btn">
+    <i class="fa-solid fa-user-plus"></i>
+    Add User
+</a>
+
+
+{{-- =========================
+     KPI
+========================= --}}
+
+<div class="usr-kpi-row">
+
+    <div class="kpi-card">
+        <div class="kpi-icon c-teal">
+            <i class="fa-solid fa-user"></i>
+        </div>
+
+        <p class="kpi-label">Nombre d'utilisateurs</p>
+        <p class="kpi-value">{{ $totalUsers }}</p>
+    </div>
+
+
+    <div class="kpi-card">
+        <div class="kpi-icon c-sage">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+
+        <p class="kpi-label">Utilisateurs Actifs</p>
+        <p class="kpi-value">{{ $activeUsers }}</p>
+    </div>
+
+
+    <div class="kpi-card">
+        <div class="kpi-icon c-teal">
+            <i class="fa-solid fa-user-shield"></i>
+        </div>
+
+        <p class="kpi-label">Administrateurs</p>
+        <p class="kpi-value">{{ $admins }}</p>
+    </div>
+
+
+    <div class="kpi-card">
+        <div class="kpi-icon c-sage">
+            <i class="fa-solid fa-user-xmark"></i>
+        </div>
+
+        <p class="kpi-label">Utilisateurs Inactifs</p>
+        <p class="kpi-value">{{ $inactiveUsers }}</p>
+    </div>
+
+</div>
+
+
+
+{{-- =========================
+     RECHERCHE + FILTRES
+========================= --}}
+
+<div class="panel">
+
+    <form method="GET" action="{{ route('users') }}">
+
+        <div class="panel-header">
+
+
+            {{-- RECHERCHE --}}
+
+            <div class="search-bar">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Rechercher un utilisateur..."
+                    value="{{ request('search') }}"
+                >
+
             </div>
-            <a href="{{  route('sign') }}" class="usr-btn">
-                <i class="fa-solid fa-user-plus"></i>
-                 Add User
+
+
+
+            <div class="grid-3">
+
+
+                {{-- ROLE --}}
+
+                <select name="role" class="filter-btn">
+
+                    <option value="">
+                        Tous les rôles
+                    </option>
+
+                    <option value="Admin"
+                        @selected(request('role') == 'Admin')>
+                        Admin
+                    </option>
+
+                    <option value="DevOps"
+                        @selected(request('role') == 'DevOps')>
+                        DevOps
+                    </option>
+
+                    <option value="Développeur"
+                        @selected(request('role') == 'Développeur')>
+                        Développeur
+                    </option>
+
+                </select>
+
+
+
+                {{-- STATUT --}}
+
+                <select name="status" class="filter-btn">
+
+                    <option value="">
+                        Tous les statuts
+                    </option>
+
+                    <option value="actif"
+                        @selected(request('status') == 'actif')>
+                        Actif
+                    </option>
+
+                    <option value="inactif"
+                        @selected(request('status') == 'inactif')>
+                        Inactif
+                    </option>
+
+                </select>
+
+
+
+                {{-- DEPARTEMENT --}}
+
+                <select name="department" class="filter-btn">
+
+                    <option value="">
+                        Tous les départements
+                    </option>
+
+                    <option value="Technologie"
+                        @selected(request('department') == 'Technologie')>
+                        Technologie
+                    </option>
+
+                    <option value="QAT"
+                        @selected(request('department') == 'QAT')>
+                        QAT
+                    </option>
+
+                    <option value="Application Support"
+                        @selected(request('department') == 'Application Support')>
+                        Application Support
+                    </option>
+
+                    <option value="RSSI"
+                        @selected(request('department') == 'RSSI')>
+                        RSSI
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            {{-- BOUTON FILTRER --}}
+
+            <button type="submit" class="filter-btn">
+                <i class="fa-solid fa-filter"></i>
+                Filtrer
+            </button>
+
+        </div>
+
+    </form>
+
+
+
+    {{-- =========================
+         TABLEAU
+    ========================= --}}
+
+    <table class="server-table">
+
+        <thead>
+
+            <tr>
+                <th>Noms</th>
+                <th>Email</th>
+                <th>Fonction</th>
+                <th>Département</th>
+                <th>Statut</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+            @forelse ($users as $user)
+
+                <tr>
+
+                    <td>
+                        {{ $user->name }}
+                    </td>
+
+                    <td>
+                        {{ $user->email }}
+                    </td>
+
+                    <td>
+                        {{ $user->role }}
+                    </td>
+
+                    <td>
+                        {{ $user->department }}
+                    </td>
+
+
+                    {{-- STATUT --}}
+
+                    <td>
+
+                        @if($user->status === 'actif')
+
+                            <span class="status-dot online"></span>
+                            Actif
+
+                        @else
+
+                            <span class="status-dot offline"></span>
+                            Inactif
+
+                        @endif
+
+                    </td>
+
+
+                    {{-- LAST LOGIN --}}
+
+                    <td>
+                        --
+                    </td>
+
+
+                    {{-- ACTIONS --}}
+
+                    <td class="grid-6">
+
+                        {{-- SHOW --}}
+
+                        <a
+                            href="{{ route('users.show', $user->id) }}"
+                            class="icon-btn"
+                            title="Voir"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+
+
+                        {{-- EDIT --}}
+
+                        <a
+                            href="{{ route('users.edit', $user->id) }}"
+                            class="icon-btn"
+                            title="Modifier"
+                        >
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+
+
+                        {{-- DELETE --}}
+
+                        <form
+                            action="{{ route('users.destroy', $user->id) }}"
+                            method="POST"
+                        >
+
+                            @csrf
+                            @method('DELETE')
+
+                            <button
+                                type="submit"
+                                class="icon-btn"
+                                title="Supprimer"
+                                onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?')"
+                            >
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+            @empty
+
+                <tr>
+
+                    <td colspan="7" style="text-align: center;">
+                        Aucun utilisateur trouvé.
+                    </td>
+
+                </tr>
+
+            @endforelse
+
+        </tbody>
+
+    </table>
+
+
+
+    {{-- =========================
+         PAGINATION
+    ========================= --}}
+
+    <div class="pagination">
+
+
+        {{-- PRECEDENTE --}}
+
+        @if ($users->onFirstPage())
+
+            <button
+                class="pagination-btn"
+                disabled
+            >
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+        @else
+
+            <a
+                href="{{ $users->previousPageUrl() }}"
+                class="pagination-btn"
+            >
+                <i class="fa-solid fa-chevron-left"></i>
             </a>
-            {{-- Rangée de 12 KPI, une seule ligne, défilement horizontal --}}
-            <div class="usr-kpi-row">
-                <div class="kpi-card">
-                    <div class="kpi-icon c-teal"><i class="fa-solid fa-user"></i></div>
-                    <p class="kpi-label">Nombre d'utilisateurs</p><p class="kpi-value">{{ $totalUsers }}</p>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon c-sage"><i class="fa-solid fa-user-check"></i></div>
-                    <p class="kpi-label">Utilisateurs Actifs</p><p class="kpi-value">{{ $activeUsers }}</p>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon c-teal"><i class="fa-solid fa-user-shield"></i></div>
-                    <p class="kpi-label">Administrateurs</p><p class="kpi-value">{{ $admins}}</p>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon c-sage"><i class="fa-solid fa-user-xmark"></i></div>
-                    <p class="kpi-label">Utilisateurs Inactifs</p><p class="kpi-value">{{ $inactiveUsers }}</p>
-                </div>
-            </div>
 
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="search-bar">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Rechercher un utilisateur...">
-                    </div>
-                    <div class="grid-3">
-                        <select class="filter-btn">
-                            <option>Tous les rôles</option>
-                            <option>Admin</option>
-                            <option>UI/UX Designer</option>
-                            <option>Développeur</option>
-                        </select>
-                        <select class="filter-btn">
-                            <option>Tous les statuts</option>
-                            <option>Actif</option>
-                            <option>Inactif</option>
-                        </select>
-                        <select class="filter-btn">
-                            <option>Software Dev</option>
-                            <option>Application Support</option>
-                        </select>
-                    </div>
-                </div>
+        @endif
 
-                <table class="server-table">
-                    <thead>
-                        <tr>
-                            <th>Noms</th>
-                            <th>Email</th>
-                            <th>Fonction</th>
-                            <th>Département</th>
-                            <th>Statut</th>
-                            <th>Last Login</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($users as $user)
-                            
-                            <tr>
-                                <td>{{ $user->name }}</td>
-                                <td>{{ $user->email }}</td>
-                                <td>{{ $user->role }}</td>
-                                <td>{{ $user->department }}</td>
-                                <td><span class="status-dot online"></span>Actif</td>
-                                <td>--</td>
-                                <td class="grid-6">
-                                    <a href="{{ route('users.show' , $user->id) }}" class="icon-btn">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </a>
-                                    <a href= "{{ route('users.edit' , $user->id) }}" class="icon-btn">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </a>
-                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
 
-                                        <button type="submit" class="icon-btn">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
-                    
-                                </td>
-                            </tr>
-                         @endforeach
-                    </tbody>
-                </table>
 
-                <div class="pagination">
-                    <button class="pagination-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="pagination-btn active-page">1</button>
-                    <button class="pagination-btn">2</button>
-                    <button class="pagination-btn"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </div>
+        {{-- NUMEROS --}}
+
+        @for ($page = 1; $page <= $users->lastPage(); $page++)
+
+            @if ($page == $users->currentPage())
+
+                <a
+                    href="{{ $users->url($page) }}"
+                    class="pagination-btn active-page"
+                >
+                    {{ $page }}
+                </a>
+
+            @else
+
+                <a
+                    href="{{ $users->url($page) }}"
+                    class="pagination-btn"
+                >
+                    {{ $page }}
+                </a>
+
+            @endif
+
+        @endfor
+
+
+
+        {{-- SUIVANTE --}}
+
+        @if ($users->hasMorePages())
+
+            <a
+                href="{{ $users->nextPageUrl() }}"
+                class="pagination-btn"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+        @else
+
+            <button
+                class="pagination-btn"
+                disabled
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+        @endif
+
+    </div>
+
+</div>
 @endsection

@@ -44,11 +44,11 @@
 
         <div class="form-actions">
 
-            <a href="{{ $cancelUrl }}" class="login-btn">
+            <a href="{{ $cancelUrl }}" class="btn btn-cancel">
                 Annuler
             </a>
 
-            <button type="submit" class="login-btn">
+            <button type="submit" class="btn btn-primary">
                 {{ $submitText ?? 'Enregistrer' }}
             </button>
 
