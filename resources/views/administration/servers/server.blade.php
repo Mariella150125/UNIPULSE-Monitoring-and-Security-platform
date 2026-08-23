@@ -1,15 +1,19 @@
 @extends('layout.app')
-@section('Utilisateurs')
+@section('Serveur')
 @section('content')
 
         <div class="page-title">
             <h1>Gestion des Serveurs</h1>
         </div>
-        <button class= "usr-btn">
+        <button 
+            type="button"
+            class= "usr-btn"
+            data-modal-open="server-modal">
             <i class="fa-solid fa-server"></i>
             <i class="fa-solid fa-plus"></i>
                  Add Server
         </button>
+       
 
         {{-- Rangée de 12 KPI, une seule ligne, défilement horizontal --}}
         <div class="usr-kpi-row">
@@ -124,4 +128,6 @@
             </div>
 
             <p class="sync-time">Dernière synchronisation : il y a 2 min</p>
+            @include('administration.servers.server-modal')
+           
 @endsection

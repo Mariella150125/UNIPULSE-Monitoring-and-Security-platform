@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
        Fonction réutilisable pour la validation du mot de passe
        ------------------------------------------------------ */
     function initPasswordValidator(passwordInputId, toggleIconId, rulesPanelId, formId) {
+
         const passwordInput = document.getElementById(passwordInputId);
         const toggleIcon = document.getElementById(toggleIconId);
         const rulesPanel = document.getElementById(rulesPanelId);
@@ -25,12 +26,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function updateRulesPanel(value) {
+
             Object.keys(rules).forEach(function (key) {
-                const li = rulesPanel.querySelector('[data-rule="' + key + '"]');
+
+                const li = rulesPanel.querySelector(
+                    '[data-rule="' + key + '"]'
+                );
 
                 if (!li) return;
 
-                li.classList.toggle('valid', rules[key](value));
+                li.classList.toggle(
+                    'valid',
+                    rules[key](value)
+                );
             });
         }
 
@@ -46,13 +54,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Icône œil
         if (toggleIcon) {
+
             toggleIcon.addEventListener('click', function () {
-                const isHidden = passwordInput.type === 'password';
 
-                passwordInput.type = isHidden ? 'text' : 'password';
+                const isHidden =
+                    passwordInput.type === 'password';
 
-                toggleIcon.classList.toggle('fa-eye', !isHidden);
-                toggleIcon.classList.toggle('fa-eye-slash', isHidden);
+                passwordInput.type =
+                    isHidden ? 'text' : 'password';
+
+                toggleIcon.classList.toggle(
+                    'fa-eye',
+                    !isHidden
+                );
+
+                toggleIcon.classList.toggle(
+                    'fa-eye-slash',
+                    isHidden
+                );
             });
         }
 
@@ -61,12 +80,10 @@ document.addEventListener('DOMContentLoaded', function () {
          *
          * IMPORTANT :
          * On ne bloque PAS l'envoi du formulaire.
-         * Laravel doit recevoir le POST pour faire Auth::attempt().
          */
         if (formId === 'login-form') {
 
             form.addEventListener('submit', function () {
-                // Aucun event.preventDefault() ici.
                 // Le formulaire est envoyé normalement à Laravel.
             });
 
@@ -75,8 +92,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         /*
          * SIGNUP / ACTIVATION
-         *
-         * Ici on garde la validation frontend.
          */
         form.addEventListener('submit', function (event) {
 
@@ -84,12 +99,16 @@ document.addEventListener('DOMContentLoaded', function () {
             rulesPanel.hidden = false;
 
             if (!isPasswordValid(passwordInput.value)) {
+
                 event.preventDefault();
                 passwordInput.focus();
+
                 return;
             }
 
-            console.log('Formulaire valide (' + formId + ')');
+            console.log(
+                'Formulaire valide (' + formId + ')'
+            );
         });
     }
 
@@ -130,19 +149,35 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ------------------------------------------------------
        Icône œil - confirmation mot de passe
        ------------------------------------------------------ */
-    const confirmToggle = document.getElementById('confirmation-toggle-password');
-    const confirmInput = document.getElementById('password-confirmation');
+    const confirmToggle =
+        document.getElementById(
+            'confirmation-toggle-password'
+        );
+
+    const confirmInput =
+        document.getElementById(
+            'password-confirmation'
+        );
 
     if (confirmToggle && confirmInput) {
 
         confirmToggle.addEventListener('click', function () {
 
-            const isHidden = confirmInput.type === 'password';
+            const isHidden =
+                confirmInput.type === 'password';
 
-            confirmInput.type = isHidden ? 'text' : 'password';
+            confirmInput.type =
+                isHidden ? 'text' : 'password';
 
-            confirmToggle.classList.toggle('fa-eye', !isHidden);
-            confirmToggle.classList.toggle('fa-eye-slash', isHidden);
+            confirmToggle.classList.toggle(
+                'fa-eye',
+                !isHidden
+            );
+
+            confirmToggle.classList.toggle(
+                'fa-eye-slash',
+                isHidden
+            );
         });
     }
 
@@ -150,7 +185,8 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ------------------------------------------------------
        Etapes du formulaire SIGNUP
        ------------------------------------------------------ */
-    const signupForm = document.getElementById('signup-form');
+    const signupForm =
+        document.getElementById('signup-form');
 
     if (signupForm) {
 
@@ -175,7 +211,8 @@ document.addEventListener('DOMContentLoaded', function () {
         function isCurrentStepValid() {
 
             const currentStepEl = steps.find(
-                step => Number(step.dataset.step) === currentStep
+                step =>
+                    Number(step.dataset.step) === currentStep
             );
 
             if (!currentStepEl) return false;
@@ -226,8 +263,11 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ------------------------------------------------------
        Sidebar & Menu
        ------------------------------------------------------ */
-    const sidebar = document.querySelector('.sidebar');
-    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar =
+        document.querySelector('.sidebar');
+
+    const menuToggle =
+        document.querySelector('.menu-toggle');
 
     if (sidebar && menuToggle) {
 
@@ -237,14 +277,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-
     document
         .querySelectorAll('.nav-group-toggle')
         .forEach(function (toggle) {
 
             toggle.addEventListener('click', function () {
 
-                const group = toggle.closest('.nav-group');
+                const group =
+                    toggle.closest('.nav-group');
 
                 if (!group) return;
 
@@ -265,7 +305,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             openGroup.classList.remove('open');
 
                             const openItems =
-                                openGroup.querySelector('.nav-group-items');
+                                openGroup.querySelector(
+                                    '.nav-group-items'
+                                );
 
                             if (openItems) {
                                 openItems.style.maxHeight = null;
@@ -276,13 +318,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (isOpen) {
 
                     group.classList.remove('open');
-
                     items.style.maxHeight = null;
 
                 } else {
 
                     group.classList.add('open');
-
                     items.style.maxHeight =
                         items.scrollHeight + 'px';
                 }
@@ -304,8 +344,6 @@ document.addEventListener('DOMContentLoaded', function () {
         '28 Juil.'
     ];
 
-
-    // Alertes critiques
     var ctxAlerts =
         document.getElementById('alertChart');
 
@@ -316,14 +354,14 @@ document.addEventListener('DOMContentLoaded', function () {
             type: 'line',
 
             data: {
-
                 labels: labels,
 
                 datasets: [{
-
                     label: 'Alertes critiques',
 
-                    data: [3, 5, 2, 6, 4, 7, 4],
+                    data: [
+                        3, 5, 2, 6, 4, 7, 4
+                    ],
 
                     borderColor: '#c0392b',
 
@@ -339,7 +377,6 @@ document.addEventListener('DOMContentLoaded', function () {
             },
 
             options: {
-
                 responsive: true,
 
                 maintainAspectRatio: false,
@@ -354,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     y: {
                         min: 0,
+
                         grid: {
                             color: '#eef1ef'
                         }
@@ -370,7 +408,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // Score de sécurité
     var ctxSecurityScore =
         document.getElementById('securityChart');
 
@@ -388,7 +425,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     label: 'Score de sécurité (%)',
 
-                    data: [78, 80, 82, 81, 85, 88, 92],
+                    data: [
+                        78, 80, 82, 81, 85, 88, 92
+                    ],
 
                     borderColor: '#56825E',
 
@@ -421,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     y: {
                         min: 0,
+
                         grid: {
                             display: false
                         }
@@ -437,7 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // Santé des serveurs
     var ctxServerHealth =
         document.getElementById('serverChart');
 
@@ -455,7 +494,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     label: 'Santé des serveurs (%)',
 
-                    data: [78, 80, 82, 81, 85, 88, 92],
+                    data: [
+                        78, 80, 82, 81, 85, 88, 92
+                    ],
 
                     borderColor: '#56825E',
 
@@ -488,6 +529,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     y: {
                         min: 0,
+
                         grid: {
                             display: false
                         }
@@ -504,16 +546,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-        /* ------------------------------------------------------
+    /* ------------------------------------------------------
        Déconnexion
        ------------------------------------------------------ */
+    const logoutLink =
+        document.getElementById('logout-link');
 
-    const logoutLink = document.getElementById('logout-link');
-    const logoutForm = document.getElementById('logout-form');
+    const logoutForm =
+        document.getElementById('logout-form');
 
     if (logoutLink && logoutForm) {
+
         logoutLink.addEventListener('click', function (e) {
+
             e.preventDefault();
+
             logoutForm.submit();
         });
     }
@@ -522,20 +569,198 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ------------------------------------------------------
        Recherche en temps réel (Utilisateurs)
        ------------------------------------------------------ */
-    const searchInput = document.querySelector('input[name="search"]');
+    const searchInput =
+        document.querySelector(
+            'input[name="search"]'
+        );
 
-    // LE "if (searchInput)" EST OBLIGATOIRE : 
-    // Il empêche le script de planter sur les pages qui n'ont pas de barre de recherche
     if (searchInput) {
+
         let timer;
 
-        searchInput.addEventListener('input', function() {
-            clearTimeout(timer);
-            
-            timer = setTimeout(function() {
-                searchInput.closest('form').submit();
-            }, 500);
-        });
+        searchInput.addEventListener(
+            'input',
+            function () {
+
+                clearTimeout(timer);
+
+                timer = setTimeout(function () {
+
+                    const form =
+                        searchInput.closest('form');
+
+                    if (form) {
+                        form.submit();
+                    }
+
+                }, 500);
+            }
+        );
     }
 
-}); // <--- C'est la fermeture de votre VRAI premier "DOMContentLoaded"
+
+    /* ------------------------------------------------------
+       Modals (Ouverture / Fermeture)
+       ------------------------------------------------------ */
+
+    document
+        .querySelectorAll('[data-modal-open]')
+        .forEach(function (button) {
+
+            button.addEventListener('click', function () {
+
+                const modalId =
+                    this.dataset.modalOpen;
+
+                const modal =
+                    document.getElementById(modalId);
+
+                if (modal) {
+
+                    modal.classList.add('open');
+
+                    document.body.classList.add(
+                        'modal-open'
+                    );
+                }
+            });
+        });
+
+
+    document
+        .querySelectorAll('[data-modal-close]')
+        .forEach(function (button) {
+
+            button.addEventListener('click', function () {
+
+                const modalId =
+                    this.dataset.modalClose;
+
+                const modal =
+                    document.getElementById(modalId);
+
+                if (modal) {
+
+                    modal.classList.remove('open');
+
+                    document.body.classList.remove(
+                        'modal-open'
+                    );
+                }
+            });
+        });
+
+
+    /* ------------------------------------------------------
+       APPLICATIONS
+       Gestion hébergement
+       ------------------------------------------------------ */
+
+    const hostingSelect =
+        document.getElementById('is_hosted');
+
+    const serverField =
+        document.getElementById('server-field');
+
+    const portField =
+        document.getElementById('port-field');
+
+    const deploymentPathField =
+        document.getElementById(
+            'deployment-path-field'
+        );
+
+    const serverSelect =
+        document.getElementById('server_id');
+
+    const portInput =
+        document.getElementById('port');
+
+    const deploymentPathInput =
+        document.getElementById('deployment_path');
+
+
+    /*
+     * On vérifie que les éléments existent.
+     *
+     * C'est important parce que ce fichier JS
+     * est utilisé sur plusieurs pages.
+     */
+    if (
+        hostingSelect &&
+        serverField &&
+        portField &&
+        deploymentPathField &&
+        serverSelect
+    ) {
+
+        function updateHostingFields() {
+
+            const isHosted =
+                hostingSelect.value === '1';
+
+
+            if (isHosted) {
+
+                /*
+                 * APPLICATION HÉBERGÉE
+                 */
+
+                serverField.style.display = 'block';
+
+                portField.style.display = 'block';
+
+                deploymentPathField.style.display =
+                    'block';
+
+                // Le serveur devient obligatoire
+                serverSelect.required = true;
+
+
+            } else {
+
+                /*
+                 * APPLICATION NON HÉBERGÉE
+                 */
+
+                serverField.style.display = 'none';
+
+                portField.style.display = 'none';
+
+                deploymentPathField.style.display =
+                    'none';
+
+                // Le serveur n'est plus obligatoire
+                serverSelect.required = false;
+
+                // Nettoyage des valeurs
+                serverSelect.value = '';
+
+                if (portInput) {
+                    portInput.value = '';
+                }
+
+                if (deploymentPathInput) {
+                    deploymentPathInput.value = '';
+                }
+            }
+        }
+
+
+        /*
+         * Lorsque l'utilisateur change
+         * Oui / Non
+         */
+        hostingSelect.addEventListener(
+            'change',
+            updateHostingFields
+        );
+
+
+        /*
+         * État initial
+         */
+        updateHostingFields();
+    }
+
+});

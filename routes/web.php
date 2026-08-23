@@ -4,6 +4,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ServerController;
+use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\ApplicationTypeController;
 
 
 // 1. Afficher la page (GET)
@@ -42,6 +45,7 @@ Route::get('/password', function () {
     return view('auth.password');
 })->name('password');
 
+
 // CRUD USERS
 
 Route::get('/users', [UserController::class, 'index'])
@@ -68,13 +72,19 @@ Route::delete('/users/{id}', [UserController::class, 'destroy'])
     ->middleware('auth')
     ->name('users.destroy');
 
-Route::get('/server', function () {
-    return view('administration.serveur');
-});
+// gestion des serveurs 
 
-Route::get('/appli', function () {
-    return view('administration.appli');
-});
+Route::resource('server', ServerController::class)
+    ->except(['create']);
+
+// applications 
+Route::resource('appli', ApplicationController::class)
+    ->only(['index', 'store', 'update', 'destroy']);
+Route::resource(
+    'application-types',
+    ApplicationTypeController::class
+)->except(['create', 'show', 'edit']);
+
 Route::get('/agent', function () {
     return view('administration.agent');
 });

@@ -6,7 +6,11 @@
         <h1>Applications Management</h1>
         <p>Manage and monitor your applications</p>
     </div>
-    <button class="usr-btn">
+    <button
+    type="button"
+    class="usr-btn"
+    data-modal-open="application-modal"
+    >
         <i class="fa-solid fa-plus"></i>
         Add Application
     </button>
@@ -17,25 +21,25 @@
             <div class="kpi-icon c-teal"><i class="fa-solid fa-table-cells-large"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 2.5%</span>
             <p class="kpi-label">Total Applications</p>
-            <p class="kpi-value">12</p>
+            <p class="kpi-value"> {{ $applications->count() }}</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-sage"><i class="fa-solid fa-circle-check"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 1.8%</span>
             <p class="kpi-label">Active Applications</p>
-            <p class="kpi-value">10</p>
+            <p class="kpi-value">{{ $activeApplications->count() }}</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-down"></i> 0.5%</span>
             <p class="kpi-label">Critical Issues</p>
-            <p class="kpi-value">2</p>
+            <p class="kpi-value">--</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-orange"><i class="fa-solid fa-cloud"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 0.2%</span>
             <p class="kpi-label">Avg. Availability</p>
-            <p class="kpi-value">99.8%</p>
+            <p class="kpi-value">--</p>
         </div>
     </div>
 
@@ -211,5 +215,6 @@
             </div>
         </div>
     </div>
+    @include('administration.applis.appli-modal')
 
 @endsection

@@ -1,11 +1,13 @@
 <div class="app-layout">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo-icon">
-                <i class="fa-solid fa-heart-pulse"></i>
-            </div>
+            <img
+                src="{{ asset('images/unipulse.png') }}"
+                alt="UniPulse"
+                class="sidebar-logo"
+            >
+
             <div class="logo-text">
-                <p class="logo-title"><span class="pacifico">UniPulse</span></p>
                 <p class="logo-subtitle">Monitor. Secure. Perform.</p>
             </div>
         </div>
@@ -28,7 +30,7 @@
                     <a href="/web" class="nav-item {{ request()->is('web') ? 'active' : '' }}"><i class="fa-solid fa-code"></i><span>API REST & Webhooks</span></a>
                     <a href="/appli" class="nav-item {{ request()->is('appli') ? 'active' : '' }}"><i class="fa-solid fa-window-restore"></i><span>Applications</span></a>
                     <a href="/server" class="nav-item {{ request()->is('server') ? 'active' : '' }}"><i class="fa-solid fa-server"></i><span>Serveurs</span></a>
-                    <a href="/agent" class="nav-item {{ request()->is('agent') ? 'active' : '' }}"><i class="fa-solid fa-robot"></i><span>Agents Python</span></a>
+                    <a href="/agent" class="nav-item {{ request()->is('agent') ? 'active' : '' }}"><i class="fa-solid fa-robot"></i><span>Connecteur</span></a>
                 </div>
             </div>
 
