@@ -1,5 +1,4 @@
 @extends('layout.app')
-@section('applications')
 @section('content')
 
     <div class="page-title">
@@ -38,7 +37,7 @@
         <div class="kpi-card">
             <div class="kpi-icon c-orange"><i class="fa-solid fa-cloud"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 0.2%</span>
-            <p class="kpi-label">Avg. Availability</p>
+            <p class="kpi-label">App en maintenance</p>
             <p class="kpi-value">--</p>
         </div>
     </div>
@@ -46,6 +45,7 @@
     {{-- ─── Graphiques ─── --}}
     <div class="grid-2">
         <div class="panel">
+            
             <div class="panel-header">
                 <p>Application Availability</p>
                 <button class="period-btn">7 derniers jours <i class="fa-solid fa-chevron-down"></i></button>
@@ -73,22 +73,22 @@
     <div class="panel">
         <div class="panel-header">
             <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Rechercher une application...">
+                <form method="GET" action="{{ route('applications.index') }}">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Rechercher une application...">
             </div>
             <div class="search-filter">
-                <select>
-                    <option>Tous les environnements</option>
+                <select name="type" class="filter-btn">
+                    <option value="">Tous les environnements</option>
                     <option>Production</option>
                     <option>Staging</option>
                     <option>Development</option>
                     <option>QA</option>
                 </select>
-                <select>
-                    <option>Tous les statuts</option>
-                    <option>Actif</option>
-                    <option>Warning</option>
-                    <option>Inactif</option>
+                <select name="type" class="filter-btn">
+                    <option value="">Tous les statuts</option>
+                    <option value="actif" @selected(request('status') == 'actif')">Actif</option>
+                    <option value="en maintenance" @selected(request('status') == 'en maintenance')>En maintenance</option>
                 </select>
             </div>
         </div>
@@ -106,7 +106,18 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
+                 @forelse ($applications as $app)
+                    <tr>
+                        <td>{{ $app->name }}</td>
+                        <td>{{ $app->type }}</td>
+                        <td>{{ $app->environment }}</td>
+                        <td>{{ $app->department }}</td>
+                        <td>
+                            @if($app->status === 'actif')
+                                <span class="status-dot online"></span> Actif
+                            @else
+                                <span class="status-dot offline"></span> Maintenance
+                            @endif
                     <td class="app-name-cell">
                         <span class="app-icon-sm c-teal"><i class="fa-solid fa-globe"></i></span>
                         Company Website

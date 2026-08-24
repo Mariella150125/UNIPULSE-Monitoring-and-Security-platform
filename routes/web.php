@@ -7,6 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationTypeController;
+use App\Http\Controllers\ServerGroupController;
+use App\Http\Controllers\GlobalSearchController;
 
 
 // 1. Afficher la page (GET)
@@ -84,6 +86,54 @@ Route::resource(
     'application-types',
     ApplicationTypeController::class
 )->except(['create', 'show', 'edit']);
+
+Route::get(
+    '/search',
+    [GlobalSearchController::class, 'index']
+)->name('global.search');
+
+Route::get('/profile', function () {
+    return view('layout.profile');
+})->name('profile');
+
+Route::get('/settings', function () {
+    return view('layout.settings');
+})->name('settings');
+
+Route::resource(
+    'server-groups',
+    ServerGroupController::class
+)->only([
+    'index',
+    'store',
+    'update',
+]);
+
+
+Route::get('/language/{locale}', function ($locale) {
+
+    if (!in_array($locale, ['fr', 'en'])) {
+        abort(404);
+    }
+
+    session(['locale' => $locale]);
+
+    return redirect()->back();
+
+})->name('language');
+
+Route::post('/language/change', function (Request $request) {
+
+    $language = $request->input('language');
+
+    if (in_array($language, ['fr', 'en'])) {
+        session(['locale' => $language]);
+    }
+
+    return back();
+
+})->name('language.change');
+
 
 Route::get('/agent', function () {
     return view('administration.agent');

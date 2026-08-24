@@ -762,5 +762,157 @@ document.addEventListener('DOMContentLoaded', function () {
          */
         updateHostingFields();
     }
+    /* ------------------------------------------------------
+   Menu utilisateur Topbar
+   ------------------------------------------------------ */
 
+    const userMenuToggle = document.getElementById('user-menu-toggle');
+    const userDropdown = document.getElementById('user-dropdown');
+
+    if (userMenuToggle && userDropdown) {
+
+        userMenuToggle.addEventListener('click', function (event) {
+
+            event.stopPropagation();
+
+            userDropdown.classList.toggle('open');
+
+        });
+
+
+        document.addEventListener('click', function (event) {
+
+            if (
+                !userDropdown.contains(event.target) &&
+                !userMenuToggle.contains(event.target)
+            ) {
+                userDropdown.classList.remove('open');
+            }
+
+        });
+
+    }
+        document.addEventListener('DOMContentLoaded', function () {
+
+        const toggle = document.getElementById('date-range-toggle');
+        const menu = document.getElementById('date-range-menu');
+
+        if (!toggle || !menu) {
+            console.log('Calendrier : éléments introuvables');
+            return;
+        }
+
+        console.log('Calendrier : OK');
+
+        toggle.addEventListener('click', function (event) {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            menu.classList.toggle('open');
+
+            console.log('Menu calendrier:', menu.classList.contains('open'));
+
+        });
+
+
+        menu.querySelectorAll('[data-range]').forEach(function (button) {
+
+            button.addEventListener('click', function (event) {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const range = this.dataset.range;
+
+                console.log('Période sélectionnée:', range);
+
+                const label = document.getElementById('date-range-label');
+
+                if (range === 'today') {
+                    label.textContent = "Aujourd'hui";
+                }
+
+                if (range === '7') {
+                    label.textContent = "7 derniers jours";
+                }
+
+                if (range === '30') {
+                    label.textContent = "30 derniers jours";
+                }
+
+                if (range === '90') {
+                    label.textContent = "90 derniers jours";
+                }
+
+                if (range === 'custom') {
+                    alert('Période personnalisée');
+                }
+
+                menu.classList.remove('open');
+
+            });
+
+        });
+
+
+        document.addEventListener('click', function (event) {
+
+            if (
+                !menu.contains(event.target) &&
+                !toggle.contains(event.target)
+            ) {
+                menu.classList.remove('open');
+            }
+
+        });
+
+    });
+        document.addEventListener('DOMContentLoaded', function () {
+
+        const language = document.querySelector('.language');
+
+        if (!language) {
+            return;
+        }
+
+        const languageButton = language.querySelector('.lang-active');
+        const languageOptions = language.querySelectorAll('[data-lang]');
+
+        // Ouvrir / fermer le menu
+        languageButton.addEventListener('click', function (event) {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            language.classList.toggle('open');
+
+        });
+
+        // Choisir une langue
+        languageOptions.forEach(function (button) {
+
+            button.addEventListener('click', function (event) {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const lang = this.dataset.lang;
+
+                console.log('Langue sélectionnée :', lang);
+
+                language.classList.remove('open');
+
+            });
+
+        });
+
+        // Fermer en cliquant ailleurs
+        document.addEventListener('click', function () {
+
+            language.classList.remove('open');
+
+        });
+
+    });
 });

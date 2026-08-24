@@ -1,5 +1,4 @@
 @extends('layout.app')
-@section('Serveur')
 @section('content')
 
         <div class="page-title">

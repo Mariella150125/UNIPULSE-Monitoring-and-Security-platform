@@ -15,7 +15,7 @@ class ApplicationTypeController extends Controller
         $applicationTypes = ApplicationType::orderBy('name')->get();
 
         return view(
-            'administration.applications.application-types',
+            'layout.appli-type',
             compact('applicationTypes')
         );
     }
@@ -51,7 +51,7 @@ class ApplicationTypeController extends Controller
         $applicationType->update($validated);
 
         return redirect()
-            ->route('application-types.index')
+            ->route('administration.applis.appli')
             ->with('success', 'Type d’application modifié avec succès.');
     }
 

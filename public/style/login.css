@@ -466,17 +466,19 @@ h2 {
 }
 
 /* Zone principale : décalée de la largeur EXACTE de la sidebar */
-/*.main-area {
+.main-area {
     margin-left: 260px;
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}*/
+}
 
 .topbar {
-    display: flex; align-items: center; gap: 16px;
-    padding: 16px 32px;
+    display: flex; 
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
     background: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
@@ -488,6 +490,87 @@ h2 {
     background: #fff; display: flex; align-items: center; justify-content: center;
     color: var(--text-dark); cursor: pointer; position: relative;
     text-decoration: none;
+}
+/* ==========================================================
+   BARRE DE RECHERCHE TOPBAR
+   ========================================================== */
+
+.topbar-search {
+    flex: 1;
+    max-width: 420%;
+
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+
+    padding: 0 10px 0 14px;
+
+    color: var(--text-muted);
+
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.topbar-search:focus-within {
+    border-color: var(--sage-green);
+    box-shadow: 0 0 0 3px rgba(86, 130, 94, 0.10);
+}
+
+.topbar-search > i {
+    font-size: 14px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.topbar-search input {
+    flex: 1;
+
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-dark);
+}
+
+.topbar-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-submit {
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 7px;
+
+    background: var(--dark-teal);
+    color: #fff;
+
+    cursor: pointer;
+
+    transition: opacity 0.2s ease;
+}
+
+.search-submit:hover {
+    opacity: 0.85;
+}
+
+.search-submit i {
+    font-size: 11px;
 }
 .search-bar {
     flex: 1; display: flex; align-items: center; gap: 8px;
@@ -752,13 +835,11 @@ h2 {
 .date-range-menu button:hover { background: var(--page-bg); }
 .main-content{
     margin-left:260px;
-    width:calc(100% - 260px);
     height:100vh;
-
+    width:calc(100% - 260px);
     display:flex;
     flex-direction:column;
-
-    overflow:hidden;
+    overflow-y: auto;
 }
 .usr-btn {
     background: var(--dark-teal);
@@ -800,6 +881,98 @@ h2 {
     display: flex;
     margin-top: 16px;
     align-items: center;
+}
+/* ======================================================
+   MENU UTILISATEUR TOPBAR
+   ====================================================== */
+
+.user-menu {
+    position: relative;
+}
+
+.user-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    border: none;
+    background: transparent;
+    cursor: pointer;
+
+    padding: 4px 6px;
+}
+
+.user-menu-toggle .fa-chevron-down {
+    font-size: 12px;
+}
+
+
+/* Dropdown */
+
+.user-dropdown {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 190px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.10);
+
+    padding: 6px;
+
+    display: none;
+
+    z-index: 1000;
+}
+
+
+/* Ouvert */
+
+.user-dropdown.open {
+    display: block;
+}
+
+
+/* Élément */
+
+.user-dropdown-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border-radius: 7px;
+
+    text-decoration: none;
+
+    color: #374151;
+
+    font-size: 14px;
+
+    transition: background 0.2s ease;
+}
+
+
+.user-dropdown-item:hover {
+    background: #f3f5f4;
+}
+
+
+.user-dropdown-item i {
+    width: 18px;
+
+    text-align: center;
+
+    font-size: 14px;
 }
 thead {
  background-color: var(--grey);

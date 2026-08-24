@@ -1,7 +1,5 @@
 @extends('layout.app')
 
-@section('Utilisateurs')
-
 @section('content')
 
 <div class="page-title">
