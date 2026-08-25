@@ -34,6 +34,7 @@ html, body {
 .app-layout{
     display:flex;
     height:100vh;
+    
 }
 
 /* Centrage réservé UNIQUEMENT à la page de connexion/inscription.
@@ -466,19 +467,14 @@ h2 {
 }
 
 /* Zone principale : décalée de la largeur EXACTE de la sidebar */
-.main-area {
-    margin-left: 260px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
+
 
 .topbar {
-    display: flex; 
-    align-items: center;
-    gap: 12px;
-    padding: 16px 24px;
+     
+    display: flex;
+    align-items: center; 
+    gap: 16px;
+    padding: 16px 32px;
     background: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
@@ -595,7 +591,7 @@ h2 {
 
 .dashboard-content { 
     padding: 32px 32px; 
-    flex: 1;                 /* prend tout l'espace restant sous la topbar */
+    flex: 1;              /* prend tout l'espace restant sous la topbar */
     overflow-y: auto;
 }
 
@@ -838,8 +834,10 @@ h2 {
     height:100vh;
     width:calc(100% - 260px);
     display:flex;
+
+    min-width: 0;
     flex-direction:column;
-    overflow-y: auto;
+    overflow: hidden;
 }
 .usr-btn {
     background: var(--dark-teal);

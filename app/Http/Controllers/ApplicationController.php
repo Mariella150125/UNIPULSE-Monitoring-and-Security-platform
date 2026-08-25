@@ -13,36 +13,114 @@ class ApplicationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $applications = Application::with([
+        // ==========================================
+    // 1. REQUÊTE PRINCIPALE
+    // ==========================================
+
+        $query = Application::with([
             'applicationType',
             'server',
             'responsibleUser'
-        ])
-        ->orderBy('created_at', 'desc')
-        ->get();
+        ]);
+
+
+        // ==========================================
+        // 2. RECHERCHE
+        // ==========================================
+
+        if ($request->filled('search')) {
+
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where('name', 'like', '%' . $search . '%')
+                ->orWhere('identifiant_genere', 'like', '%' . $search . '%')
+                ->orWhere('description', 'like', '%' . $search . '%')
+                ->orWhere('url', 'like', '%' . $search . '%');
+
+            });
+        }
+
+
+        // ==========================================
+        // 3. FILTRE ENVIRONNEMENT
+        // ==========================================
+
+        if ($request->filled('environment')) {
+
+            $query->where(
+                'environment',
+                $request->environment
+            );
+        }
+
+
+        // ==========================================
+        // 4. FILTRE STATUT
+        // ==========================================
+
+        if ($request->filled('status')) {
+
+            $query->where(
+                'status',
+                $request->status
+            );
+        }
+
+
+        // ==========================================
+        // 5. APPLICATIONS PAGINÉES
+        // ==========================================
+
+        $applications = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+
+        // ==========================================
+        // 6. TYPES D'APPLICATION
+        // ==========================================
 
         $applicationTypes = ApplicationType::where('status', true)
             ->orderBy('name')
             ->get();
 
-        $servers = Server::orderBy('name')->get();
+            $applicationTypes = ApplicationType::where('status', true)
+                ->orderBy('name')
+                ->get();
 
-        $users = User::orderBy('name')->get();
+            $servers = Server::orderBy('name')->get();
 
-        $activeApplications = Application::where('status', 'active')->get();
+            $users = User::orderBy('name')->get();
 
-        return view(
-            'administration.applis.appli',
-            compact(
-                'applications',
-                'applicationTypes',
-                'servers',
-                'users',
-                'activeApplications'
-            )
-        );
+            $activeApplications = Application::where('status', 'actif')->count();
+
+
+        // ==========================================
+        // STATISTIQUES PAR ENVIRONNEMENT
+        // ==========================================
+
+        $environmentStats = Application::selectRaw(
+            'environment, COUNT(*) as total'
+        )
+        ->groupBy('environment')
+        ->get();
+
+            return view(
+                'administration.applis.appli',
+                compact(
+                    'applications',
+                    'applicationTypes',
+                    'servers',
+                    'users',
+                    'activeApplications',
+                    'environmentStats'
+                )
+            );
     }
 
     /**
@@ -323,7 +401,6 @@ class ApplicationController extends Controller
             ->route('appli.index')
             ->with(
                 'success',
-                'Application supprimée avec succès.'
-            );
+                'Application supprimée avec succès.' );
     }
 }
