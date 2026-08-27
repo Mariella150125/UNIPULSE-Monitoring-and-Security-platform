@@ -1,6 +1,19 @@
 @extends('layout.app')
 @section('content')
 
+@if ($errors->any())
+        <div class="flash-message error">
+            @foreach ($errors->all() as $error)
+                <p>{{ $error }}</p>
+            @endforeach
+        </div>
+    @endif
+@if(session('success'))
+    <div class="success-message" id="success-message">
+        <i class="fa-solid fa-circle-check"></i>
+        {{ session('success') }}
+    </div>
+@endif
     <div class="page-title">
         <h1>Applications Management</h1>
         <p>Manage and monitor your applications</p>

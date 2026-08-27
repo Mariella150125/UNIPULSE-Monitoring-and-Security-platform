@@ -6,7 +6,7 @@
     <h1>Détails de l'utilisateur</h1>
 </div>
 
-<div class="details-card">
+<div class="input-group">
 
     <div>
         <strong>Nom</strong>

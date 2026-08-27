@@ -15,7 +15,7 @@
         {{-- TYPE --}}
         <div class="modal-grid-2">
             <label for="type">Type de connecteur</label>
-            <select name="type" id="type" class="input-group"required onchange="onTypeChange()">
+            <select name="type" id="type" class="input-group" required onchange="onTypeChange()">
                 <option value="">-- Choisir --</option>
                 <option value="prometheus">Prometheus</option>
                 <option value="wazuh">Wazuh</option>

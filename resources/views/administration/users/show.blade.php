@@ -6,36 +6,53 @@
     <h1>Détails de l'utilisateur</h1>
 </div>
 
-<div class="details-card">
+<div class="entity-details">
 
-    <div>
-        <strong>Nom</strong>
-        <p>{{ $user->name }}</p>
+    <div class="entity-details-header">
+        <div>
+            <h2>{{ $user->name }}</h2>
+            <p>{{ $user->email }}</p>
+        </div>
+        <a href="{{ route('users') }}" class="btn btn-cancel">
+            <i class="fa-solid fa-arrow-left"></i>
+            Retour
+        </a>
     </div>
 
-    <div>
-        <strong>Email</strong>
-        <p>{{ $user->email }}</p>
-    </div>
+    <div class="entity-details-body">
+        <div class="details-grid">
 
-    <div>
-        <strong>Téléphone</strong>
-        <p>{{ $user->telephone }}</p>
-    </div>
+            <div class="detail-item">
+                <span class="detail-label">Nom</span>
+                <span class="detail-value">{{ $user->name }}</span>
+            </div>
 
-    <div>
-        <strong>Fonction</strong>
-        <p>{{ $user->role }}</p>
-    </div>
+            <div class="detail-item">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">{{ $user->email }}</span>
+            </div>
 
-    <div>
-        <strong>Département</strong>
-        <p>{{ $user->department }}</p>
-    </div>
+            <div class="detail-item">
+                <span class="detail-label">Téléphone</span>
+                <span class="detail-value">{{ $user->telephone ?? '—' }}</span>
+            </div>
 
-    <div>
-        <strong>Statut</strong>
-        <p>{{ $user->status }}</p>
+            <div class="detail-item">
+                <span class="detail-label">Fonction</span>
+                <span class="detail-value">{{ $user->role }}</span>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-label">Département</span>
+                <span class="detail-value">{{ $user->department ?? '—' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-label">Statut</span>
+                <span class="detail-value">{{ $user->status }}</span>
+            </div>
+
+        </div>
     </div>
 
 </div>

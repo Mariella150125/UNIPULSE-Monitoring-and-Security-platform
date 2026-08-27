@@ -101,7 +101,7 @@
 
 
 
-            <div class="grid-3">
+            <div class="search-filter">
 
 
                 {{-- ROLE --}}
@@ -182,17 +182,15 @@
                     </option>
 
                 </select>
+                {{-- BOUTON FILTRER --}}
 
+                <button type="submit" class="filter-btn">
+                    <i class="fa-solid fa-filter"></i>
+                    Filtrer
+                </button>
             </div>
 
 
-
-            {{-- BOUTON FILTRER --}}
-
-            <button type="submit" class="filter-btn">
-                <i class="fa-solid fa-filter"></i>
-                Filtrer
-            </button>
 
         </div>
 
