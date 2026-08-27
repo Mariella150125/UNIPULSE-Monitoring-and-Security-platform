@@ -1,9 +1,15 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ------------------------------------------------------
-       Fonction réutilisable pour la validation du mot de passe
-       ------------------------------------------------------ */
-    function initPasswordValidator(passwordInputId, toggleIconId, rulesPanelId, formId) {
+    /* ==========================================================
+       VALIDATION DU MOT DE PASSE
+       ========================================================== */
+
+    function initPasswordValidator(
+        passwordInputId,
+        toggleIconId,
+        rulesPanelId,
+        formId
+    ) {
 
         const passwordInput = document.getElementById(passwordInputId);
         const toggleIcon = document.getElementById(toggleIconId);
@@ -113,9 +119,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
-       Initialisation LOGIN
-       ------------------------------------------------------ */
+    /* ==========================================================
+       INITIALISATION LOGIN
+       ========================================================== */
+
     initPasswordValidator(
         'login-password',
         'login-toggle-password',
@@ -124,9 +131,10 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
 
-    /* ------------------------------------------------------
-       Initialisation SIGNUP
-       ------------------------------------------------------ */
+    /* ==========================================================
+       INITIALISATION SIGNUP
+       ========================================================== */
+
     initPasswordValidator(
         'signup-password',
         'signup-toggle-password',
@@ -135,9 +143,10 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
 
-    /* ------------------------------------------------------
-       Initialisation ACTIVATION
-       ------------------------------------------------------ */
+    /* ==========================================================
+       INITIALISATION ACTIVATION
+       ========================================================== */
+
     initPasswordValidator(
         'activation-password',
         'activation-toggle-password',
@@ -146,9 +155,10 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
 
-    /* ------------------------------------------------------
-       Icône œil - confirmation mot de passe
-       ------------------------------------------------------ */
+    /* ==========================================================
+       ICÔNE ŒIL - CONFIRMATION MOT DE PASSE
+       ========================================================== */
+
     const confirmToggle =
         document.getElementById(
             'confirmation-toggle-password'
@@ -182,9 +192,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
-       Etapes du formulaire SIGNUP
-       ------------------------------------------------------ */
+    /* ==========================================================
+       ÉTAPES DU FORMULAIRE SIGNUP
+       ========================================================== */
+
     const signupForm =
         document.getElementById('signup-form');
 
@@ -260,9 +271,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
-       Sidebar & Menu
-       ------------------------------------------------------ */
+    /* ==========================================================
+       SIDEBAR & MENU
+       ========================================================== */
+
     const sidebar =
         document.querySelector('.sidebar');
 
@@ -276,6 +288,11 @@ document.addEventListener('DOMContentLoaded', function () {
             sidebar.classList.toggle('collapsed');
         });
     }
+
+
+    /* ==========================================================
+       GROUPES DU MENU
+       ========================================================== */
 
     document
         .querySelectorAll('.nav-group-toggle')
@@ -323,6 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
 
                     group.classList.add('open');
+
                     items.style.maxHeight =
                         items.scrollHeight + 'px';
                 }
@@ -330,11 +348,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
 
-    /* ------------------------------------------------------
-       Graphiques — Dashboard principal
-       ------------------------------------------------------ */
+    /* ==========================================================
+       GRAPHIQUES — DASHBOARD PRINCIPAL
+       ========================================================== */
 
-    var labels = [
+    const labels = [
         '22 Juil.',
         '23 Juil.',
         '24 Juil.',
@@ -344,19 +362,201 @@ document.addEventListener('DOMContentLoaded', function () {
         '28 Juil.'
     ];
 
-    var ctxAlerts =
+
+    /* -------------------------
+       Graphique Alertes
+       ------------------------- */
+    /* ------------------------------------------------------
+   Donut — Répartition des serveurs par environnement
+   ------------------------------------------------------ */
+
+    var envDonutCanvas =
+        document.getElementById('envDonutChart');
+
+    if (envDonutCanvas) {
+
+        fetch('/dashboard/environment-chart')
+            .then(function (response) {
+
+                if (!response.ok) {
+                    throw new Error(
+                        'Erreur lors du chargement des environnements'
+                    );
+                }
+
+                return response.json();
+            })
+            .then(function (result) {
+
+                var labels = result.labels || [];
+                var data = result.data || [];
+
+                /* ------------------------------------------
+                Si aucune donnée
+                ------------------------------------------ */
+
+                if (labels.length === 0 || data.length === 0) {
+
+                    document.getElementById('donutLegend').innerHTML =
+                        '<p style="color: var(--text-muted);">' +
+                        'Aucune donnée disponible' +
+                        '</p>';
+
+                    return;
+                }
+
+
+                /* ------------------------------------------
+                Création du donut
+                ------------------------------------------ */
+
+                new Chart(envDonutCanvas, {
+
+                    type: 'doughnut',
+
+                    data: {
+
+                        labels: labels,
+
+                        datasets: [{
+
+                            data: data,
+
+                            backgroundColor: [
+                                '#56825E',
+                                '#1d4a40',
+                                '#8fae94',
+                                '#c9d8cb',
+                                '#6f8f77',
+                                '#b5c7b8'
+                            ],
+
+                            borderWidth: 0,
+
+                            hoverOffset: 5
+                        }]
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        cutout: '68%',
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            },
+
+                            tooltip: {
+
+                                callbacks: {
+
+                                    label: function (context) {
+
+                                        var label =
+                                            context.label || '';
+
+                                        var value =
+                                            context.parsed || 0;
+
+                                        return ' ' +
+                                            label +
+                                            ' : ' +
+                                            value +
+                                            ' serveur(s)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+
+                /* ------------------------------------------
+                Création de la légende personnalisée
+                ------------------------------------------ */
+
+                var legend =
+                    document.getElementById('donutLegend');
+
+                legend.innerHTML = '';
+
+                labels.forEach(function (label, index) {
+
+                    var item =
+                        document.createElement('div');
+
+                    item.className = 'legend-item';
+
+                    item.innerHTML =
+
+                        '<span class="legend-color" ' +
+                        'style="background-color:' +
+                        getEnvironmentColor(index) +
+                        '"></span>' +
+
+                        '<span class="legend-label">' +
+                        label +
+                        '</span>' +
+
+                        '<span class="legend-value">' +
+                        data[index] +
+                        '</span>';
+
+                    legend.appendChild(item);
+                });
+
+
+                function getEnvironmentColor(index) {
+
+                    var colors = [
+                        '#56825E',
+                        '#1d4a40',
+                        '#8fae94',
+                        '#c9d8cb',
+                        '#6f8f77',
+                        '#b5c7b8'
+                    ];
+
+                    return colors[
+                        index % colors.length
+                    ];
+                }
+
+            })
+
+            .catch(function (error) {
+
+                console.error(
+                    'Erreur donut environnement :',
+                    error
+                );
+
+                document.getElementById('donutLegend').innerHTML =
+                    '<p style="color: var(--c-red);">' +
+                    'Impossible de charger les données.' +
+                    '</p>';
+            });
+    }
+    const ctxAlerts =
         document.getElementById('alertChart');
 
-    if (ctxAlerts) {
+    if (ctxAlerts && typeof Chart !== 'undefined') {
 
         new Chart(ctxAlerts, {
 
             type: 'line',
 
             data: {
+
                 labels: labels,
 
                 datasets: [{
+
                     label: 'Alertes critiques',
 
                     data: [
@@ -377,11 +577,13 @@ document.addEventListener('DOMContentLoaded', function () {
             },
 
             options: {
+
                 responsive: true,
 
                 maintainAspectRatio: false,
 
                 plugins: {
+
                     legend: {
                         display: false
                     }
@@ -390,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 scales: {
 
                     y: {
+
                         min: 0,
 
                         grid: {
@@ -398,6 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
 
                     x: {
+
                         grid: {
                             display: false
                         }
@@ -408,10 +612,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    var ctxSecurityScore =
+    /* -------------------------
+       Graphique Score sécurité
+       ------------------------- */
+
+    const ctxSecurityScore =
         document.getElementById('securityChart');
 
-    if (ctxSecurityScore) {
+    if (ctxSecurityScore && typeof Chart !== 'undefined') {
 
         new Chart(ctxSecurityScore, {
 
@@ -451,7 +659,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 plugins: {
 
                     legend: {
+
                         display: true,
+
                         position: 'top'
                     }
                 },
@@ -459,6 +669,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 scales: {
 
                     y: {
+
                         min: 0,
 
                         grid: {
@@ -467,6 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
 
                     x: {
+
                         grid: {
                             display: false
                         }
@@ -477,10 +689,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    var ctxServerHealth =
+    /* -------------------------
+       Graphique Santé serveurs
+       ------------------------- */
+
+    const ctxServerHealth =
         document.getElementById('serverChart');
 
-    if (ctxServerHealth) {
+    if (ctxServerHealth && typeof Chart !== 'undefined') {
 
         new Chart(ctxServerHealth, {
 
@@ -520,7 +736,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 plugins: {
 
                     legend: {
+
                         display: true,
+
                         position: 'top'
                     }
                 },
@@ -528,6 +746,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 scales: {
 
                     y: {
+
                         min: 0,
 
                         grid: {
@@ -536,6 +755,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
 
                     x: {
+
                         grid: {
                             display: false
                         }
@@ -546,9 +766,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
-       Déconnexion
-       ------------------------------------------------------ */
+    /* ==========================================================
+       DÉCONNEXION
+       ========================================================== */
+
     const logoutLink =
         document.getElementById('logout-link');
 
@@ -566,9 +787,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
-       Recherche en temps réel (Utilisateurs)
-       ------------------------------------------------------ */
+    /* ==========================================================
+       RECHERCHE EN TEMPS RÉEL — UTILISATEURS
+       ========================================================== */
+
     const searchInput =
         document.querySelector(
             'input[name="search"]'
@@ -599,9 +821,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /* ------------------------------------------------------
-       Modals (Ouverture / Fermeture)
-       ------------------------------------------------------ */
+    /* ==========================================================
+       MODALS — OUVERTURE / FERMETURE
+       ========================================================== */
 
     document
         .querySelectorAll('[data-modal-open]')
@@ -651,10 +873,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
 
-    /* ------------------------------------------------------
+    /* ==========================================================
        APPLICATIONS
        Gestion hébergement
-       ------------------------------------------------------ */
+       ========================================================== */
 
     const hostingSelect =
         document.getElementById('is_hosted');
@@ -680,12 +902,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('deployment_path');
 
 
-    /*
-     * On vérifie que les éléments existent.
-     *
-     * C'est important parce que ce fichier JS
-     * est utilisé sur plusieurs pages.
-     */
     if (
         hostingSelect &&
         serverField &&
@@ -702,9 +918,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (isHosted) {
 
-                /*
-                 * APPLICATION HÉBERGÉE
-                 */
+                /* APPLICATION HÉBERGÉE */
 
                 serverField.style.display = 'block';
 
@@ -719,9 +933,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             } else {
 
-                /*
-                 * APPLICATION NON HÉBERGÉE
-                 */
+                /* APPLICATION NON HÉBERGÉE */
 
                 serverField.style.display = 'none';
 
@@ -747,76 +959,73 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
 
-        /*
-         * Lorsque l'utilisateur change
-         * Oui / Non
-         */
         hostingSelect.addEventListener(
             'change',
             updateHostingFields
         );
 
 
-        /*
-         * État initial
-         */
+        // État initial
         updateHostingFields();
     }
-    /* ------------------------------------------------------
-   Menu utilisateur Topbar
-   ------------------------------------------------------ */
 
-    const userMenuToggle = document.getElementById('user-menu-toggle');
-    const userDropdown = document.getElementById('user-dropdown');
+
+    /* ==========================================================
+       MENU UTILISATEUR TOPBAR
+       ========================================================== */
+
+    const userMenuToggle =
+        document.getElementById('user-menu-toggle');
+
+    const userDropdown =
+        document.getElementById('user-dropdown');
 
     if (userMenuToggle && userDropdown) {
 
-        userMenuToggle.addEventListener('click', function (event) {
+        userMenuToggle.addEventListener(
+            'click',
+            function (event) {
 
-            event.stopPropagation();
+                event.stopPropagation();
 
-            userDropdown.classList.toggle('open');
-
-        });
-
-
-        document.addEventListener('click', function (event) {
-
-            if (
-                !userDropdown.contains(event.target) &&
-                !userMenuToggle.contains(event.target)
-            ) {
-                userDropdown.classList.remove('open');
+                userDropdown.classList.toggle('open');
             }
+        );
 
-        });
 
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !userDropdown.contains(event.target) &&
+                    !userMenuToggle.contains(event.target)
+                ) {
+
+                    userDropdown.classList.remove('open');
+                }
+            }
+        );
     }
-        document.addEventListener('DOMContentLoaded', function () {
 
-        const toggle = document.getElementById('date-range-toggle');
-        const menu = document.getElementById('date-range-menu');
+    /* ==========================================================
+   CALENDRIER / PÉRIODE DU DASHBOARD
+   ========================================================== */
 
-        if (!toggle || !menu) {
-            console.log('Calendrier : éléments introuvables');
-            return;
-        }
+    const dateRangeToggle = document.getElementById('date-range-toggle');
+    const dateRangeMenu   = document.getElementById('date-range-menu');
 
-        console.log('Calendrier : OK');
+    if (dateRangeToggle && dateRangeMenu) {
 
-        toggle.addEventListener('click', function (event) {
-
+        // Ouvrir / fermer
+        dateRangeToggle.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-
-            menu.classList.toggle('open');
-
-            console.log('Menu calendrier:', menu.classList.contains('open'));
-
+            dateRangeMenu.classList.toggle('open');
         });
 
-
-        menu.querySelectorAll('[data-range]').forEach(function (button) {
+        // Cliquer sur une option → envoyer au backend
+        dateRangeMenu.querySelectorAll('[data-range]').forEach(function (button) {
 
             button.addEventListener('click', function (event) {
 
@@ -825,94 +1034,1077 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const range = this.dataset.range;
 
-                console.log('Période sélectionnée:', range);
-
-                const label = document.getElementById('date-range-label');
-
-                if (range === 'today') {
-                    label.textContent = "Aujourd'hui";
-                }
-
-                if (range === '7') {
-                    label.textContent = "7 derniers jours";
-                }
-
-                if (range === '30') {
-                    label.textContent = "30 derniers jours";
-                }
-
-                if (range === '90') {
-                    label.textContent = "90 derniers jours";
-                }
-
+                // Période personnalisée → ouvrir un datepicker (à toi d'implémenter)
                 if (range === 'custom') {
-                    alert('Période personnalisée');
+                    dateRangeMenu.classList.remove('open');
+                    // TODO: ouvrir un datepicker ici
+                    return;
                 }
 
-                menu.classList.remove('open');
-
+                // Construire l'URL avec le paramètre range
+                const url = new URL(window.location.href);
+                url.searchParams.set('range', range);
+                window.location.href = url.toString();
             });
-
-        });
-
-
-        document.addEventListener('click', function (event) {
-
-            if (
-                !menu.contains(event.target) &&
-                !toggle.contains(event.target)
-            ) {
-                menu.classList.remove('open');
-            }
-
-        });
-
-    });
-        document.addEventListener('DOMContentLoaded', function () {
-
-        const language = document.querySelector('.language');
-
-        if (!language) {
-            return;
-        }
-
-        const languageButton = language.querySelector('.lang-active');
-        const languageOptions = language.querySelectorAll('[data-lang]');
-
-        // Ouvrir / fermer le menu
-        languageButton.addEventListener('click', function (event) {
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            language.classList.toggle('open');
-
-        });
-
-        // Choisir une langue
-        languageOptions.forEach(function (button) {
-
-            button.addEventListener('click', function (event) {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                const lang = this.dataset.lang;
-
-                console.log('Langue sélectionnée :', lang);
-
-                language.classList.remove('open');
-
-            });
-
         });
 
         // Fermer en cliquant ailleurs
-        document.addEventListener('click', function () {
+        document.addEventListener('click', function (event) {
+            if (
+                !dateRangeMenu.contains(event.target) &&
+                !dateRangeToggle.contains(event.target)
+            ) {
+                dateRangeMenu.classList.remove('open');
+            }
+        });
+    }
 
-            language.classList.remove('open');
+    
 
+
+    /* ==========================================================
+       MENU LANGUE
+       ========================================================== */
+
+    const language =
+        document.querySelector('.language');
+
+    if (language) {
+
+        const languageButton =
+            language.querySelector('.lang-active');
+
+        const languageOptions =
+            language.querySelectorAll('[data-lang]');
+
+
+        if (languageButton) {
+
+            // Ouvrir / fermer le menu
+            languageButton.addEventListener(
+                'click',
+                function (event) {
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    language.classList.toggle('open');
+                }
+            );
+        }
+
+
+        // Choisir une langue
+        languageOptions.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    'click',
+                    function (event) {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        const lang =
+                            this.dataset.lang;
+
+                        console.log(
+                            'Langue sélectionnée :',
+                            lang
+                        );
+
+                        language.classList.remove(
+                            'open'
+                        );
+                    }
+                );
+            }
+        );
+
+
+        // Fermer en cliquant ailleurs
+        document.addEventListener(
+            'click',
+            function () {
+
+                language.classList.remove('open');
+            }
+        );
+    }
+
+
+    /* ==========================================================
+       CONNECTEURS
+       ========================================================== */
+
+
+    /* ----------------------------------------------------------
+       Recherche / filtres
+       ---------------------------------------------------------- */
+
+    let connectorSearchTimeout;
+
+    const connectorSearch =
+        document.getElementById('connector-search');
+
+    const filterType =
+        document.getElementById('filter-type');
+
+    const filterStatus =
+        document.getElementById('filter-status');
+
+
+    function applyConnectorFilters() {
+
+        const params =
+            new URLSearchParams();
+
+        const search =
+            connectorSearch
+                ? connectorSearch.value.trim()
+                : '';
+
+        const type =
+            filterType
+                ? filterType.value
+                : '';
+
+        const status =
+            filterStatus
+                ? filterStatus.value
+                : '';
+
+
+        if (search) {
+            params.set('search', search);
+        }
+
+        if (type) {
+            params.set('type', type);
+        }
+
+        if (status) {
+            params.set('status', status);
+        }
+
+
+        const qs =
+            params.toString();
+
+        window.location =
+            '/connecteurs' +
+            (qs ? '?' + qs : '');
+    }
+
+
+    if (connectorSearch) {
+
+        connectorSearch.addEventListener(
+            'input',
+            function () {
+
+                clearTimeout(
+                    connectorSearchTimeout
+                );
+
+                connectorSearchTimeout =
+                    setTimeout(
+                        applyConnectorFilters,
+                        400
+                    );
+            }
+        );
+    }
+
+
+    if (filterType) {
+
+        filterType.addEventListener(
+            'change',
+            applyConnectorFilters
+        );
+    }
+
+
+    if (filterStatus) {
+
+        filterStatus.addEventListener(
+            'change',
+            applyConnectorFilters
+        );
+    }
+
+
+    /* ----------------------------------------------------------
+       MODALE CONNECTEUR
+       ---------------------------------------------------------- */
+
+    function openCreateModal() {
+
+        const modal =
+            document.getElementById(
+                'connector-modal'
+            );
+
+        const form =
+            document.getElementById(
+                'connector-form'
+            );
+
+        const method =
+            document.getElementById('_method');
+
+        const connectorId =
+            document.getElementById(
+                'modal-connector-id'
+            );
+
+        const testArea =
+            document.getElementById(
+                'modal-test-area'
+            );
+
+        const testResult =
+            document.getElementById(
+                'modal-test-result'
+            );
+
+
+        if (!modal || !form) return;
+
+
+        const title =
+            modal.querySelector('h3');
+
+        if (title) {
+            title.textContent =
+                'Ajouter un connecteur';
+        }
+
+
+        form.action = '/connecteurs';
+
+        if (method) {
+            method.value = 'POST';
+        }
+
+        if (connectorId) {
+            connectorId.value = '';
+        }
+
+
+        form.reset();
+
+
+        if (testArea) {
+            testArea.style.display = 'none';
+        }
+
+        if (testResult) {
+            testResult.textContent = '';
+        }
+
+
+        onConnectorTypeChange();
+    }
+
+
+    /* ----------------------------------------------------------
+       OUVERTURE CRÉATION CONNECTEUR
+       ---------------------------------------------------------- */
+
+    document
+        .querySelectorAll(
+            '[data-modal-open="connector-modal"]'
+        )
+        .forEach(function (btn) {
+
+            btn.addEventListener(
+                'click',
+                function () {
+
+                    openCreateModal();
+                }
+            );
         });
 
-    });
+
+    /* ----------------------------------------------------------
+       MODIFICATION CONNECTEUR
+       ---------------------------------------------------------- */
+
+    function openEditModal(connectorId) {
+
+        fetch(
+            '/connecteurs/' +
+            connectorId +
+            '/edit-data'
+        )
+
+            .then(function (r) {
+
+                if (!r.ok) {
+                    throw new Error(
+                        'Non autorisé'
+                    );
+                }
+
+                return r.json();
+            })
+
+            .then(function (data) {
+
+                const modal =
+                    document.getElementById(
+                        'connector-modal'
+                    );
+
+                const form =
+                    document.getElementById(
+                        'connector-form'
+                    );
+
+
+                if (!modal || !form) return;
+
+
+                const title =
+                    modal.querySelector('h3');
+
+                if (title) {
+
+                    title.textContent =
+                        'Modifier le connecteur';
+                }
+
+
+                form.action =
+                    '/connecteurs/' +
+                    connectorId;
+
+
+                const method =
+                    document.getElementById(
+                        '_method'
+                    );
+
+                if (method) {
+                    method.value = 'PUT';
+                }
+
+
+                const modalConnectorId =
+                    document.getElementById(
+                        'modal-connector-id'
+                    );
+
+                if (modalConnectorId) {
+                    modalConnectorId.value =
+                        connectorId;
+                }
+
+
+                const type =
+                    document.getElementById('type');
+
+                const name =
+                    document.getElementById('name');
+
+                const baseUrl =
+                    document.getElementById(
+                        'base_url'
+                    );
+
+                const apiPort =
+                    document.getElementById(
+                        'api_port'
+                    );
+
+                const authUsername =
+                    document.getElementById(
+                        'auth_username'
+                    );
+
+                const authPassword =
+                    document.getElementById(
+                        'auth_password'
+                    );
+
+                const extraConfig =
+                    document.getElementById(
+                        'extra_config_raw'
+                    );
+
+
+                if (type) {
+                    type.value = data.type;
+                }
+
+                if (name) {
+                    name.value = data.name;
+                }
+
+                if (baseUrl) {
+                    baseUrl.value = data.base_url;
+                }
+
+                if (apiPort) {
+                    apiPort.value =
+                        data.api_port || '';
+                }
+
+                if (authUsername) {
+                    authUsername.value =
+                        data.auth_username || '';
+                }
+
+                if (authPassword) {
+                    authPassword.value = '';
+                }
+
+                if (extraConfig) {
+
+                    extraConfig.value =
+                        data.extra_config
+                            ? JSON.stringify(
+                                data.extra_config,
+                                null,
+                                2
+                            )
+                            : '';
+                }
+
+
+                onConnectorTypeChange();
+            })
+
+            .catch(function (err) {
+
+                alert(
+                    'Erreur : ' +
+                    err.message
+                );
+            });
+    }
+
+
+    /* ----------------------------------------------------------
+       CHAMPS CONDITIONNELS SELON LE TYPE
+       ---------------------------------------------------------- */
+
+    function onConnectorTypeChange() {
+
+        const typeElement =
+            document.getElementById('type');
+
+        const portGroup =
+            document.getElementById(
+                'port-group'
+            );
+
+        const testArea =
+            document.getElementById(
+                'modal-test-area'
+            );
+
+        const portInput =
+            document.getElementById(
+                'api_port'
+            );
+
+
+        if (
+            !typeElement ||
+            !portGroup ||
+            !testArea ||
+            !portInput
+        ) {
+            return;
+        }
+
+
+        const type =
+            typeElement.value;
+
+
+        if (type === 'wazuh') {
+
+            portGroup.style.display = '';
+
+            portInput.placeholder = '55000';
+
+            if (!portInput.value) {
+                portInput.value = '55000';
+            }
+
+            testArea.style.display = '';
+
+
+        } else if (type === 'prometheus') {
+
+            portGroup.style.display = '';
+
+            portInput.placeholder = '9090';
+
+            if (
+                !portInput.value ||
+                portInput.value === '55000'
+            ) {
+                portInput.value = '9090';
+            }
+
+            testArea.style.display = '';
+
+
+        } else {
+
+            portGroup.style.display = 'none';
+
+            testArea.style.display = 'none';
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       CHANGEMENT DU TYPE DE CONNECTEUR
+       ---------------------------------------------------------- */
+
+    const connectorType =
+        document.getElementById('type');
+
+    if (connectorType) {
+
+        connectorType.addEventListener(
+            'change',
+            onConnectorTypeChange
+        );
+    }
+
+
+    /* ----------------------------------------------------------
+       TEST DEPUIS LA MODALE
+       ---------------------------------------------------------- */
+
+    async function testFromModal() {
+
+        const btn =
+            document.getElementById(
+                'modal-test-btn'
+            );
+
+        const result =
+            document.getElementById(
+                'modal-test-result'
+            );
+
+
+        if (!btn || !result) return;
+
+
+        const originalHTML =
+            btn.innerHTML;
+
+
+        btn.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
+
+        btn.disabled = true;
+
+        result.textContent = '';
+
+
+        const rawConfig =
+            document.getElementById(
+                'extra_config_raw'
+            ).value.trim();
+
+
+        let extraConfig = null;
+
+
+        if (rawConfig) {
+
+            try {
+
+                extraConfig =
+                    JSON.parse(rawConfig);
+
+            } catch (e) {
+                extraConfig = null;
+            }
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    '/connecteurs/test-preview',
+                    {
+                        method: 'POST',
+
+                        headers: {
+
+                            'Content-Type':
+                                'application/json',
+
+                            'X-CSRF-TOKEN':
+                                document.querySelector(
+                                    'meta[name="csrf-token"]'
+                                ).content,
+
+                            'Accept':
+                                'application/json'
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                type:
+                                    document.getElementById(
+                                        'type'
+                                    ).value,
+
+                                name:
+                                    document.getElementById(
+                                        'name'
+                                    ).value,
+
+                                base_url:
+                                    document.getElementById(
+                                        'base_url'
+                                    ).value,
+
+                                api_port:
+                                    document.getElementById(
+                                        'api_port'
+                                    ).value ||
+                                    null,
+
+                                auth_username:
+                                    document.getElementById(
+                                        'auth_username'
+                                    ).value ||
+                                    null,
+
+                                auth_password:
+                                    document.getElementById(
+                                        'auth_password'
+                                    ).value ||
+                                    null,
+
+                                extra_config:
+                                    extraConfig
+                            })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (data.success) {
+
+                result.style.color =
+                    'var(--sage-green)';
+
+                result.textContent =
+                    '✓ ' +
+                    data.message +
+                    ' (' +
+                    data.response_time +
+                    ' ms)';
+
+            } else {
+
+                result.style.color =
+                    'var(--c-red)';
+
+                result.textContent =
+                    '✗ ' +
+                    data.message;
+            }
+
+
+        } catch (error) {
+
+            result.style.color =
+                'var(--c-red)';
+
+            result.textContent =
+                'Erreur réseau : ' +
+                error.message;
+
+
+        } finally {
+
+            btn.innerHTML =
+                originalHTML;
+
+            btn.disabled = false;
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       TEST DE CONNEXION — PAGE CONNECTEUR
+       ---------------------------------------------------------- */
+
+    async function runTest(id, btn) {
+
+        if (!btn) return;
+
+
+        const original =
+            btn.innerHTML;
+
+
+        btn.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
+
+        btn.disabled = true;
+
+
+        const resultCard =
+            document.getElementById(
+                'test-result-card'
+            );
+
+
+        if (resultCard) {
+            resultCard.style.display = 'none';
+        }
+
+
+        try {
+
+            const r =
+                await fetch(
+                    '/connecteurs/' +
+                    id +
+                    '/test',
+                    {
+                        method: 'POST',
+
+                        headers: {
+
+                            'X-CSRF-TOKEN':
+                                document.querySelector(
+                                    'meta[name="csrf-token"]'
+                                ).content,
+
+                            'Accept':
+                                'application/json'
+                        }
+                    }
+                );
+
+
+            const data =
+                await r.json();
+
+
+            const content =
+                document.getElementById(
+                    'test-result-content'
+                );
+
+
+            if (!content) return;
+
+
+            if (data.success) {
+
+                content.innerHTML =
+
+                    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
+
+                        '<span class="status-dot online" style="width:14px;height:14px;"></span>' +
+
+                        '<strong style="font-size:16px;color:var(--sage-green);">Connexion réussie</strong>' +
+
+                    '</div>' +
+
+                    '<div><strong>Temps de réponse</strong><p>' +
+
+                        data.response_time +
+
+                        ' ms</p></div>' +
+
+                    '<div><strong>Nouveau statut</strong><p>' +
+
+                        (
+                            data.status === 'connected'
+                                ? 'Connecté'
+                                : data.status
+                        ) +
+
+                        '</p></div>' +
+
+                    '<div><strong>Vérifié à</strong><p>' +
+
+                        (
+                            data.last_check_at ||
+                            '—'
+                        ) +
+
+                        '</p></div>' +
+
+                    (
+                        data.metadata
+
+                            ? '<div><strong>Détails</strong><pre style="background:var(--input-bg);padding:10px;border-radius:6px;font-size:13px;overflow-x:auto;">' +
+
+                                JSON.stringify(
+                                    data.metadata,
+                                    null,
+                                    2
+                                ) +
+
+                              '</pre></div>'
+
+                            : ''
+                    );
+
+
+            } else {
+
+                content.innerHTML =
+
+                    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
+
+                        '<span class="status-dot offline" style="width:14px;height:14px;"></span>' +
+
+                        '<strong style="font-size:16px;color:var(--c-red);">Échec de connexion</strong>' +
+
+                    '</div>' +
+
+                    '<div><strong>Erreur</strong><p style="color:var(--c-red);">' +
+
+                        data.message +
+
+                        '</p></div>' +
+
+                    '<div><strong>Nouveau statut</strong><p>' +
+
+                        (
+                            data.status === 'error'
+                                ? 'En erreur'
+                                : data.status
+                        ) +
+
+                        '</p></div>';
+            }
+
+
+            if (resultCard) {
+                resultCard.style.display = '';
+            }
+
+
+        } catch (e) {
+
+            const content =
+                document.getElementById(
+                    'test-result-content'
+                );
+
+
+            if (content) {
+
+                content.innerHTML =
+
+                    '<div style="display:flex;align-items:center;gap:12px;">' +
+
+                        '<span class="status-dot offline" style="width:14px;height:14px;"></span>' +
+
+                        '<strong style="color:var(--c-red);">Erreur réseau</strong>' +
+
+                    '</div>' +
+
+                    '<p style="color:var(--text-muted);margin-top:8px;">Impossible de contacter le serveur.</p>';
+            }
+
+
+            if (resultCard) {
+                resultCard.style.display = '';
+            }
+
+
+        } finally {
+
+            btn.innerHTML =
+                original;
+
+            btn.disabled = false;
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       AFFICHER / MASQUER MOT DE PASSE
+       ---------------------------------------------------------- */
+
+    function togglePasswordVisibility(
+        inputId,
+        btn
+    ) {
+
+        const input =
+            document.getElementById(inputId);
+
+        if (!input || !btn) return;
+
+
+        const icon =
+            btn.querySelector('i');
+
+        if (!icon) return;
+
+
+        if (input.type === 'password') {
+
+            input.type = 'text';
+
+            icon.className =
+                'fa-solid fa-eye-slash';
+
+        } else {
+
+            input.type = 'password';
+
+            icon.className =
+                'fa-solid fa-eye';
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       FORMULAIRE CONNECTEUR
+       Parser extra_config avant submit
+       ---------------------------------------------------------- */
+
+    const connectorForm =
+        document.getElementById(
+            'connector-form'
+        );
+
+
+    if (connectorForm) {
+
+        connectorForm.addEventListener(
+            'submit',
+            function (e) {
+
+                const rawField =
+                    document.getElementById(
+                        'extra_config_raw'
+                    );
+
+                if (!rawField) return;
+
+
+                const raw =
+                    rawField.value.trim();
+
+
+                const old =
+                    this.querySelector(
+                        'input[name="extra_config"]'
+                    );
+
+
+                if (old) {
+                    old.remove();
+                }
+
+
+                if (raw) {
+
+                    try {
+
+                        const hidden =
+                            document.createElement(
+                                'input'
+                            );
+
+                        hidden.type = 'hidden';
+
+                        hidden.name =
+                            'extra_config';
+
+                        hidden.value =
+                            JSON.stringify(
+                                JSON.parse(raw)
+                            );
+
+                        this.appendChild(
+                            hidden
+                        );
+
+
+                    } catch (err) {
+
+                        e.preventDefault();
+
+                        alert(
+                            'Le champ "Configuration avancée" doit contenir du JSON valide.'
+                        );
+                    }
+                }
+            }
+        );
+    }
+
+
+    /* ==========================================================
+       EXPOSITION DES FONCTIONS POUR LES BOUTONS BLADE
+       ========================================================== */
+
+    /*
+     * Ces fonctions sont utilisées si tes boutons Blade
+     * contiennent par exemple :
+     *
+     * onclick="openEditModal(id)"
+     * onclick="testFromModal()"
+     * onclick="runTest(id, this)"
+     * onclick="togglePasswordVisibility(...)"
+     */
+
+    window.openCreateModal =
+        openCreateModal;
+
+    window.openEditModal =
+        openEditModal;
+
+    window.onConnectorTypeChange =
+        onConnectorTypeChange;
+
+    window.testFromModal =
+        testFromModal;
+
+    window.runTest =
+        runTest;
+
+    window.togglePasswordVisibility =
+        togglePasswordVisibility;
+
+
+    const successMessage = document.getElementById('success-message');
+
+    if (successMessage) {
+
+        setTimeout(function () {
+
+            successMessage.style.transition = 'opacity 0.5s ease';
+            successMessage.style.opacity = '0';
+
+            setTimeout(function () {
+                successMessage.remove();
+            }, 500);
+
+        }, 3000);
+    }
+
 });

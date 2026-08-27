@@ -48,7 +48,13 @@
             
             <div class="panel-header">
                 <p>Application Availability</p>
-                <button class="period-btn">7 derniers jours <i class="fa-solid fa-chevron-down"></i></button>
+                <select class="period-btn" id="environmentFilter">
+                    <option value="">Tous</option>
+                    <option value="production">Production</option>
+                    <option value="staging">Staging</option>
+                    <option value="development">Development</option>
+                    <option value="test">Test</option>
+                </select>
             </div>
             <div class="alertChart">
                 <canvas id="availabilityChart"></canvas>
@@ -71,14 +77,11 @@
 
     {{-- ─── Tableau ─── --}}
     {{-- ─── Tableau ─── --}}
-<div class="panel">
-
-    <div class="panel-header">
-
+    <div class="panel">
         {{-- RECHERCHE + FILTRES --}}
         <form method="GET" action="{{ route('appli.index') }}" class="search-filter-form">
-
-            <div class="search-bar">
+            <div class="panel-header">
+                <div class="search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
 
                 <input
@@ -175,12 +178,11 @@
                         Retirée
                     </option>
 
-                    
-
-                </select>
+                    </select>
 
 
-                <button type="submit" class="filter-submit">
+                <button type="submit" class="filter-btn">
+                    <i class="fa-solid fa-filter"></i>
                     Filtrer
                 </button>
 
@@ -360,10 +362,83 @@
     </table>
 
 
-    {{-- PAGINATION --}}
+    {{-- =========================
+     PAGINATION
+========================= --}}
+
     <div class="pagination">
 
-        {{ $applications->withQueryString()->links() }}
+        {{-- PRECEDENTE --}}
+
+        @if ($applications->onFirstPage())
+
+            <button
+                class="pagination-btn"
+                disabled
+            >
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+        @else
+
+            <a
+                href="{{ $applications->previousPageUrl() }}"
+                class="pagination-btn"
+            >
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+
+        @endif
+
+
+        {{-- NUMEROS --}}
+
+        @for ($page = 1; $page <= $applications->lastPage(); $page++)
+
+            @if ($page == $applications->currentPage())
+
+                <a
+                    href="{{ $applications->url($page) }}"
+                    class="pagination-btn active-page"
+                >
+                    {{ $page }}
+                </a>
+
+            @else
+
+                <a
+                    href="{{ $applications->url($page) }}"
+                    class="pagination-btn"
+                >
+                    {{ $page }}
+                </a>
+
+            @endif
+
+        @endfor
+
+
+        {{-- SUIVANTE --}}
+
+        @if ($applications->hasMorePages())
+
+            <a
+                href="{{ $applications->nextPageUrl() }}"
+                class="pagination-btn"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+        @else
+
+            <button
+                class="pagination-btn"
+                disabled
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+        @endif
 
     </div>
 

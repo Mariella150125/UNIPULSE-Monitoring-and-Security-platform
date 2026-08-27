@@ -5,100 +5,197 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Server;
 use App\Models\ServerGroup;
+use App\Models\Application;
+
 class ServerController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Liste avec filtres + KPIs + données graphiques.
      */
-    public function index()
+    public function index(Request $request)
     {
-    
-        $servers = Server::with('group')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Server::with('group')->latest();
+
+        // Recherche
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'ILIKE', "%{$s}%")
+                  ->orWhere('hostname', 'ILIKE', "%{$s}%")
+                  ->orWhere('ip_address', 'ILIKE', "%{$s}%");
+            });
+        }
+
+        // Filtre environnement
+        if ($request->filled('environment')) {
+            $query->where('environment', $request->environment);
+        }
+
+        // Filtre statut global
+        if ($request->filled('status')) {
+            $query->where('global_status', $request->status);
+        }
+
+        // Filtre OS
+        if ($request->filled('os')) {
+            $query->where('os', 'ILIKE', "%{$request->os}%");
+        }
+
+        // Filtre groupe
+        if ($request->filled('group_id')) {
+            $query->where('group_id', $request->group_id);
+        }
+
+        $servers = $query->paginate(10);
         $groups = ServerGroup::orderBy('name')->get();
 
-        //$totalServers = User::count();
-        //$activeServers = User::where('status' , 'actif')->count();
-        //$inactiveUsers = User::where('status' , 'inactif')->count();
-        //$admins = User::where('role', 'Admin')->count();
-        
+        // KPIs
+        $totalServers    = Server::count();
+        $activeServers   = Server::where('global_status', 'healthy')->count();
+        $criticalServers = Server::where('global_status', 'critical')->count();
+        $hostedApps      = Application::whereNotNull('server_id')->count();
+
+        // Graphiques
+        $envDistribution = Server::selectRaw('environment, count(*) as total')
+            ->groupBy('environment')
+            ->orderByDesc('total')
+            ->get();
+
+        $osDistribution = Server::selectRaw('os, count(*) as total')
+            ->groupBy('os')
+            ->orderByDesc('total')
+            ->get();
 
         return view('administration.servers.server', compact(
-            'servers' , 
+            'servers',
             'groups',
-            ));
+            'totalServers',
+            'activeServers',
+            'criticalServers',
+            'hostedApps',
+            'envDistribution',
+            'osDistribution',
+        ));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Page détail d'un serveur.
      */
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        // Validation des données reçues
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'hostname' => 'required|string|max:255|unique:servers,hostname',
-            'ip_address' => 'required|ip',
-            'port' => 'nullable|integer|min:1|max:65535',
-
-            'os' => 'required|string|max:100',
-            'os_version' => 'nullable|string|max:100',
-
-            'environment' => 'required|string|max:100',
-            'department' => 'nullable|string|max:100',
-
-            'description' => 'nullable|string',
-
-            'tags' => 'nullable|array',
-
-            'group_id' => 'nullable|exists:server_groups,id',
-        ]);
-
-        $server = Server::create($validated);
-
-        return redirect()
-            ->route('servers.index')
-            ->with('success', 'Serveur ajouté avec succès.');
-
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Server $server)
-    {
+        $server = Server::with('group', 'applications')->findOrFail($id);
         return view('administration.servers.show', compact('server'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Page d'édition d'un serveur.
      */
-    public function edit(Server $server)
+    public function edit($id)
     {
+        $server = Server::findOrFail($id);
         $groups = ServerGroup::orderBy('name')->get();
-
         return view('administration.servers.edit', compact('server', 'groups'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Mise à jour un serveur.
      */
-    public function update(Request $request, Server $server)
+    public function update(Request $request, $id)
     {
+        $server = Server::findOrFail($id);
 
+        $validated = $request->validate([
+            'name'        => 'sometimes|required|string|max:255',
+            'hostname'    => 'sometimes|required|string|max:255|unique:servers,hostname,' . $server->id,
+            'ip_address'  => 'sometimes|required|ip',
+            'port'        => 'nullable|integer|min:1|max:65535',
+            'os'          => 'sometimes|required|string|max:100',
+            'os_version'   => 'nullable|string|max:100',
+            'environment'  => 'sometimes|required|string|max:100',
+            'department'   => 'nullable|string|max:100',
+            'description'  => 'nullable|string',
+            'tags'        => 'nullable|string',
+            'group_id'    => 'nullable|exists:server_groups,id',
+        ]);
+
+        $server->update($validated);
+
+        return redirect()->route('server.index')->with('success', 'Serveur modifié.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Page de confirmation de suppression.
      */
-    public function destroy(Server $server)
+    public function delete($id)
     {
-        
+        $server = Server::findOrFail($id);
+        return view('administration.servers.delete', compact('server'));
     }
-    
+
+    /**
+     * Suppression effective d'un serveur.
+     */
+    public function destroy($id)
+    {
+        $server = Server::findOrFail($id);
+        $server->delete();
+        return redirect()->route('servers.index')->with('success', 'Serveur supprimé.');
+    }
+
+    /**
+     * Créer un serveur.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'hostname'    => 'required|string|max:255|unique:servers,hostname',
+            'ip_address'  => 'required|ip',
+            'port'        => 'nullable|integer|min:1|max:65535',
+            'os'          => 'required|string|max:100',
+            'os_version'   => 'nullable|string|max:100',
+            'environment'  => 'required|string|max:100',
+            'department'   => 'nullable|string|max:100',
+            'description'  => 'nullable|string',
+            'tags'        => 'nullable|string',
+            'group_id'    => 'nullable|exists:server_groups,id',
+        ]);
+
+        Server::create($validated);
+
+        return redirect()->route('server.index')->with('success', 'Serveur ajouté avec succès.');
+    }
+
+    /**
+     * Données graphique — Évolution des alertes.
+     * Sera alimenté par les datasources Wazuh quand elles seront prêtes.
+     */
+    public function alertChartData()
+    {
+        return response()->json([
+            'labels' => [],
+            'data'   => [],
+        ]);
+    }
+
+    /**
+     * Données graphique — Répartition par environnement.
+     */
+    public function envChartData()
+    {
+        $data = Server::selectRaw('environment, count(*) as total')
+            ->groupBy('environment')
+            ->orderByDesc('total')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [
+                    $item->environment => $item->total
+                ];
+            });
+
+        return response()->json([
+            'labels' => array_keys($data->toArray()),
+            'data'   => array_values($data->toArray()),
+        ]);
+    }
 }

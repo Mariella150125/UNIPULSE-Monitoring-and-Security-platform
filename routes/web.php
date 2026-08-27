@@ -9,6 +9,8 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationTypeController;
 use App\Http\Controllers\ServerGroupController;
 use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\ConnectorController;
+use Illuminate\Http\Request;
 
 
 // 1. Afficher la page (GET)
@@ -135,9 +137,24 @@ Route::post('/language/change', function (Request $request) {
 })->name('language.change');
 
 
-Route::get('/agent', function () {
-    return view('administration.agent');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/connecteurs', [ConnectorController::class, 'index'])->name('connectors.index');
+    Route::post('/connecteurs', [ConnectorController::class, 'store'])->name('connectors.store');
+    Route::get('/connecteurs/{connector}/show', [ConnectorController::class, 'show'])->name('connectors.show');
+    Route::get('/connecteurs/{connector}/edit', [ConnectorController::class, 'edit'])->name('connectors.edit');
+    Route::put('/connecteurs/{connector}', [ConnectorController::class, 'update'])->name('connectors.update');
+    Route::get('/connecteurs/{connector}/delete', [ConnectorController::class, 'delete'])->name('connectors.delete');
+    Route::delete('/connecteurs/{connector}', [ConnectorController::class, 'destroy'])->name('connectors.destroy');
+    Route::get('/connecteurs/{connector}/plug', [ConnectorController::class, 'plug'])->name('connectors.plug');
+    Route::post('/connecteurs/{connector}/test', [ConnectorController::class, 'test'])->name('connectors.test')
+        ->middleware('throttle.connector.test');
+    Route::get('/connecteurs/{connector}/edit-data', [ConnectorController::class, 'editData'])->name('connectors.edit-data');
+    Route::post('/connecteurs/test-preview', [ConnectorController::class, 'testPreview'])->name('connectors.test-preview');
 });
+
+
+
 
 Route::get('/web', function () {
     return view('administration.webh');

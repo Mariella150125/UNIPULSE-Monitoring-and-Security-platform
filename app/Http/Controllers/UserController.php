@@ -84,7 +84,8 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return redirect()->back()->with('success', 'Utilisateur modifié.');
+        return redirect()->route('users')
+            ->with('success', 'Utilisateur modifié.');
     }
     public function delete($id)
     {

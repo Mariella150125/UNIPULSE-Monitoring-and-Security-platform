@@ -58,35 +58,6 @@
             </span>
         @enderror
 
-
-        <ul
-            class="password-rules"
-            id="login-password-rules"
-            hidden
-        >
-
-            <li data-rule="length">
-                Au moins 8 caractères
-            </li>
-
-            <li data-rule="uppercase">
-                Une lettre majuscule
-            </li>
-
-            <li data-rule="lowercase">
-                Une lettre minuscule
-            </li>
-
-            <li data-rule="number">
-                Un chiffre
-            </li>
-
-            <li data-rule="special">
-                Un caractère spécial (!@#$...)
-            </li>
-
-        </ul>
-
     </div>
 
 

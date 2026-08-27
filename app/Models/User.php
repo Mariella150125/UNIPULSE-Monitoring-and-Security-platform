@@ -20,4 +20,7 @@ class User extends Authenticatable implements CanResetPassword
     protected $hidden = [
         'password',
     ];
+    protected $casts = [
+        'last_login' => 'datetime',
+    ];
 }

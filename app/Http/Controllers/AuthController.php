@@ -32,6 +32,12 @@ class AuthController extends Controller
         
         if (Auth::attempt($credentials, $request->boolean('remember'))){
             $request->session()->regenerate();
+
+            // Enregistrer la dernière connexion
+            $user = Auth::user();
+            $user->last_login = now();
+            $user->save();
+
             return redirect()->route('dashboard');
         }
         

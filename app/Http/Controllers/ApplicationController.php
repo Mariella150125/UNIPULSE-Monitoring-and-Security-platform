@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\ApplicationType;
 use App\Models\Server;
 use App\Models\User;
+use App\Models\ApplicationAvailability;
 
 class ApplicationController extends Controller
 {
@@ -85,10 +86,7 @@ class ApplicationController extends Controller
         // 6. TYPES D'APPLICATION
         // ==========================================
 
-        $applicationTypes = ApplicationType::where('status', true)
-            ->orderBy('name')
-            ->get();
-
+       
             $applicationTypes = ApplicationType::where('status', true)
                 ->orderBy('name')
                 ->get();
@@ -97,7 +95,7 @@ class ApplicationController extends Controller
 
             $users = User::orderBy('name')->get();
 
-            $activeApplications = Application::where('status', 'actif')->count();
+            $activeApplications = Application::where('status', 'active')->count();
 
 
         // ==========================================
@@ -110,6 +108,20 @@ class ApplicationController extends Controller
         ->groupBy('environment')
         ->get();
 
+
+        // ==========================================
+// DISPONIBILITÉ DES 7 DERNIERS JOURS
+// ==========================================
+
+    $availabilityStats = ApplicationAvailability::query()
+        ->where('checked_at', '>=', now()->subDays(7))
+        ->selectRaw('DATE(checked_at) as date')
+        ->selectRaw(
+            'AVG(CASE WHEN is_available = true THEN 100 ELSE 0 END) as availability'
+        )
+        ->groupByRaw('DATE(checked_at)')
+        ->orderBy('date')
+        ->get();
             return view(
                 'administration.applis.appli',
                 compact(
@@ -118,7 +130,8 @@ class ApplicationController extends Controller
                     'servers',
                     'users',
                     'activeApplications',
-                    'environmentStats'
+                    'environmentStats',
+                    'availabilityStats'
                 )
             );
     }
@@ -187,7 +200,7 @@ class ApplicationController extends Controller
             // Status
             'status' => [
                 'nullable',
-                'in:planned,development,testing,staging,active,maintenance,suspended,retired'
+                'in:development,testing,staging,active,maintenance,suspended,retired'
             ],
 
             // Hébergement

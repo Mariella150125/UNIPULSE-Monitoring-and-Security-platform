@@ -1,4 +1,4 @@
-<div class="app-layout">
+
     <aside class="sidebar">
         <div class="sidebar-header">
             <img
@@ -19,18 +19,18 @@
             </a>
 
             {{-- Groupe repliable : Administration --}}
-            <div class="nav-group {{ (request()->is('user') || request()->is('web') || request()->is('appli') || request()->is('server') || request()->is('agent')) ? 'open' : '' }}">
+            <div class="nav-group {{ (request()->is('user') || request()->is('web') || request()->is('appli') || request()->is('server') || request()->is('connecteurs')) ? 'open' : '' }}">
                 <button type="button" class="nav-group-toggle">
                     <i class="fa-solid fa-user-shield"></i>
                     <span>Administration</span>
                     <i class="fa-solid fa-chevron-down nav-group-arrow"></i>
                 </button>
-                <div class="nav-group-items" style="{{ (request()->is('users') || request()->is('web') || request()->is('appli') || request()->is('server') || request()->is('agent')) ? 'max-height: 500px;' : '' }}">
+                <div class="nav-group-items" style="{{ (request()->is('users') || request()->is('web') || request()->is('appli') || request()->is('server') || request()->is('connecteurs')) ? 'max-height: 500px;' : '' }}">
                     <a href="/users" class="nav-item {{ request()->is('users') ? 'active' : '' }}"><i class="fa-solid fa-users"></i><span>Utilisateurs</span></a>
                     <a href="/web" class="nav-item {{ request()->is('web') ? 'active' : '' }}"><i class="fa-solid fa-code"></i><span>API REST & Webhooks</span></a>
                     <a href="/appli" class="nav-item {{ request()->is('appli') ? 'active' : '' }}"><i class="fa-solid fa-window-restore"></i><span>Applications</span></a>
                     <a href="/server" class="nav-item {{ request()->is('server') ? 'active' : '' }}"><i class="fa-solid fa-server"></i><span>Serveurs</span></a>
-                    <a href="/agent" class="nav-item {{ request()->is('agent') ? 'active' : '' }}"><i class="fa-solid fa-robot"></i><span>Connecteur</span></a>
+                    <a href="/connecteurs" class="nav-item {{ request()->is('connecteurs') ? 'active' : '' }}"><i class="fa-solid fa-robot"></i><span>Connecteur</span></a>
                 </div>
             </div>
 
@@ -80,4 +80,3 @@
             @csrf
         </form>
     </aside>
-</div>

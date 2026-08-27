@@ -2,6 +2,19 @@
 
 @section('content')
 
+@if ($errors->any())
+        <div class="flash-message error">
+            @foreach ($errors->all() as $error)
+                <p>{{ $error }}</p>
+            @endforeach
+        </div>
+    @endif
+@if(session('success'))
+    <div class="success-message" id="success-message">
+        <i class="fa-solid fa-circle-check"></i>
+        {{ session('success') }}
+    </div>
+@endif
 <div class="page-title">
     <h1>Gestion des Utilisateurs</h1>
 </div>
@@ -253,7 +266,7 @@
                     {{-- LAST LOGIN --}}
 
                     <td>
-                        --
+                        {{ $user->last_login ? $user->last_login->format('d/m/Y H:i') : 'Jamais' }}
                     </td>
 
 

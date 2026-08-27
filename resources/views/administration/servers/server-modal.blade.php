@@ -102,8 +102,8 @@
     </form>
 
     <x-slot:footer>
-        <button type="button" class="btn-secondary" data-modal-close="server-modal">Annuler</button>
-        <button type="submit" form="server-form" class="login-btn">Enregistrer</button>
+        <button type="button" class="btn btn-cancel" data-modal-close="server-modal">Annuler</button>
+        <button type="submit" form="server-form" class="btn btn-primary">Enregistrer</button>
     </x-slot:footer>
 
 </x-modal>

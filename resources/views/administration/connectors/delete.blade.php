@@ -3,7 +3,7 @@
 @section('content')
 
 <div class="page-title">
-    <h1>Supprimer le serveur</h1>
+    <h1>Supprimer le connecteur</h1>
     <p>Confirmation de suppression</p>
 </div>
 
@@ -13,34 +13,35 @@
         <i class="fa-solid fa-triangle-exclamation"></i>
     </div>
 
-    <h2>Voulez-vous supprimer ce serveur ?</h2>
+    <h2>Voulez-vous supprimer ce connecteur ?</h2>
 
     <p>Vous êtes sur le point de supprimer :</p>
 
-    <strong>{{ $server->name }} ({{ $server->hostname }})</strong>
+    <strong>
+        @if ($connector->type === 'prometheus')
+            <i class="fa-solid fa-chart-line"></i> 
+        @else
+            <i class="fa-solid fa-shield-halved"></i> 
+        @endif
+        {{ $connector->name }}
+    </strong>
 
     <p style="color:var(--text-muted);font-size:14px;">
-        {{ $server->ip_address }}{{ $server->port ? ':' . $server->port : '' }}
+        {{ $connector->full_url }}
     </p>
 
-    @if ($server->applications->isNotEmpty())
-        <p class="warning-text">
-            Attention : {{ $server->applications->count() }} application(s) sont hébergée(s) sur ce serveur et seront dissociée(s).
-        </p>
-    @else
-        <p class="warning-text">
-            Cette action est irréversible.
-        </p>
-    @endif
+    <p class="warning-text">
+        Cette action est irréversible. L'historique des tests de connexion sera également supprimé.
+    </p>
 
     <div class="form-actions">
 
-        <a href="{{ route('servers.show', $server) }}" class="btn-cancel">
+        <a href="{{ route('connectors.show', $connector) }}" class="btn-cancel">
             Annuler
         </a>
 
         <form
-            action="{{ route('servers.destroy', $server) }}"
+            action="{{ route('connectors.destroy', $connector) }}"
             method="POST"
         >
             @csrf
