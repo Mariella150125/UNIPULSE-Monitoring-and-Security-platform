@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
                 document.getElementById('donutLegend').innerHTML =
-                    '<p style="color: var(--c-red);">' +
+                    '<p style="color: var(--red);">' +
                     'Impossible de charger les données.' +
                     '</p>';
             });
@@ -1719,7 +1719,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
 
                 result.style.color =
-                    'var(--c-red)';
+                    'var(--red)';
 
                 result.textContent =
                     '✗ ' +
@@ -1730,7 +1730,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
 
             result.style.color =
-                'var(--c-red)';
+                'var(--red)';
 
             result.textContent =
                 'Erreur réseau : ' +
@@ -1876,11 +1876,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         '<span class="status-dot offline" style="width:14px;height:14px;"></span>' +
 
-                        '<strong style="font-size:16px;color:var(--c-red);">Échec de connexion</strong>' +
+                        '<strong style="font-size:16px;color:var(--red);">Échec de connexion</strong>' +
 
                     '</div>' +
 
-                    '<div><strong>Erreur</strong><p style="color:var(--c-red);">' +
+                    '<div><strong>Erreur</strong><p style="color:var(--red);">' +
 
                         data.message +
 
@@ -1919,7 +1919,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         '<span class="status-dot offline" style="width:14px;height:14px;"></span>' +
 
-                        '<strong style="color:var(--c-red);">Erreur réseau</strong>' +
+                        '<strong style="color:var(--red);">Erreur réseau</strong>' +
 
                     '</div>' +
 
@@ -2106,5 +2106,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
         }, 3000);
     }
+    /* ==========================================================
+   SIDEBAR MOBILE
+   ========================================================== */
 
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    if (sidebarToggle && sidebar) {
+
+        sidebarToggle.addEventListener('click', function () {
+            sidebar.classList.toggle('open');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+        });
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function () {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+
+        // Fermer la sidebar quand on clique sur un lien (mobile)
+        sidebar.querySelectorAll('.nav-item').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.remove('open');
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                }
+            });
+        });
+    }
 });

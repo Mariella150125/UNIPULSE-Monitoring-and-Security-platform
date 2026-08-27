@@ -12,6 +12,7 @@
 <body>
     <div class="app-layout">
         @include('layout.sidebar')
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <div class="main-content">
             @include('layout.topbar')
              

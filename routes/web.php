@@ -45,9 +45,7 @@ Route::get('/look', function () {
     return view('auth.look');
 })->name('look');
 
-Route::get('/password', function () {
-    return view('auth.password');
-})->name('password');
+
 
 
 // CRUD USERS

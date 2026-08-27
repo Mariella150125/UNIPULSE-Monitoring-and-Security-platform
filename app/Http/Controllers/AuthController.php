@@ -170,7 +170,7 @@ class AuthController extends Controller
         }
         return view('auth.password', [
             'token' => $token,
-            'email' => $request->email,
+            'email' => $request->query('email'),
         ]);
     }
 

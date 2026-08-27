@@ -1,7 +1,9 @@
 <div class="main-area">
 
     <header class="topbar">
-        
+        <button class="sidebar-toggle" id="sidebar-toggle">
+            <i class="fa-solid fa-bars"></i>
+        </button>
         <form
             action="{{ route('global.search') }}"
             method="GET"
