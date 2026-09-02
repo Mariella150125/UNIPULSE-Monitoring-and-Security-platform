@@ -118,10 +118,10 @@ class ConnectorController extends Controller
     {
         $connector = Connector::findOrFail($id);
 
-        if ($connector->created_by !== Auth::id()) abort(403);
+        //if ($connector->created_by !== Auth::id()) abort(403);
 
-        $this->service->delete($connector);
-
+        //$this->service->delete($connector);
+        $connector->delete();
         return redirect()->route('connectors.index')->with('success', 'Connecteur supprimé.');
     }
 

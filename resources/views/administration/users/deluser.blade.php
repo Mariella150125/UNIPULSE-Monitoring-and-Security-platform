@@ -7,24 +7,23 @@
     <p>{{ $user->name }}</p>
 </div>
 
-<div class="entity-details delete-card">
+<div class="delete-card">
 
-    <div class="entity-details-body">
-        <div class="delete-icon">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-
-        <h2>Supprimer cet utilisateur ?</h2>
-
-        <p>Vous êtes sur le point de supprimer</p>
-
-        <strong>{{ $user->name }}</strong>
-
-        <p class="warning-text">Cette action est irréversible.</p>
+    <div class="delete-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
     </div>
 
-    <div class="form-actions">
-        <a href="/users" class="btn btn-cancel">Annuler</a>
+    <h2>Supprimer cet utilisateur ?</h2>
+
+    <p>Vous êtes sur le point de supprimer</p>
+
+    <strong>{{ $user->name }}</strong>
+
+    <p class="warning-text">Cette action est irréversible.</p>
+   
+
+    <div class="delete-actions">
+        <a href="{{ route('users.index') }}" class="btn btn-cancel">Annuler</a>
 
         <form action="{{ route('users.destroy', $user->id) }}" method="POST">
             @csrf
@@ -36,6 +35,9 @@
         </form>
     </div>
 
+</div>
+
+</div>
 </div>
 
 @endsection

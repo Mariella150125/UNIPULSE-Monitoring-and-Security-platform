@@ -13,7 +13,7 @@
             <h2>{{ $user->name }}</h2>
             <p>{{ $user->email }}</p>
         </div>
-        <a href="{{ route('users') }}" class="btn btn-cancel">
+        <a href="{{ route('users.index') }}" class="btn btn-cancel">
             <i class="fa-solid fa-arrow-left"></i>
             Retour
         </a>

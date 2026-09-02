@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 
 class UserController extends Controller
@@ -97,8 +98,10 @@ class UserController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
+        //if ($user->created_by !== Auth::id()) abort(403);
 
-        $user->delete();
+        //$this->service->delete($user);
+         $user->delete();
 
         return redirect()->back()->with('success', 'Utilisateur supprimé.');
     }

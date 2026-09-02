@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
+use App\Traits\AuditsActivity;
 
 #[ObservedBy(ConnectorObserver::class)]
 class Connector extends Model
 {
+    use AuditsActivity;
     use HasFactory;
 
     // ── Casts automatiques ──

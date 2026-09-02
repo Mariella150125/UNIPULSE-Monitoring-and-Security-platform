@@ -7,9 +7,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
+use App\Traits\AuditsActivity;
 
 class User extends Authenticatable implements CanResetPassword
 {
+    use AuditsActivity;
     use HasFactory, Notifiable, CanResetPasswordTrait;
 
     // Les colonnes que Laravel a le droit de modifier

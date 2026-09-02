@@ -20,5 +20,6 @@ class DatabaseSeeder extends Seeder
          $this->call([
             usersSeeder::class,
         ]);
+         $this->call(WebhookEventTypeSeeder::class);
     }
 }

@@ -33,16 +33,14 @@
         </p>
     @endif
 
-    <div class="form-actions">
-
-        <a href="{{ route('servers.show', $server) }}" class="btn-cancel">
+    <div class="delete-actions">
+        
+        {{-- CORRECTION 1 : Retirer le $server de la route server.index --}}
+        <a href="{{ route('server.index') }}" class="btn btn-cancel">
             Annuler
         </a>
 
-        <form
-            action="{{ route('servers.destroy', $server) }}"
-            method="POST"
-        >
+        <form action="{{ route('server.destroy', $server->id) }}" method="POST">
             @csrf
             @method('DELETE')
 
@@ -55,5 +53,6 @@
     </div>
 
 </div>
+
 
 @endsection

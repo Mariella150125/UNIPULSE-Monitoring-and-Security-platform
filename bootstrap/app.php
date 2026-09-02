@@ -15,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
         ]);
         $middleware->alias([
-        'throttle.connector.test' => \App\Http\Middleware\ThrottleConnectorTest::class,
+            'throttle.connector.test' => \App\Http\Middleware\ThrottleConnectorTest::class,
+            'api.key'                 => \App\Http\Middleware\AuthenticateApiKey::class,
+            'scope'                   => \App\Http\Middleware\EnsureApiScope::class,
+            'webhook.verify'          => \App\Http\Middleware\VerifyWebhookSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

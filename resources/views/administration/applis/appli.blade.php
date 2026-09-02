@@ -18,22 +18,23 @@
         <h1>Applications Management</h1>
         <p>Manage and monitor your applications</p>
     </div>
-    <button
-    type="button"
-    class="usr-btn"
-    data-modal-open="application-modal"
-    >
-        <i class="fa-solid fa-plus"></i>
-        Add Application
-    </button>
-
+    <div class="page-top-action">
+        <button
+        type="button"
+        class="usr-btn"
+        data-modal-open="application-modal"
+        >
+            <i class="fa-solid fa-plus"></i>
+            Add Application
+        </button>
+    </div>
     {{-- ─── KPIs ─── --}}
     <div class="usr-kpi-row">
         <div class="kpi-card">
             <div class="kpi-icon c-teal"><i class="fa-solid fa-table-cells-large"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 2.5%</span>
             <p class="kpi-label">Total Applications</p>
-            <p class="kpi-value"> {{ $applications }}</p>
+            <p class="kpi-value"> {{ $applications->total() }}</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-sage"><i class="fa-solid fa-circle-check"></i></div>
@@ -212,6 +213,7 @@
         <thead>
 
             <tr>
+                <th>ID</th>
                 <th>Application</th>
                 <th>Environnement</th>
                 <th>Statut</th>
@@ -229,6 +231,14 @@
             @forelse ($applications as $app)
 
                 <tr>
+
+                    <td>
+
+
+                            {{ $app->identifiant_genere }}
+
+
+                    </td>
 
                     {{-- APPLICATION --}}
                     <td class="app-name-cell">
@@ -315,7 +325,7 @@
 
                         {{-- SHOW --}}
                         <a
-                            href="{{ route('applications.show', $app->id) }}"
+                            href="{{ route('appli.show', $app->id) }}"
                             class="icon-btn"
                             title="Voir"
                         >
@@ -325,7 +335,7 @@
 
                         {{-- EDIT --}}
                         <a
-                            href="{{ route('applications.edit', $app->id) }}"
+                            href="{{ route('appli.edit', $app->id) }}"
                             class="icon-btn"
                             title="Modifier"
                         >
@@ -335,7 +345,7 @@
 
                         {{-- DELETE --}}
                         <form
-                            action="{{ route('applications.destroy', $app->id) }}"
+                            action="{{ route('appli.destroy', $app->id) }}"
                             method="POST"
                             style="display:inline;"
                         >
@@ -343,12 +353,7 @@
                             @csrf
                             @method('DELETE')
 
-                            <button
-                                type="submit"
-                                class="icon-btn"
-                                title="Supprimer"
-                                onclick="return confirm('Voulez-vous vraiment supprimer cette application ?')"
-                            >
+                            <a href="{{ route('appli.delete', $app->id) }}" class="icon-btn" title="Supprimer">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
 

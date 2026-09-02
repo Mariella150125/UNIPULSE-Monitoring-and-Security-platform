@@ -12,6 +12,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Password as PasswordFacade; // <--- LE SURNOM CORRIGE TOUT
 use App\Models\User;
 use App\Mail\SignMail; 
+use App\Models\AuditLog;
 
 class AuthController extends Controller 
 {
@@ -37,10 +38,24 @@ class AuthController extends Controller
             $user = Auth::user();
             $user->last_login = now();
             $user->save();
-
+            AuditLog::create([
+                'user_id'      => $user->id,
+                'action'       => 'auth_login_success',
+                'resource_type'=> 'User',
+                'resource_id'  => $user->id,
+                'ip_address'   => $request->ip(),
+                'is_success'   => true,
+            ]);
             return redirect()->route('dashboard');
         }
-        
+        AuditLog::create([
+            'user_id'      => null, // null car on ne connaît pas l'utilisateur
+            'action'       => 'auth_login_failed',
+            'resource_type'=> 'User',
+            'ip_address'   => $request->ip(),
+            'is_success'   => false,
+            'details'      => 'Tentative avec email : ' . $request->email,
+        ]);
         throw ValidationException::withMessages([
             'email' => 'Identifiants incorrects.',
         ]);
@@ -143,7 +158,7 @@ class AuthController extends Controller
         
         if ($user) {
             $token = PasswordFacade::createToken($user);
-            Mail::to($user->email)->send(new WelcomeMail($user, $token));
+            Mail::to($user->email)->send(new SignMail($user, $token));
         }
 
         return redirect()->route('look')

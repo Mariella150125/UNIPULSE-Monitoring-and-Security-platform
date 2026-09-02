@@ -85,18 +85,16 @@ body.auth-body {
 }
 
 .shap {
-    position: absolute;
-    display: flex;
+   position: absolute;
     top: 0;
     left: 0;
-    bottom: 0;
     width: 55%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: left center;
     z-index: 2;
     pointer-events: none;
-    user-select: none;
-    object-position: left center;
+    user-select: none; 
 }
 
 .login-card {
@@ -778,6 +776,33 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     gap: 2px;
     margin-bottom: 10px;
 }
+/* Fix panel-header pour afficher le bouton */
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+/* Bouton adaptatif dans les panels étroits */
+.grid-3 .panel-header .usr-btn {
+    font-size: 11px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    flex-shrink: 0;
+}
+.grid-3 .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
 .panel {
     background: #fff;
     border: 1px solid var(--border-color);
@@ -856,6 +881,7 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     border-collapse: separate; 
     table-layout: auto;  
     border-spacing: 0 8px; 
+    text-align: left;
 }
 
 .server-table th { 
@@ -867,6 +893,7 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     white-space: nowrap; 
     height: 49px;
     background: var(--grey);
+    text-align: left;
 }
 .server-table td { 
     padding: 14px 18px; 
@@ -875,6 +902,7 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     line-height: 1.5;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: left;
 }
 .panel:has(.server-table) {
     padding: 0;
@@ -988,7 +1016,29 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
 
     text-decoration: none;
 
-    margin-left: 1000px;
+    /*margin-left: 1000px;*/
+    margin-bottom: 10px;
+}
+.usr-btn-1 {
+    background: var(--sage-green);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+
+    text-decoration: none;
+
+    /*margin-left: 1000px;*/
     margin-bottom: 10px;
 }
 .usr-btn:hover {
@@ -1111,6 +1161,13 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     margin-bottom: 10px;
     align-items: stretch;
 }
+.grid-2-api {
+    display: flex;
+    justify-content: right;
+    gap: 12px;
+    margin-top: 28px;
+}
+
 /* Donut — wrapper side-by-side chart + légende */
 .donut-wrapper {
     display: flex;
@@ -1859,12 +1916,6 @@ form.entity-details .form-actions {
 }
 
 
-
-
-
-
-
-
 /* ==========================================================
    RESPONSIVE — MOBILE FIRST
    ========================================================== */
@@ -2013,8 +2064,506 @@ form.entity-details .form-actions {
     height: 160px;
     margin: 0 auto;
 }
+/* ==========================================================
+   PAGE API & WEBHOOKS — Styles manquants
+   ========================================================== */
 
+/* ── Layout page ── */
+.page-top-action {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
 
+/* ── Méthodes HTTP (badges colorés) ── */
+.method-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.method-get    { background: rgba(29,74,64,0.12); color: var(--dark-teal); }
+.method-post   { background: rgba(59,130,246,0.12); color: #3b82f6; }
+.method-put    { background: rgba(224,142,62,0.12); color: var(--orange); }
+.method-delete { background: rgba(192,57,43,0.12);  color: var(--red); }
+.method-head   { background: rgba(138,148,144,0.12);color: var(--text-muted); }
+.method-patch  { background: rgba(168,85,247,0.12); color: #a855f7; }
+
+/* ── Status badges (endpoints + webhooks) ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.status-badge .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.status-badge.success       .status-dot { background: var(--sage-green); box-shadow: 0 0 6px var(--sage-green); }
+.status-badge.timeout       .status-dot { background: var(--orange);     box-shadow: 0 0 6px var(--orange); }
+.status-badge.http_4xx      .status-dot { background: var(--orange);     box-shadow: 0 0 6px var(--orange); }
+.status-badge.http_5xx      .status-dot { background: var(--red);        box-shadow: 0 0 6px var(--red); }
+.status-badge.never_checked .status-dot { background: var(--text-muted); }
+.status-badge.error         .status-dot { background: var(--red);        box-shadow: 0 0 6px var(--red); }
+
+/* ── Event badges (événements webhook) ── */
+.event-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.event-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    background: rgba(29,74,64,0.08);
+    color: var(--dark-teal);
+    border: 1px solid rgba(29,74,64,0.15);
+    white-space: nowrap;
+}
+
+/* ── URL tronquée ── */
+.url-cell {
+    display: inline-block;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+}
+
+/* ── Table vide ── */
+.table-empty {
+    text-align: center;
+    padding: 32px 16px !important;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* ── Grid span (clés API sur 2 colonnes) ── */
+.grid-span-2 {
+    grid-column: span 2;
+}
+
+/* ── Clé API préfixe ── */
+.key-prefix {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: var(--page-bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--dark-teal);
+}
+
+/* ── Clé API statut ── */
+.key-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.key-status .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+.key-status.active    .status-dot { background: var(--sage-green); box-shadow: 0 0 6px var(--sage-green); }
+.key-status.suspended .status-dot { background: var(--orange);     box-shadow: 0 0 6px var(--orange); }
+.key-status.revoked   .status-dot { background: var(--red);        box-shadow: 0 0 6px var(--red); }
+.key-status.expired   .status-dot { background: var(--text-muted); }
+
+/* ── Scopes (permissions clés API) ── */
+.scope-checks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.scope-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+    font-size: 12px;
+}
+.scope-check:hover { border-color: var(--sage-green); }
+.scope-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--dark-teal);
+    cursor: pointer;
+}
+.scope-check-label {
+    font-family: 'Courier New', monospace;
+    color: var(--text-dark);
+}
+
+/* ── Event checks (sélection événements webhook) ── */
+.event-checks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.event-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+    font-size: 12px;
+}
+.event-check:hover { border-color: var(--sage-green); }
+.event-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--dark-teal);
+    cursor: pointer;
+}
+.event-check-label {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--text-dark);
+}
+
+/* ── Headers dynamiques (modal endpoint) ── */
+.header-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.header-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.header-row input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #c7cec9;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text-dark);
+    background: #fff;
+    outline: none;
+}
+.header-row input:focus {
+    border-color: var(--dark-teal);
+    box-shadow: 0 0 0 3px rgba(29,74,64,0.10);
+}
+.add-header-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all 0.15s ease;
+}
+.add-header-btn:hover {
+    border-color: var(--sage-green);
+    color: var(--dark-teal);
+}
+
+/* ── Révélation clé API ── */
+.key-reveal-warning {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(224,142,62,0.08);
+    border: 1px solid rgba(224,142,62,0.2);
+    border-radius: 8px;
+    color: var(--orange);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+.key-reveal-block {
+    background: #1a1e2e;
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #c3e88d;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+/* ── Utilitaires texte ── */
+.font-medium { font-weight: 500; }
+.text-sm { font-size: 12px; }
+.text-muted { color: var(--text-muted); }
+.text-red { color: var(--red); }
+
+/* ── Bouton petit (modals) ── */
+.login-btn-sm {
+    width: auto;
+    padding: 8px 20px;
+    font-size: 13px;
+    letter-spacing: 0;
+}
+
+/* ── Toast notifications ── */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    font-size: 13px;
+    color: var(--text-dark);
+    animation: toast-in 0.25s ease;
+    min-width: 280px;
+}
+.toast.toast-success { border-left: 4px solid var(--sage-green); }
+.toast.toast-error   { border-left: 4px solid var(--red); }
+.toast.toast-warning { border-left: 4px solid var(--orange); }
+.toast.toast-out { animation: toast-out 0.2s ease forwards; }
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toast-out {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(40px); }
+}
+
+/* ── Icone danger dans les boutons ── */
+.icon-danger { color: var(--red); }
+.icon-danger:hover { color: #a93226; }
+
+/* ── Responsive modals ── */
+@media (max-width: 768px) {
+    .scope-checks,
+    .event-checks {
+        grid-template-columns: 1fr;
+    }
+    .modal-grid-2 {
+        grid-template-columns: 1fr;
+    }
+    .grid-span-2 {
+        grid-column: span 1;
+    }
+    .url-cell {
+        max-width: 120px;
+    }
+}
+
+/* ==========================================================
+   PAGE SETTINGS & TABS
+   ========================================================== */
+
+/* Grille du menu des paramètres */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.settings-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: all 0.2s ease;
+}
+
+.settings-card:hover {
+    border-color: var(--sage-green);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+}
+
+.settings-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--page-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dark-teal);
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.settings-card h3 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    color: var(--text-dark);
+}
+
+.settings-card p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.settings-arrow {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Navigation par Onglets */
+.tabs-container {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text-dark);
+}
+
+.tab-btn.active {
+    color: var(--dark-teal);
+    border-bottom-color: var(--dark-teal);
+}
+
+/* Contenu des Onglets */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content h2 {
+    font-size: 18px;
+    color: var(--text-dark);
+    margin: 0 0 20px;
+}
+
+/* Grille du formulaire de paramètres */
+.settings-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.settings-section {
+    background: var(--page-bg);
+    padding: 20px;
+    border-radius: 16px;
+}
+
+.settings-section h3 {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Champs de formulaire */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-dark);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: var(--dark-teal);
+    box-shadow: 0 0 0 3px rgba(29, 74, 64, 0.10);
+}
+
+/* Checkbox group alignement */
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-dark);
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--dark-teal);
+    cursor: pointer;
+}
 /* ----------------------------------------------------------
    PETIT MOBILE (480px et +)
    ---------------------------------------------------------- */
@@ -2034,7 +2583,6 @@ form.entity-details .form-actions {
         display: flex;
     }
 }
-
 
 /* ----------------------------------------------------------
    TABLETTES (768px et +)
@@ -2070,7 +2618,6 @@ form.entity-details .form-actions {
         padding: 24px;
     }
 }
-
 
 /* ----------------------------------------------------------
    DESKTOP (1024px et +) — layout normal
@@ -2114,118 +2661,31 @@ form.entity-details .form-actions {
         grid-template-columns: repeat(4, 1fr);
     }
 
-    /* Topbar normale */
-    .topbar {
-        padding: 16px 32px;
-        height: var(--topbar-height);
-    }
-
+    /* Dashboard content */
     .dashboard-content {
         padding: 32px;
     }
 
-    /* Agent layout côte à côte */
-    .agent-layout {
-        grid-template-columns: 1.5fr 1fr;
+    .topbar {
+        padding: 16px 32px;
+        height: 72px;
     }
 
-    /* Panel server côte à côte */
-    .panel-server {
-        grid-template-columns: repeat(2, 1fr);
+    /* Tables : layout normal */
+    .server-table {
+        table-layout: auto;
     }
 
-    /* Details : 2 colonnes */
-    .details-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-
-/* ----------------------------------------------------------
-   GRAND ÉCRAN (1440px et +)
-   ---------------------------------------------------------- */
-@media (min-width: 1440px) {
-
-    .kpi-row {
-        grid-template-columns: repeat(5, 1fr);
+    .panel {
+        overflow: visible;
     }
 
-    .dashboard-content {
-        padding: 32px 40px;
-    }
-}
-/* ----------------------------------------------------------
-   MOBILE — AUTH (login / signup)
-   ---------------------------------------------------------- */
-
-/* Le fond vert prend toute la largeur */
-.background {
-    width: 100%;
-    padding: 40px 24px;
-    border-radius: 0;
-}
-
-/* La carte de login prend toute la largeur */
-.login-card {
-    padding: 32px 24px;
-    min-height: auto;
-}
-
-/* L'image décorative cachée sur mobile */
-.shape,
-.shap {
-    display: none;
-}
-
-
-/* ----------------------------------------------------------
-   PETIT MOBILE (480px+)
-   ---------------------------------------------------------- */
-@media (min-width: 480px) {
-
-    .background {
-        width: 90%;
-        border-radius: var(--radius-outer);
-        margin: 0 auto;
+    .panel:has(.server-table) {
+        padding: 0;
+        overflow: hidden;
     }
 
-    .login-card {
-        padding: 32px 28px;
-    }
-}
-
-
-/* ----------------------------------------------------------
-   TABLETTES (768px+)
-   ---------------------------------------------------------- */
-@media (min-width: 768px) {
-
-    .background {
-        width: 70%;
-    }
-
-    .login-card {
-        padding: 32px 40%;
-    }
-
-    /* L'image réapparaît côté droit */
-    .shape {
-        display: block;
-    }
-}
-
-
-/* ----------------------------------------------------------
-   DESKTOP (1024px+) — layout normal
-   ---------------------------------------------------------- */
-@media (min-width: 1024px) {
-
-    .background {
-        width: 60%;
-        padding: 70px;
-    }
-
-    .login-card {
-        padding: 32px 58% 32px 40px;
+    .panel:has(.server-table) .panel-header {
+        padding: 18px 20px;
     }
 }

@@ -18,11 +18,12 @@
 <div class="page-title">
     <h1>Gestion des Utilisateurs</h1>
 </div>
-<a href="{{ route('sign') }}" class="usr-btn">
-    <i class="fa-solid fa-user-plus"></i>
-    Add User
-</a>
-
+<div class="page-top-action">
+    <a href="{{ route('sign') }}" class="usr-btn">
+        <i class="fa-solid fa-user-plus"></i>
+        Add User
+    </a>
+</div>
 
 {{-- =========================
      KPI
@@ -79,7 +80,7 @@
 
 <div class="panel">
 
-    <form method="GET" action="{{ route('users') }}">
+    <form method="GET" action="{{ route('users.index') }}">
 
         <div class="panel-header">
 
@@ -296,24 +297,10 @@
 
                         {{-- DELETE --}}
 
-                        <form
-                            action="{{ route('users.destroy', $user->id) }}"
-                            method="POST"
-                        >
-
-                            @csrf
-                            @method('DELETE')
-
-                            <button
-                                type="submit"
-                                class="icon-btn"
-                                title="Supprimer"
-                                onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?')"
-                            >
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-
-                        </form>
+                        <a href="{{ route('users.delete', $user->id) }}" class="icon-btn" title="Supprimer" style="color:var(--c-red);">
+                            <i class="fa-solid fa-trash"></i>
+                        </a>
+                    
 
                     </td>
 

@@ -19,12 +19,13 @@
     <div class="page-title">
         <h1>Gestion des Serveurs</h1>
     </div>
-
-    <button type="button" class="usr-btn" data-modal-open="server-modal">
-        <i class="fa-solid fa-server"></i>
-        <i class="fa-solid fa-plus"></i>
-        Add Server
-    </button>
+    <div class="page-top-action">
+        <button type="button" class="usr-btn" data-modal-open="server-modal">
+            <i class="fa-solid fa-server"></i>
+            <i class="fa-solid fa-plus"></i>
+            Add Server
+        </button>
+    </div>
 
 
     {{-- KPIs dynamiques --}}
@@ -181,7 +182,7 @@
                                 <a href="{{ route('server.edit', $server) }}" class="icon-btn" title="Modifier">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <a href="{{ route('server.destroy', $server) }}" class="icon-btn" title="Supprimer" style="color:var(--c-red);">
+                                <a href="{{ route('servers.delete', $server->id) }}" class="icon-btn" title="Supprimer" style="color:var(--c-red);">
                                     <i class="fa-solid fa-trash"></i>
                                 </a>
                             </td>

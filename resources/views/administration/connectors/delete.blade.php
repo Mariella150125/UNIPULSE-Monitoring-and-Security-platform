@@ -2,6 +2,9 @@
 
 @section('content')
 
+<div class="main-content">
+<div class="dashboard-content">
+
 <div class="page-title">
     <h1>Supprimer le connecteur</h1>
     <p>Confirmation de suppression</p>
@@ -34,9 +37,9 @@
         Cette action est irréversible. L'historique des tests de connexion sera également supprimé.
     </p>
 
-    <div class="form-actions">
+    <div class="delete-actions">
 
-        <a href="{{ route('connectors.show', $connector) }}" class="btn-cancel">
+        <a href="{{ route('connectors.index', $connector) }}" class="btn btn-cancel">
             Annuler
         </a>
 
@@ -55,6 +58,9 @@
 
     </div>
 
+</div>
+
+</div>
 </div>
 
 @endsection

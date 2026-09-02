@@ -23,10 +23,12 @@
         <p>Gérez et surveillez les connexions avec vos plateformes de monitoring et de sécurité.</p>
     </div>
 
-    <button type="button" class="usr-btn" data-modal-open="connector-modal">
-        <i class="fa-solid fa-plus"></i>
-        Ajouter un connecteur
-    </button>
+    <div class="page-top-action">
+        <button type="button" class="usr-btn" data-modal-open="connector-modal">
+            <i class="fa-solid fa-plus"></i>
+            Ajouter un connecteur
+        </button>
+    </div>
 
     <div class="usr-kpi-row">
 

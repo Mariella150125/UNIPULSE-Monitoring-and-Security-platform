@@ -2137,4 +2137,479 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+        /* ==========================================================
+       PAGE API & WEBHOOKS
+       ========================================================== */
+
+    function toast(message, type) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+        var el = document.createElement('div');
+        el.className = 'toast toast-' + (type || 'success');
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(function () {
+            el.classList.add('toast-out');
+            setTimeout(function () { el.remove(); }, 200);
+        }, 3500);
+    }
+
+    // data-open-modal (vue Blade)
+    document.querySelectorAll('[data-open-modal]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = this.dataset.openModal;
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.add('open');
+        });
+    });
+
+    // Fermer en cliquant sur l'overlay
+    document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('open');
+        });
+    });
+
+    // Fermer avec Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay.open').forEach(function (m) {
+                m.classList.remove('open');
+            });
+        }
+    });
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function () {
+            toast('Copié dans le presse-papiers.', 'success');
+        }).catch(function () {
+            toast('Impossible de copier.', 'error');
+        });
+    }
+
+    var copyCurlBtn = document.getElementById('copyCurl');
+    if (copyCurlBtn) {
+        copyCurlBtn.addEventListener('click', function () {
+            var block = document.getElementById('curlBlock');
+            if (block) copyToClipboard(block.textContent);
+        });
+    }
+
+    document.querySelectorAll('[data-copy-reveal-key]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var keyText = document.getElementById('reveal-key-text');
+            if (keyText) copyToClipboard(keyText.textContent);
+        });
+    });
+
+    // ── Filtre texte ──
+    document.querySelectorAll('[data-filter-table]').forEach(function (input) {
+        input.addEventListener('input', function () {
+            var tableId = this.dataset.filterTable;
+            var table = document.getElementById(tableId);
+            if (!table) return;
+            var query = this.value.toLowerCase();
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+        });
+    });
+
+    // ── Filtre méthode ──
+    document.querySelectorAll('[data-filter-method]').forEach(function (select) {
+        select.addEventListener('change', function () {
+            var table = document.getElementById(this.dataset.filterMethod);
+            if (!table) return;
+            var value = this.value;
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                row.style.display = !value || row.dataset.method === value ? '' : 'none';
+            });
+        });
+    });
+
+    // ── Filtre statut ──
+    document.querySelectorAll('[data-filter-status]').forEach(function (select) {
+        select.addEventListener('change', function () {
+            var table = document.getElementById(this.dataset.filterStatus);
+            if (!table) return;
+            var value = this.value;
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                row.style.display = !value || row.dataset.status === value ? '' : 'none';
+            });
+        });
+    });
+
+    // ── Filtre événement ──
+    document.querySelectorAll('[data-filter-event]').forEach(function (select) {
+        select.addEventListener('change', function () {
+            var table = document.getElementById(this.dataset.filterEvent);
+            if (!table) return;
+            var value = this.value;
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                if (!value) { row.style.display = ''; return; }
+                var events = (row.dataset.events || '').split(',');
+                row.style.display = events.includes(value) ? '' : 'none';
+            });
+        });
+    });
+
+    // ── Charger événements dans modal webhook ──
+    var eventContainer = document.getElementById('event-checks-container');
+    if (eventContainer) {
+        fetch('/webhooks/event-types')
+            .then(function (r) { return r.json(); })
+            .then(function (types) {
+                eventContainer.innerHTML = '';
+                types.forEach(function (t) {
+                    var label = document.createElement('label');
+                    label.className = 'event-check';
+                    label.innerHTML =
+                        '<input type="checkbox" name="event_types[]" value="' + t.id + '">' +
+                        '<span class="event-check-label">' + t.code + '</span>';
+                    eventContainer.appendChild(label);
+                });
+            })
+            .catch(function () {
+                eventContainer.innerHTML = '<p class="text-muted">Impossible de charger les événements.</p>';
+            });
+    }
+
+    // ── Afficher/masquer clé API dans modal webhook ──
+    var whAuthMethod = document.getElementById('wh-auth-method');
+    var whApikeyGroup = document.getElementById('wh-apikey-group');
+    if (whAuthMethod && whApikeyGroup) {
+        whAuthMethod.addEventListener('change', function () {
+            whApikeyGroup.style.display = this.value === 'api_key' ? '' : 'none';
+        });
+    }
+
+    // ── En-têtes dynamiques endpoint ──
+    var headerIndex = 1;
+    var addHeaderBtn = document.getElementById('add-header-btn');
+    var headerRows = document.getElementById('header-rows');
+    if (addHeaderBtn && headerRows) {
+        addHeaderBtn.addEventListener('click', function () {
+            var row = document.createElement('div');
+            row.className = 'header-row';
+            row.innerHTML =
+                '<input type="text" name="headers[' + headerIndex + '][key]" placeholder="Clé">' +
+                '<input type="text" name="headers[' + headerIndex + '][value]" placeholder="Valeur">' +
+                '<button type="button" class="icon-btn" data-remove-header><i class="fa-solid fa-xmark"></i></button>';
+            headerRows.appendChild(row);
+            headerIndex++;
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-remove-header]');
+        if (btn) btn.closest('.header-row').remove();
+    });
+
+    // ── CSRF ──
+    function getCsrf() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    // ── Clé API — Générer ──
+    var apiKeyForm = document.getElementById('api-key-form');
+    if (apiKeyForm) {
+        apiKeyForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var fd = new FormData(this);
+            var scopes = fd.getAll('scopes[]');
+            fetch('/api-keys', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: fd.get('name'), scopes: scopes, expires_at: fd.get('expires_at') || null })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.plain_key) {
+                    document.getElementById('reveal-key-text').textContent = data.plain_key;
+                    document.getElementById('api-key-modal').classList.remove('open');
+                    document.getElementById('api-key-reveal').classList.add('open');
+                    apiKeyForm.reset();
+                    toast('Clé API générée avec succès.');
+                } else if (data.errors) {
+                    toast(data.errors.name ? data.errors.name[0] : 'Erreur de validation.', 'error');
+                }
+            })
+            .catch(function () { toast('Erreur lors de la génération.', 'error'); });
+        });
+    }
+
+    // ── Clé API — Toggle ──
+    document.querySelectorAll('[data-toggle-key]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var keyId = this.dataset.toggleKey;
+            fetch('/api-keys/' + keyId + '/suspend', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.message) { toast(data.message); setTimeout(function () { location.reload(); }, 600); }
+                if (data.error) { toast(data.error, 'error'); }
+            })
+            .catch(function () { toast('Erreur.', 'error'); });
+        });
+    });
+
+    // ── Clé API — Régénérer ──
+    document.querySelectorAll('[data-regen-key]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!confirm('Régénérer cette clé ? L\'ancienne sera immédiatement invalide.')) return;
+            var keyId = this.dataset.regenKey;
+            fetch('/api-keys/' + keyId + '/regenerate', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.plain_key) {
+                    document.getElementById('reveal-key-text').textContent = data.plain_key;
+                    document.getElementById('api-key-reveal').classList.add('open');
+                    toast('Clé régénérée. Copiez la nouvelle clé.');
+                }
+                if (data.error) { toast(data.error, 'error'); }
+            })
+            .catch(function () { toast('Erreur.', 'error'); });
+        });
+    });
+
+    // ── Clé API — Révoquer ──
+    document.querySelectorAll('[data-revoke-key]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!confirm('Révoquer définitivement cette clé ?')) return;
+            var keyId = this.dataset.revokeKey;
+            fetch('/api-keys/' + keyId + '/revoke', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.message) { toast(data.message); setTimeout(function () { location.reload(); }, 600); }
+            })
+            .catch(function () { toast('Erreur.', 'error'); });
+        });
+    });
+
+    // ── Endpoint — Charger cURL ──
+    document.querySelectorAll('[data-load-curl]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var epId = this.dataset.loadCurl;
+            var curlBlock = document.getElementById('curlBlock');
+            curlBlock.innerHTML = '<code><span class="text-muted">Chargement...</span></code>';
+            fetch('/endpoints/' + epId, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var html = '<span class="api-cmd">curl</span> <span class="api-flag">-X ' + (data.http_method || 'GET') + '</span> \\<br>';
+                html += '&nbsp;&nbsp;<span class="api-url">"' + (data.url || '') + '"</span>';
+                curlBlock.innerHTML = '<code>' + html + '</code>';
+            })
+            .catch(function () { curlBlock.innerHTML = '<code><span class="text-muted">Impossible de charger.</span></code>'; });
+        });
+    });
+
+    // ── Endpoint — Tester ──
+    document.querySelectorAll('[data-test-endpoint]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var epId = this.dataset.testEndpoint;
+            var original = this.innerHTML;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            this.disabled = true;
+            fetch('/endpoints/' + epId + '/test', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.status === 'success') toast('Endpoint OK — ' + data.duration_ms + 'ms', 'success');
+                else if (data.status === 'timeout') toast('Timeout — ' + data.duration_ms + 'ms', 'warning');
+                else toast('Erreur HTTP ' + data.http_code, 'error');
+                setTimeout(function () { location.reload(); }, 800);
+            })
+            .catch(function () { toast('Erreur réseau.', 'error'); })
+            .finally(function () { btn.innerHTML = original; btn.disabled = false; });
+        });
+    });
+
+    // ── Endpoint — Modifier ──
+    document.querySelectorAll('[data-edit-endpoint]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var epId = this.dataset.editEndpoint;
+            fetch('/endpoints/' + epId, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var form = document.getElementById('endpoint-form');
+                if (!form) return;
+                document.getElementById('endpoint-edit-id').value = data.id || '';
+                form.querySelector('[name="application_id"]').value = data.application_id || '';
+                form.querySelector('[name="http_method"]').value = data.http_method || 'GET';
+                form.querySelector('[name="url"]').value = data.url || '';
+                form.querySelector('[name="frequency_seconds"]').value = data.frequency_seconds || 60;
+                document.getElementById('header-rows').innerHTML =
+                    '<div class="header-row">' +
+                    '<input type="text" name="headers[0][key]" placeholder="Clé">' +
+                    '<input type="text" name="headers[0][value]" placeholder="Valeur">' +
+                    '<button type="button" class="icon-btn" data-remove-header><i class="fa-solid fa-xmark"></i></button></div>';
+                headerIndex = 1;
+                document.querySelector('#endpoint-modal h3').textContent = 'Modifier l\'endpoint';
+                document.getElementById('endpoint-modal').classList.add('open');
+            })
+            .catch(function () { toast('Impossible de charger.', 'error'); });
+        });
+    });
+
+    // ── Endpoint — Supprimer ──
+    document.querySelectorAll('[data-delete-endpoint]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var epId = this.dataset.deleteEndpoint;
+            document.getElementById('delete-modal-text').textContent = 'Voulez-vous vraiment supprimer cet endpoint ?';
+            var form = document.getElementById('delete-form');
+            form.action = '/endpoints/' + epId;
+            form.querySelector('input[name="_method"]').value = 'DELETE';
+            document.getElementById('delete-modal').classList.add('open');
+        });
+    });
+
+    // ── Webhook — Supprimer ──
+    document.querySelectorAll('[data-delete-webhook]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var whId = this.dataset.deleteWebhook;
+            document.getElementById('delete-modal-text').textContent = 'Voulez-vous vraiment supprimer ce webhook ?';
+            var form = document.getElementById('delete-form');
+            form.action = '/webhooks/' + whId;
+            form.querySelector('input[name="_method"]').value = 'DELETE';
+            document.getElementById('delete-modal').classList.add('open');
+        });
+    });
+
+    // ── Endpoint form — Soumission ──
+    var endpointForm = document.getElementById('endpoint-form');
+    if (endpointForm) {
+        endpointForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var editId = document.getElementById('endpoint-edit-id').value;
+            var isEdit = editId && editId !== '';
+            var url = isEdit ? '/endpoints/' + editId : '/endpoints';
+            var headerRows = document.querySelectorAll('#header-rows .header-row');
+            var headers = [];
+            headerRows.forEach(function (row) {
+                var inputs = row.querySelectorAll('input');
+                if (inputs[0] && inputs[1] && inputs[0].value && inputs[1].value) {
+                    headers.push({ key: inputs[0].value, value: inputs[1].value });
+                }
+            });
+            var payload = {
+                application_id: this.querySelector('[name="application_id"]').value,
+                http_method: this.querySelector('[name="http_method"]').value,
+                url: this.querySelector('[name="url"]').value,
+                frequency_seconds: this.querySelector('[name="frequency_seconds"]').value,
+                headers: headers
+            };
+            fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.message) {
+                    toast(data.message);
+                    document.getElementById('endpoint-modal').classList.remove('open');
+                    setTimeout(function () { location.reload(); }, 600);
+                }
+                if (data.errors) {
+                    var firstError = Object.values(data.errors)[0];
+                    toast(Array.isArray(firstError) ? firstError[0] : firstError, 'error');
+                }
+            })
+            .catch(function () { toast('Erreur.', 'error'); });
+        });
+    }
+
+    // ── Webhook form — Soumission ──
+    var webhookForm = document.getElementById('webhook-form');
+    if (webhookForm) {
+        webhookForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var fd = new FormData(this);
+            var eventTypes = fd.getAll('event_types[]');
+            var payload = {
+                name: fd.get('name'),
+                target_url: fd.get('target_url'),
+                auth_method: fd.get('auth_method'),
+                api_key_id: fd.get('api_key_id') || null,
+                min_severity_level: fd.get('min_severity_level'),
+                event_types: eventTypes
+            };
+            fetch('/webhooks', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.message) {
+                    toast(data.message);
+                    document.getElementById('webhook-modal').classList.remove('open');
+                    setTimeout(function () { location.reload(); }, 600);
+                }
+                if (data.errors) {
+                    var firstError = Object.values(data.errors)[0];
+                    toast(Array.isArray(firstError) ? firstError[0] : firstError, 'error');
+                }
+            })
+            .catch(function () { toast('Erreur.', 'error'); });
+        });
+    }
+        /* ==========================================================
+       PAGE SETTINGS (Onglets et sauvegarde)
+       ========================================================== */
+    const form = document.getElementById('settingsForm');
+    const saveBtn = document.getElementById('saveSettingsBtn');
+    
+    // SÉCURITÉ : Si on n'est pas sur la page des settings, on arrête tout
+    if (form && saveBtn) {
+        const noChangesText = document.getElementById('noChangesText');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const activeTabInput = document.getElementById('active_tab_input');
+        
+        let hasChanged = false;
+
+        // Gestion des onglets
+        if (tabBtns.length > 0) {
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    const tabContent = document.getElementById('tab-' + tab);
+                    if (tabContent) tabContent.classList.add('active');
+                    if (activeTabInput) activeTabInput.value = tab;
+                });
+            });
+        }
+
+        // Détection de modification pour activer le bouton Enregistrer
+        form.addEventListener('input', function() {
+            if (!hasChanged) {
+                hasChanged = true;
+                saveBtn.disabled = false;
+                saveBtn.classList.add('btn-active-state'); // Classe CSS pour changer le style
+                if (noChangesText) noChangesText.style.display = 'none';
+            }
+        });
+
+        // Effet de chargement lors du clic sur "Enregistrer"
+        form.addEventListener('submit', function() {
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+            saveBtn.disabled = true;
+        });
+    }
+
 });

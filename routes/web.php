@@ -11,6 +11,10 @@ use App\Http\Controllers\ServerGroupController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\ConnectorController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\ApiKeyController;
+use App\Http\Controllers\PlatformSettingController;
+use App\Http\Controllers\AuditLogController;
+
 
 
 // 1. Afficher la page (GET)
@@ -52,7 +56,7 @@ Route::get('/look', function () {
 
 Route::get('/users', [UserController::class, 'index'])
     ->middleware('auth')
-    ->name('users');
+    ->name('users.index');
 
 Route::get('/users/{id}', [UserController::class, 'show'])
     ->middleware('auth')
@@ -78,10 +82,12 @@ Route::delete('/users/{id}', [UserController::class, 'destroy'])
 
 Route::resource('server', ServerController::class)
     ->except(['create']);
-
+Route::get('/server/{server}/delete', [ServerController::class, 'delete'])->name('servers.delete');
 // applications 
 Route::resource('appli', ApplicationController::class)
-    ->only(['index', 'store', 'update', 'destroy']);
+    ->except(['create'])
+    ->middleware('auth');
+Route::get('/appli/{applications}/delete', [ApplicationController::class, 'delete'])->name('appli.delete');
 Route::resource(
     'application-types',
     ApplicationTypeController::class
@@ -152,8 +158,70 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-
-
-Route::get('/web', function () {
-    return view('administration.webh');
+Route::prefix('api-keys')->name('api-keys.')->group(function () {
+    Route::get('/',               [ApiKeyController::class, 'index'])          ->name('index');
+    Route::post('/',              [ApiKeyController::class, 'store'])          ->name('store');
+    Route::post('{apiKey}/suspend',   [ApiKeyController::class, 'suspend'])    ->name('suspend');
+    Route::post('{apiKey}/regenerate',[ApiKeyController::class, 'regenerate']) ->name('regenerate');
+    Route::post('{apiKey}/revoke',    [ApiKeyController::class, 'revoke'])     ->name('revoke');
+    Route::delete('{apiKey}',         [ApiKeyController::class, 'destroy'])    ->name('destroy');
 });
+
+use App\Http\Controllers\ApplicationEndpointController;
+
+Route::prefix('endpoints')->name('endpoints.')->group(function () {
+    Route::get('/',                          [ApplicationEndpointController::class, 'index'])          ->name('index');
+    Route::post('/',                         [ApplicationEndpointController::class, 'store'])          ->name('store');
+    Route::get('{applicationEndpoint}',      [ApplicationEndpointController::class, 'show'])           ->name('show');
+    Route::put('{applicationEndpoint}',      [ApplicationEndpointController::class, 'update'])         ->name('update');
+    Route::delete('{applicationEndpoint}',   [ApplicationEndpointController::class, 'destroy'])        ->name('destroy');
+    Route::post('{applicationEndpoint}/test',[ApplicationEndpointController::class, 'test'])           ->name('test');
+    Route::post('{applicationEndpoint}/dry-test', [ApplicationEndpointController::class, 'dryTest'])   ->name('dry-test');
+});
+
+use App\Http\Controllers\WebhookController;
+
+Route::prefix('webhooks')->name('webhooks.')->group(function () {
+    // Liste, stats, et types d'événements pour les formulaires
+    Route::get('/',                    [WebhookController::class, 'index'])             ->name('index');
+    Route::get('/event-types',         [WebhookController::class, 'eventTypes'])        ->name('event-types');
+
+    // CRUD
+    Route::post('/',                   [WebhookController::class, 'store'])             ->name('store');
+    Route::get('{webhook}',            [WebhookController::class, 'show'])              ->name('show');
+    Route::put('{webhook}',            [WebhookController::class, 'update'])            ->name('update');
+    Route::delete('{webhook}',         [WebhookController::class, 'destroy'])           ->name('destroy');
+
+    // Actions spécifiques
+    Route::post('{webhook}/toggle',    [WebhookController::class, 'toggleStatus'])      ->name('toggle');
+    Route::post('{webhook}/error',     [WebhookController::class, 'markError'])         ->name('mark-error');
+    Route::post('{webhook}/rotate-secret', [WebhookController::class, 'rotateSecret'])  ->name('rotate-secret');
+
+    // Historique des livraisons
+    Route::get('{webhook}/deliveries',            [WebhookController::class, 'deliveries'])       ->name('deliveries');
+    Route::get('{webhook}/deliveries/{delivery}', [WebhookController::class, 'deliveryDetail'])   ->name('delivery-detail');
+    Route::post('{webhook}/deliveries/{delivery}/retry', [WebhookController::class, 'retryDelivery'])->name('retry-delivery');
+});
+use App\Http\Controllers\WebhookPageController;
+
+Route::get('/web', [WebhookPageController::class, 'index'])
+->middleware('auth')
+->name('webhooks.page');
+
+Route::get('/settings/platform', [PlatformSettingController::class, 'index'])->name('settings.platform.index');
+Route::put('/settings/platform', [PlatformSettingController::class, 'update'])->name('settings.platform.update');
+
+Route::get('/settings/audit-logs', [AuditLogController::class, 'index'])->name('settings.audit-logs.index');
+
+use App\Http\Controllers\ProfileController;
+// partie profil
+// Afficher le profil
+Route::get('/profile', function () {
+    return view('layout.profile');
+})->middleware('auth')->name('profile');
+
+// Mettre à jour les infos
+Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth')->name('profile.update');
+
+// Mettre à jour le mot de passe
+Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('auth')->name('profile.password.update');

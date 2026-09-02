@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Server;
 use App\Models\ServerGroup;
 use App\Models\Application;
+use Illuminate\Support\Facades\Auth;
 
 class ServerController extends Controller
 {
@@ -98,7 +99,7 @@ class ServerController extends Controller
     }
 
     /**
-     * Mise à jour un serveur.
+     * Mise à jour d'un serveur.
      */
     public function update(Request $request, $id)
     {
@@ -138,8 +139,10 @@ class ServerController extends Controller
     public function destroy($id)
     {
         $server = Server::findOrFail($id);
-        $server->delete();
-        return redirect()->route('servers.index')->with('success', 'Serveur supprimé.');
+        //if ($server->created_by !== Auth::id()) abort(403);
+        //$this->service->delete($server);
+         $server->delete();
+        return redirect()->route('server.index')->with('success', 'Serveur supprimé.');
     }
 
     /**
@@ -168,7 +171,6 @@ class ServerController extends Controller
 
     /**
      * Données graphique — Évolution des alertes.
-     * Sera alimenté par les datasources Wazuh quand elles seront prêtes.
      */
     public function alertChartData()
     {
