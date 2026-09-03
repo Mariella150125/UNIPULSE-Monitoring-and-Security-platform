@@ -2611,5 +2611,157 @@ document.addEventListener('DOMContentLoaded', function () {
             saveBtn.disabled = true;
         });
     }
+        /* ==========================================================
+       MONITORING SERVEUR (Style Grafana)
+       ========================================================== */
+    function initGrafanaMonitoring() {
+        const panels = document.querySelectorAll('.grafana-panel');
+        if (panels.length === 0) return; // Si pas de panneaux sur la page, on arrête
 
+        async function loadAllMetrics() {
+            panels.forEach(async (panel) => {
+                const serverId = panel.dataset.serverId;
+                
+                try {
+                    const response = await fetch(`/monitoring/servers/${serverId}/metrics`);
+                    if (!response.ok) return;
+                    
+                    const data = await response.json();
+                    if (!data.success) return;
+
+                    // 1. Mise à jour du Statut
+                    const statusEl = document.getElementById(`status-${serverId}`);
+                    
+                    if (data.status === 'online') {
+                        statusEl.innerHTML = '<span class="status-dot online"></span> En ligne';
+                    } else {
+                        statusEl.innerHTML = '<span class="status-dot offline"></span> Hors ligne';
+                    }
+
+                    // 2. Mise à jour CPU
+                    const cpuVal = data.cpu !== null ? `${data.cpu.toFixed(1)} %` : '-- %';
+                    const cpuPct = data.cpu !== null ? data.cpu : 0;
+                    document.getElementById(`cpu-val-${serverId}`).textContent = cpuVal;
+                    
+                    const cpuBar = document.getElementById(`cpu-bar-${serverId}`);
+                    cpuBar.style.width = `${cpuPct}%`;
+                    cpuBar.className = 'metric-bar'; // Reset class
+                    if (cpuPct > 80) cpuBar.classList.add('critical');
+                    else if (cpuPct > 60) cpuBar.classList.add('warning');
+
+                    // 3. Mise à jour RAM
+                    const ramVal = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
+                    const ramPct = data.memory !== null ? data.memory : 0;
+                    document.getElementById(`ram-val-${serverId}`).textContent = ramVal;
+                    
+                    const ramBar = document.getElementById(`ram-bar-${serverId}`);
+                    ramBar.style.width = `${ramPct}%`;
+                    ramBar.className = 'metric-bar'; // Reset class
+                    if (ramPct > 80) ramBar.classList.add('critical');
+                    else if (ramPct > 60) ramBar.classList.add('warning');
+
+                } catch (error) {
+                    console.error('Erreur monitoring pour serveur ' + serverId, error);
+                }
+            });
+        }
+
+        // Première exécution
+        loadAllMetrics();
+
+        // Rafraîchissement toutes les 15 secondes
+        setInterval(loadAllMetrics, 15000);
+    }
+    initGrafanaMonitoring();
+    const monitorCard = document.querySelector('.monitor-card');
+        if (!monitorCard) return; // Si on n'est pas sur cette page, on arrête
+
+        const serverId = monitorCard.dataset.serverId;
+        const statusEl = document.getElementById('server-status');
+        const cpuEl = document.getElementById('cpu-value');
+        const memEl = document.getElementById('memory-value');
+
+        // Fonction pour mettre à jour les chiffres
+        async function loadMetrics() {
+            try {
+                const response = await fetch(`/monitoring/servers/${serverId}/metrics`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (!data.success) return;
+
+                // Mise à jour du statut
+                if (data.status === 'online') {
+                    statusEl.textContent = '🟢 En ligne';
+                    statusEl.style.color = 'var(--sage-green)';
+                } else {
+                    statusEl.textContent = '🔴 Hors ligne';
+                    statusEl.style.color = 'var(--red)';
+                }
+
+                // Mise à jour du CPU et de la RAM
+                cpuEl.textContent = data.cpu !== null ? `${data.cpu.toFixed(1)} %` : '-- %';
+                memEl.textContent = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
+
+            } catch (error) {
+                console.error('Erreur monitoring:', error);
+                statusEl.textContent = 'Erreur réseau';
+                statusEl.style.color = 'var(--red)';
+            }
+        }
+
+        // Première exécution immédiate
+        loadMetrics();
+
+        // Rafraîchissement toutes les 15 secondes
+        setInterval(loadMetrics, 15000);
+
+        /* ==========================================================
+       MONITORING SERVEUR - PAGE DE DÉTAIL
+       ========================================================== */
+    function initServerMonitoringDetail() {
+        const monitorCard = document.querySelector('.monitor-card');
+        if (!monitorCard) return; // Si on n'est pas sur la page de détail, on arrête
+
+        const serverId = monitorCard.dataset.serverId;
+        const statusEl = document.getElementById('server-status');
+        const cpuEl = document.getElementById('cpu-value');
+        const memEl = document.getElementById('memory-value');
+
+        async function loadMetrics() {
+            try {
+                const response = await fetch(`/monitoring/servers/${serverId}/metrics`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (!data.success) return;
+
+                if (data.status === 'online') {
+                    statusEl.textContent = '🟢 En ligne';
+                    statusEl.style.color = 'var(--sage-green)';
+                } else {
+                    statusEl.textContent = '🔴 Hors ligne';
+                    statusEl.style.color = 'var(--red)';
+                }
+
+                cpuEl.textContent = data.cpu !== null ? `${data.cpu.toFixed(1)} %` : '-- %';
+                memEl.textContent = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
+
+            } catch (error) {
+                console.error('Erreur monitoring:', error);
+                statusEl.textContent = 'Erreur réseau';
+                statusEl.style.color = 'var(--red)';
+            }
+        }
+
+        // Première exécution
+        loadMetrics();
+
+        // Rafraîchissement toutes les 15 secondes
+        setInterval(loadMetrics, 15000);
+    }
+
+    // On lance la fonction quand la page est prête
+    initServerMonitoringDetail();
+// ATTENTION : Ne mets pas de }); ici. Laisse la grande accolade de ton fichier JS se fermer normalement plus bas.
 });

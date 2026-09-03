@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\PlatformSettingController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ServerMonitoringController;
 
 
 
@@ -83,6 +84,7 @@ Route::delete('/users/{id}', [UserController::class, 'destroy'])
 Route::resource('server', ServerController::class)
     ->except(['create']);
 Route::get('/server/{server}/delete', [ServerController::class, 'delete'])->name('servers.delete');
+Route::get('/servers/{id}/metrics', [ServerController::class, 'metrics'])->name('servers.metrics');
 // applications 
 Route::resource('appli', ApplicationController::class)
     ->except(['create'])
@@ -230,3 +232,13 @@ use App\Http\Controllers\SplashController;
 
 Route::get('/', [SplashController::class, 'index'])
     ->name('splash');
+
+  //MONITORING
+Route::prefix('monitoring')->name('monitoring.')->middleware('auth')->group(function () {
+    
+    // Sous-module Serveurs
+    Route::get('/servers', [ServerMonitoringController::class, 'index'])->name('servers.index');
+    Route::get('/servers/{id}', [ServerMonitoringController::class, 'show'])->name('servers.show');
+    Route::get('/servers/{id}/metrics', [ServerMonitoringController::class, 'metrics'])->name('servers.metrics');
+    
+});
