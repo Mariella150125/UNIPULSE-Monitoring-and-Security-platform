@@ -15,6 +15,12 @@
     --grey: #e4e3e3;
     --radius-outer: 32px;
     --radius-card: 24px;
+    
+    /* Variables responsive déplacées ici pour éviter les conflits */
+    --sidebar-width: 17%;
+    --sidebar-min: 240px;
+    --sidebar-max: 280px;
+    --topbar-height: 72px;
 }
 
 * {
@@ -1769,18 +1775,20 @@ form.entity-details .form-actions {
     font-weight: 500; 
 }
 /* ==========================================================
-   MODAL GÉNÉRIQUE RÉUTILISABLE
+   MODAL GÉNÉRIQUE (Vraie fenêtre modale pour grand écran)
    ========================================================== */
 .modal-overlay {
     display: none;
     position: fixed;
-    inset: 0;
-    background: rgba(22, 61, 52, 0.45);
-    z-index: 100;
+    inset: 0; /* Couvre tout l'écran (haut, bas, gauche, droite) */
+    background: rgba(22, 61, 52, 0.6); /* Fond sombre derrière la fenêtre */
+    z-index: 1000; /* Toujours au-dessus de tout le reste */
     align-items: center;
     justify-content: center;
     visibility: hidden;
+    padding: 20px; /* Empêche la modale de toucher les bords de l'écran */
 }
+
 .modal-overlay.open {
     display: flex;
     visibility: visible;
@@ -1790,16 +1798,18 @@ form.entity-details .form-actions {
     background: var(--card-bg);
     border-radius: var(--radius-card);
     width: 100%;
-    max-width: 560px;
-    max-height: 88vh;
+    max-width: 560px; /* Taille parfaite pour un formulaire sur ordinateur */
+    max-height: 85vh; /* Ne dépasse jamais 85% de la hauteur de l'écran */
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    animation: modal-in 0.18s ease;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.3); /* Ombre forte pour l'effet "flottant" */
+    animation: modal-in 0.2s ease;
+    overflow: hidden; /* Pour que les bords arrondis s'appliquent bien au contenu */
 }
+
 @keyframes modal-in {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal-header {
@@ -1808,14 +1818,16 @@ form.entity-details .form-actions {
     justify-content: space-between;
     padding: 20px 24px;
     border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0;
+    flex-shrink: 0; /* L'en-tête reste visible */
 }
+
 .modal-header h3 {
     margin: 0;
     font-size: 18px;
     color: var(--text-dark);
     font-weight: 700;
 }
+
 .modal-close {
     width: 32px;
     height: 32px;
@@ -1829,11 +1841,13 @@ form.entity-details .form-actions {
     align-items: center;
     justify-content: center;
 }
+
 .modal-close:hover {
     background: var(--page-bg);
     color: var(--text-dark);
 }
 
+/* C'est ici la magie du scroll : seul le corps de la modale scroll si le texte est long */
 .modal-body {
     padding: 24px;
     overflow-y: auto;
@@ -1846,13 +1860,15 @@ form.entity-details .form-actions {
     gap: 12px;
     padding: 16px 24px;
     border-top: 1px solid var(--border-color);
-    flex-shrink: 0;
+    flex-shrink: 0; /* Le pied de page reste visible */
 }
+
 .modal-footer .login-btn {
     width: auto;
     padding: 10px 24px;
     font-size: 14px;
 }
+
 .modal-footer .btn-secondary {
     background: #fff;
     color: var(--text-dark);
@@ -1864,29 +1880,9 @@ form.entity-details .form-actions {
     font-weight: 600;
     cursor: pointer;
 }
+
 .modal-footer .btn-secondary:hover {
     border-color: var(--sage-green);
-}
-
-/* Grille 2 colonnes pour les formulaires de modale */
-.modal-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-}
-.modal-grid-2 .input-group:last-child {
-    grid-column: span 2;
-}
-.modal-section-title {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    margin: 20px 0 10px;
-}
-.modal-section-title:first-child {
-    margin-top: 0;
 }
 
 .success-message {
@@ -1921,15 +1917,8 @@ form.entity-details .form-actions {
    ========================================================== */
 
 /* ----------------------------------------------------------
-   VARIABLES RESPONSIVES
+   VARIABLES RESPONSIVES (Déplacées en haut du fichier)
    ---------------------------------------------------------- */
-:root {
-    --sidebar-width: 17%;
-    --sidebar-min: 220px;
-    --sidebar-max: 280px;
-    --topbar-height: 72px;
-}
-
 
 /* ----------------------------------------------------------
    MOBILE (par défaut : < 768px)
@@ -2028,15 +2017,17 @@ form.entity-details .form-actions {
     grid-template-columns: 1fr;
 }
 
-/* Tables : scroll horizontal */
-.panel {
-    overflow-x: auto;
+/* Tables : scroll horizontal pour ne pas couper les colonnes (Webhooks) */
+.panel:has(.server-table) {
+    padding: 0;
+    overflow-x: auto; /* Modifié de hidden à auto pour autoriser le scroll */
 }
 
 .server-table {
     width: 100%; 
-    border-collapse: collapse;
-    table-layout: fixed;
+    border-collapse: separate;
+    table-layout: auto; /* Modifié de fixed à auto pour garder la largeur naturelle */
+    min-width: 700px; /* Ajouté pour forcer le scroll horizontal au lieu d'écraser le tableau */
 }
 
 /* Details grid : 1 colonne */
@@ -2044,13 +2035,19 @@ form.entity-details .form-actions {
     grid-template-columns: 1fr;
 }
 
-/* Modal : pleine largeur */
-.modal {
-    max-width: 100%;
-    margin: 0 8px;
-    border-radius: 16px;
-    max-height: 95vh;
+/* RÉGLAGE DE LA MODALE UNIQUEMENT POUR MOBILE */
+@media (max-width: 767px) {
+    .modal {
+        max-width: calc(100% - 32px) !important; /* Ne touche pas les bords de l'écran */
+        margin: 0 auto !important;
+        border-radius: 16px !important;
+        max-height: 90vh !important; /* Un peu plus de hauteur sur mobile */
+    }
+    .modal-grid-2 {
+        grid-template-columns: 1fr !important; /* Met les champs l'un sous l'autre */
+    }
 }
+
 
 /* Donut : empilé */
 .donut-wrapper {
@@ -2617,6 +2614,8 @@ form.entity-details .form-actions {
     .dashboard-content {
         padding: 24px;
     }
+    .grid-2, .usr-kpi-row, .details-grid { grid-template-columns: repeat(2, 1fr); }
+    .modal-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ----------------------------------------------------------
@@ -2674,18 +2673,103 @@ form.entity-details .form-actions {
     /* Tables : layout normal */
     .server-table {
         table-layout: auto;
-    }
-
-    .panel {
-        overflow: visible;
+        min-width: 0; /* Remis à 0 sur desktop pour prendre toute la largeur */
     }
 
     .panel:has(.server-table) {
         padding: 0;
-        overflow: hidden;
+        overflow: hidden; /* Remis à hidden sur desktop */
     }
 
     .panel:has(.server-table) .panel-header {
         padding: 18px 20px;
     }
+}
+/* ==========================================================
+   RESPONSIVE GLOBAL (Unique et sans conflits)
+   ========================================================== */
+
+/* TABLETTES ET MOBILES (Moins de 1024px) */
+@media (max-width: 1023px) {
+    
+    /* --- PAGE LOGIN --- */
+    /* On cache les formes décoratives dès la tablette */
+    .shape, .shap {
+        display: none !important; 
+    }
+    .background {
+        width: 100%; /* Prend tout l'écran au lieu de 60% */
+        padding: 40px;
+    }
+    .login-card {
+        padding: 40px; /* Enlève le padding de 58% qui écrasait le formulaire */
+    }
+
+    /* --- DASHBOARD --- */
+    /* La sidebar devient un tiroir coulissant */
+    .sidebar {
+        width: 260px !important; 
+        left: -260px; /* Cachée par défaut hors de l'écran */
+        transition: left 0.3s ease;
+        z-index: 50;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 40;
+    }
+    .sidebar-overlay.active { display: block; }
+
+    /* Le contenu prend 100% de la largeur */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Bouton hamburger visible */
+    .sidebar-toggle {
+        display: flex !important;
+    }
+
+    /* Ajustement des grilles pour tablette */
+    .kpi-row {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* PETITS MOBILES (Moins de 768px) */
+@media (max-width: 767px) {
+    /* --- LOGIN --- */
+    body.auth-body { padding: 15px; }
+    .background { padding: 25px; border-radius: 24px; }
+    .login-card { padding: 25px; border-radius: 20px; }
+    .login-card h1 { font-size: 28px; }
+
+    /* --- DASHBOARD --- */
+    .topbar { padding: 12px 16px; height: 60px; }
+    .dashboard-content { padding: 16px; }
+    #date-range-toggle { display: none !important; } /* Cache le bouton de date sur mobile */
+    .topbar-search { max-width: none; }
+
+    /* Grilles en 1 seule colonne sur mobile */
+    .kpi-row { grid-template-columns: 1fr !important; }
+    .grid-3, .grid-2, .usr-kpi-row, .panel-server, .details-grid { 
+        grid-template-columns: 1fr !important; 
+    }
+
+    /* Les tableaux scrollent horizontalement sans casser */
+    .panel:has(.server-table) { overflow-x: auto; }
+    .server-table { min-width: 700px; }
+
+    /* Modal ajustée pour mobile */
+    .modal {
+        max-width: calc(100% - 32px);
+    }
+    .modal-grid-2 { grid-template-columns: 1fr; }
 }
