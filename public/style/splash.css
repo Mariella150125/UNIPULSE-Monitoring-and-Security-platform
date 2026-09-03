@@ -1,0 +1,111 @@
+:root {
+    --dark-teal: #1d4a40;
+    --bar-bg: rgba(255, 255, 255, 0.2);
+    --bar-fill: #ffffff;
+    --text-white: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Le fond vert plein écran */
+    background-color: var(--dark-teal);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    background-size: 25px 25px; /* Espacement entre les points */
+    
+    font-family: 'Arial Rounded MT';;
+    color: var(--text-white);
+    overflow: hidden;
+}
+
+.splash-container {
+    width: min(90%, 400px);
+    text-align: center;
+}
+
+/* =========================================
+   LOGO
+========================================= */
+.splash-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 25px;
+}
+
+.splash-logo img {
+    width: 100%;
+    height: auto;
+}
+
+/* =========================================
+   TITRES
+========================================= */
+.splash-container h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.tagline {
+    margin-top: 8px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+/* =========================================
+   CHARGEMENT (Simple ligne)
+========================================= */
+.loading-section {
+    margin-top: 40px;
+}
+
+#loading-text {
+    margin-bottom: 15px;
+    font-size: 13px;
+    opacity: 0.8;
+    height: 16px; /* Fixe la hauteur pour éviter que tout bouge */
+}
+
+.progress-container {
+    width: 100%;
+    height: 4px; /* Ligne très fine */
+    background: var(--bar-bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0;
+    height: 100%;
+    background: var(--bar-fill); /* Ligne blanche */
+    border-radius: 10px;
+    transition: width 0.1s linear;
+}
+
+#progress-value {
+    display: block;
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* =========================================
+   DESCRIPTION
+========================================= */
+.platform-description {
+    margin-top: 25px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    opacity: 0.5;
+}
