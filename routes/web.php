@@ -225,3 +225,8 @@ Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth')
 
 // Mettre à jour le mot de passe
 Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('auth')->name('profile.password.update');
+
+use App\Http\Controllers\SplashController;
+
+Route::get('/', [SplashController::class, 'index'])
+    ->name('splash');
