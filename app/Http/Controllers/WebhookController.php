@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
 {
@@ -275,9 +276,12 @@ class WebhookController extends Controller
      */
     public function destroy(Webhook $webhook): JsonResponse
     {
-        $webhook->delete();
-
-        return response()->json(['message' => 'Webhook supprimé.']);
+       try {
+            $webhook->delete();
+            return redirect()->route('webhook.index')->with('success', 'Webhook supprimé avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Impossible de supprimer ce webhook car il est lié à des livraisons ou des événements.');
+        } 
     }
 
     // =========================================================================
@@ -473,8 +477,13 @@ class WebhookController extends Controller
         ];
     }
 
-    private function shortenUrl(string $url, int $max = 50): string
+        private function shortenUrl(?string $url, int $max = 50): string
     {
+        // Si l'URL est vide (null), on renvoie un tiret pour l'affichage
+        if (!$url) {
+            return '—';
+        }
+
         if (strlen($url) <= $max) {
             return $url;
         }
@@ -488,5 +497,31 @@ class WebhookController extends Controller
         }
 
         return $host . '/…';
+    }
+     public function receive(Request $request, $webhookId)
+    {
+        // 1. On cherche le webhook en base de données
+        $webhook = Webhook::findOrFail($webhookId);
+
+        // 2. On vérifie qu'il est bien configuré pour recevoir des données
+        if ($webhook->direction !== 'inbound' || $webhook->status !== 'active') {
+            return response()->json(['error' => 'Webhook inactive or not inbound'], 403);
+        }
+
+        // 3. (Sécurité basique) On récupère les données envoyées par le CRM
+        $payload = $request->all();
+
+        // 4. On enregistre la livraison dans l'historique (pour que tu le voies dans ton tableau)
+        WebhookDelivery::create([
+            'webhook_id'   => $webhook->id,
+            'event_type_id' => $request->input('event_type_id', 1), // Tu peux adapter selon ton CRM
+            'direction'     => 'inbound',
+            'payload'       => json_encode($payload),
+            'success'       => true,
+            'delivered_at'  => now(),
+        ]);
+
+        // 5. On répond au CRM que tout s'est bien passé
+        return response()->json(['message' => 'Webhook received successfully'], 200);
     }
 }

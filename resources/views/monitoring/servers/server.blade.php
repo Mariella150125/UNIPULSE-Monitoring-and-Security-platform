@@ -4,7 +4,7 @@
 
 <div class="page-title">
     <h1>Monitoring des Serveurs</h1>
-    <p>Vue d'ensemble en temps réel (Style Grafana)</p>
+    <p>Vue d'ensemble en temps réel </p>
 </div>
 
 <div class="grafana-grid">

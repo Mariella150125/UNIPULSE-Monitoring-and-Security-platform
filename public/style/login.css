@@ -61,6 +61,7 @@ body.auth-body {
     position: relative;
     width: 60%;
     height: auto;
+    min-height: 500px;
     background: var(--sage-green);
     border-radius: var(--radius-outer);
     padding: 70px;
@@ -73,14 +74,12 @@ body.auth-body {
     position: absolute;
     top: 0;
     right: 0;
-    bottom: 0;
     width: 55%;
     height: 100%;
-    object-fit: contain;
     z-index: 2;
     pointer-events: none;
     user-select: none;
-    object-position: right center;
+    object-position: right top;
 }
 .sidebar-logo {
     display: block;
@@ -232,22 +231,26 @@ body.auth-body {
     justify-content: center;
 }
 .link-btnn{
-    width: 85%;              /* On le fait prendre 85% de la largeur (plus long) */
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+
+    margin: 30px auto 0 !important;
+    width: 85% !important;
+
     background: var(--dark-teal);
     color: #fff;
     border: none;
     border-radius: 10px;
-    padding: 10px 20px;      /* 10px en haut/bas (le rend fin), 20px à gauche/droite */
+    padding: 10px 20px;
+
     font-size: 14px;
     font-family: inherit;
     font-weight: 600;
-    margin-top: 30px auto 0;
-    
     letter-spacing: 1px;
+
     cursor: pointer;
     transition: opacity 0.15s ease;
-    display: flex;
-    justify-content: center;
 }
 
 .login-btn:hover { opacity: 0.9; }
@@ -382,8 +385,13 @@ h2 {
     width: 650px;        
 }
 .lookpage{
-    align-items: center;
+    text-align: center;
+    width: 100%;
 }
+.lookpage strong {
+    display: inline;
+}
+
 .image-left .shap { left: 0; right: auto; object-position: left center; }
 .image-left .login-card { padding: 32px 40px 32px 58%; }
 
@@ -2620,8 +2628,64 @@ form.entity-details .form-actions {
     font-weight: 700;
     color: var(--dark-teal);
 }
+.legend-color {
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    border-radius: 2px;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 10px;
+}
+
+.legend-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    border-radius: 2px;
+}
+
+.legend-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.legend-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+.coming-soon-container {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.coming-soon-card {
+    width: 100%;
+    max-width: 550px;
+    text-align: center;
+    padding: 50px 40px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
 /* ==========================================================
-   MONITORING SERVEUR (Harmonisé avec ton design)
+   MONITORING SERVEUR (Style Grafana)
    ========================================================== */
 .grafana-grid {
     display: grid;
@@ -2726,6 +2790,45 @@ form.entity-details .form-actions {
     color: var(--dark-teal);
     text-decoration: underline;
 }
+
+.coming-soon-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(86, 130, 94, 0.10);
+    color: #56825E;
+    font-size: 28px;
+}
+
+.coming-soon-card h1 {
+    margin-bottom: 12px;
+    font-size: 24px;
+    color: var(--text-dark);
+}
+
+.coming-soon-card p {
+    margin-bottom: 28px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.coming-soon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border-radius: 8px;
+    background: #56825E;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
 /* ----------------------------------------------------------
    PETIT MOBILE (480px et +)
    ---------------------------------------------------------- */
@@ -2866,8 +2969,9 @@ form.entity-details .form-actions {
         width: 100%; /* Prend tout l'écran au lieu de 60% */
         padding: 40px;
     }
+    .image-left .login-card,
     .login-card {
-        padding: 40px; /* Enlève le padding de 58% qui écrasait le formulaire */
+        padding: 40px !important; /* Enlève le padding de 58% qui écrasait le formulaire */
     }
 
     /* --- DASHBOARD --- */

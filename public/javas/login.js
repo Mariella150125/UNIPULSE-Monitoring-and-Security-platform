@@ -370,10 +370,9 @@ document.addEventListener('DOMContentLoaded', function () {
    Donut — Répartition des serveurs par environnement
    ------------------------------------------------------ */
 
-    var envDonutCanvas =
-        document.getElementById('envDonutChart');
+    var envDonutCanvas = document.getElementById('envDonutChart');
 
-    if (envDonutCanvas) {
+    if (envDonutCanvas && typeof Chart !== 'undefined') {
 
         fetch('/dashboard/environment-chart')
             .then(function (response) {
@@ -386,10 +385,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 return response.json();
             })
+
             .then(function (result) {
 
                 var labels = result.labels || [];
                 var data = result.data || [];
+
+                var legend = document.getElementById('donutLegend');
 
                 /* ------------------------------------------
                 Si aucune donnée
@@ -397,14 +399,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (labels.length === 0 || data.length === 0) {
 
-                    document.getElementById('donutLegend').innerHTML =
-                        '<p style="color: var(--text-muted);">' +
+                    legend.innerHTML =
+                        '<p class="donut-empty">' +
                         'Aucune donnée disponible' +
                         '</p>';
 
                     return;
                 }
 
+                /* ------------------------------------------
+                Couleurs des environnements
+                ------------------------------------------ */
+
+                var environmentColors = [
+                    '#56825E',
+                    '#1d4a40',
+                    '#8fae94',
+                    '#c9d8cb',
+                    '#6f8f77',
+                    '#b5c7b8'
+                ];
 
                 /* ------------------------------------------
                 Création du donut
@@ -422,14 +436,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             data: data,
 
-                            backgroundColor: [
-                                '#56825E',
-                                '#1d4a40',
-                                '#8fae94',
-                                '#c9d8cb',
-                                '#6f8f77',
-                                '#b5c7b8'
-                            ],
+                            backgroundColor: labels.map(function (_, index) {
+                                return environmentColors[
+                                    index % environmentColors.length
+                                ];
+                            }),
 
                             borderWidth: 0,
 
@@ -467,7 +478,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                             label +
                                             ' : ' +
                                             value +
-                                            ' serveur(s)';
+                                            ' serveur' +
+                                            (value > 1 ? 's' : '');
                                     }
                                 }
                             }
@@ -477,31 +489,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
                 /* ------------------------------------------
-                Création de la légende personnalisée
+                Légende personnalisée
                 ------------------------------------------ */
-
-                var legend =
-                    document.getElementById('donutLegend');
 
                 legend.innerHTML = '';
 
                 labels.forEach(function (label, index) {
 
-                    var item =
-                        document.createElement('div');
+                    var item = document.createElement('div');
 
                     item.className = 'legend-item';
 
                     item.innerHTML =
 
-                        '<span class="legend-color" ' +
-                        'style="background-color:' +
-                        getEnvironmentColor(index) +
-                        '"></span>' +
+                        '<div class="legend-left">' +
 
-                        '<span class="legend-label">' +
-                        label +
-                        '</span>' +
+                            '<span class="legend-color" ' +
+                            'style="background-color:' +
+                            environmentColors[
+                                index % environmentColors.length
+                            ] +
+                            '"></span>' +
+
+                            '<span class="legend-label">' +
+                            label +
+                            '</span>' +
+
+                        '</div>' +
 
                         '<span class="legend-value">' +
                         data[index] +
@@ -509,23 +523,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     legend.appendChild(item);
                 });
-
-
-                function getEnvironmentColor(index) {
-
-                    var colors = [
-                        '#56825E',
-                        '#1d4a40',
-                        '#8fae94',
-                        '#c9d8cb',
-                        '#6f8f77',
-                        '#b5c7b8'
-                    ];
-
-                    return colors[
-                        index % colors.length
-                    ];
-                }
 
             })
 
@@ -537,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
                 document.getElementById('donutLegend').innerHTML =
-                    '<p style="color: var(--red);">' +
+                    '<p class="donut-empty">' +
                     'Impossible de charger les données.' +
                     '</p>';
             });
@@ -764,6 +761,180 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+    /* ------------------------------------------------------
+   Donut — Répartition des applications par environnement
+------------------------------------------------------ */
+
+var appEnvDonutCanvas =
+    document.getElementById('appEnvDonutChart');
+
+if (appEnvDonutCanvas && typeof Chart !== 'undefined') {
+
+    fetch('/dashboard/application-environment-chart')
+        .then(function (response) {
+
+            if (!response.ok) {
+                throw new Error(
+                    'Erreur lors du chargement des environnements'
+                );
+            }
+
+            return response.json();
+        })
+
+        .then(function (result) {
+
+            var labels = Array.isArray(result.labels)
+                ? result.labels
+                : [];
+
+            var data = Array.isArray(result.data)
+                ? result.data.map(Number)
+                : [];
+
+            var legend =
+                document.getElementById('appDonutLegend');
+
+            if (
+                labels.length === 0 ||
+                data.length === 0
+            ) {
+
+                if (legend) {
+                    legend.innerHTML =
+                        '<p style="color: var(--text-muted);">' +
+                        'Aucune donnée disponible' +
+                        '</p>';
+                }
+
+                return;
+            }
+
+            new Chart(appEnvDonutCanvas, {
+
+                type: 'doughnut',
+
+                data: {
+                    labels: labels,
+
+                    datasets: [{
+                        data: data,
+
+                        backgroundColor: [
+                            '#56825E',
+                            '#1d4a40',
+                            '#8fae94',
+                            '#c9d8cb'
+                        ],
+
+                        borderWidth: 0,
+                        hoverOffset: 5
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    cutout: '68%',
+
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+
+                                    return ' ' +
+                                        context.label +
+                                        ' : ' +
+                                        context.parsed +
+                                        ' application(s)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            /* -------------------------
+               Légende personnalisée
+            ------------------------- */
+
+            if (!legend) {
+                return;
+            }
+
+            legend.innerHTML = '';
+
+            labels.forEach(function (label, index) {
+
+                var item = document.createElement('div');
+
+                item.className = 'donut-legend-item';
+
+                var colors = [
+                    '#56825E',
+                    '#1d4a40',
+                    '#8fae94',
+                    '#c9d8cb'
+                ];
+
+                item.innerHTML =
+                    '<span class="donut-legend-dot" ' +
+                    'style="background-color:' +
+                    colors[index % colors.length] +
+                    '"></span>' +
+
+                    '<span class="donut-legend-label">' +
+                    label +
+                    '</span>' +
+
+                    '<span class="donut-legend-value">' +
+                    data[index] +
+                    '</span>';
+
+                legend.appendChild(item);
+            });
+        })
+
+        .catch(function (error) {
+
+            console.error(
+                'Erreur donut applications :',
+                error
+            );
+
+            var legend =
+                document.getElementById('appDonutLegend');
+
+            if (legend) {
+                legend.innerHTML =
+                    '<p style="color: var(--red);">' +
+                    'Impossible de charger les données.' +
+                    '</p>';
+            }
+        });
+}
+
+
+/* ------------------------------------------------------
+   Couleurs des environnements
+------------------------------------------------------ */
+
+function getAppEnvironmentColor(index) {
+
+    var colors = [
+        '#56825E',
+        '#1d4a40',
+        '#8fae94',
+        '#c9d8cb'
+    ];
+
+    return colors[index % colors.length];
+}
 
 
     /* ==========================================================
@@ -2253,13 +2424,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ── Charger événements dans modal webhook ──
+       // ── Charger événements dans modal webhook ──
     var eventContainer = document.getElementById('event-checks-container');
     if (eventContainer) {
-        fetch('/webhooks/event-types')
+        // On ajoute ?direction=inbound à l'URL pour ne récupérer QUE les événements entrants
+        fetch('/webhooks/event-types?direction=inbound')
             .then(function (r) { return r.json(); })
-            .then(function (types) {
+            .then(function (response) {
                 eventContainer.innerHTML = '';
+                var types = response.event_types || response;
+                if (!types || types.length === 0) {
+                    eventContainer.innerHTML = '<p class="text-muted">Aucun événement disponible.</p>';
+                    return;
+                }
                 types.forEach(function (t) {
                     var label = document.createElement('label');
                     label.className = 'event-check';
@@ -2273,16 +2450,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 eventContainer.innerHTML = '<p class="text-muted">Impossible de charger les événements.</p>';
             });
     }
-
-    // ── Afficher/masquer clé API dans modal webhook ──
-    var whAuthMethod = document.getElementById('wh-auth-method');
-    var whApikeyGroup = document.getElementById('wh-apikey-group');
-    if (whAuthMethod && whApikeyGroup) {
-        whAuthMethod.addEventListener('change', function () {
-            whApikeyGroup.style.display = this.value === 'api_key' ? '' : 'none';
-        });
-    }
-
+    
+    
     // ── En-têtes dynamiques endpoint ──
     var headerIndex = 1;
     var addHeaderBtn = document.getElementById('add-header-btn');
@@ -2411,7 +2580,6 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(function () { curlBlock.innerHTML = '<code><span class="text-muted">Impossible de charger.</span></code>'; });
         });
     });
-
     // ── Endpoint — Tester ──
     document.querySelectorAll('[data-test-endpoint]').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -2425,10 +2593,11 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (data.status === 'success') toast('Endpoint OK — ' + data.duration_ms + 'ms', 'success');
-                else if (data.status === 'timeout') toast('Timeout — ' + data.duration_ms + 'ms', 'warning');
-                else toast('Erreur HTTP ' + data.http_code, 'error');
-                setTimeout(function () { location.reload(); }, 800);
+                var res = data.result || data;
+                if (res.success) toast('Endpoint OK (' + res.status_code + ') — ' + res.response_time_ms + 'ms', 'success');
+                else if (res.status === 'timeout') toast('Timeout', 'warning');
+                else toast('Erreur HTTP ' + (res.status_code || 'undefined'), 'error');
+                setTimeout(function () { location.reload(); }, 1000);
             })
             .catch(function () { toast('Erreur réseau.', 'error'); })
             .finally(function () { btn.innerHTML = original; btn.disabled = false; });
@@ -2530,21 +2699,28 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ── Webhook form — Soumission ──
+        // ── Webhook form — Soumission ──
     var webhookForm = document.getElementById('webhook-form');
     if (webhookForm) {
         webhookForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var fd = new FormData(this);
             var eventTypes = fd.getAll('event_types[]');
+            
             var payload = {
                 name: fd.get('name'),
-                target_url: fd.get('target_url'),
+                direction: fd.get('direction'), // Récupère 'inbound' du champ caché
+                scope: fd.get('scope'),         // Récupère 'application' du champ caché
+                application_id: fd.get('application_id'), // <-- AJOUTÉ
                 auth_method: fd.get('auth_method'),
                 api_key_id: fd.get('api_key_id') || null,
                 min_severity_level: fd.get('min_severity_level'),
                 event_types: eventTypes
             };
+            
+            // Pour un webhook entrant, il n'y a pas d'URL cible à fournir à Laravel
+            // (L'URL cible, c'est Laravel lui-même qui la générera pour que l'app externe lui envoie les données)
+            
             fetch('/webhooks', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -2673,49 +2849,6 @@ document.addEventListener('DOMContentLoaded', function () {
         setInterval(loadAllMetrics, 15000);
     }
     initGrafanaMonitoring();
-    const monitorCard = document.querySelector('.monitor-card');
-        if (!monitorCard) return; // Si on n'est pas sur cette page, on arrête
-
-        const serverId = monitorCard.dataset.serverId;
-        const statusEl = document.getElementById('server-status');
-        const cpuEl = document.getElementById('cpu-value');
-        const memEl = document.getElementById('memory-value');
-
-        // Fonction pour mettre à jour les chiffres
-        async function loadMetrics() {
-            try {
-                const response = await fetch(`/monitoring/servers/${serverId}/metrics`);
-                if (!response.ok) return;
-                
-                const data = await response.json();
-                if (!data.success) return;
-
-                // Mise à jour du statut
-                if (data.status === 'online') {
-                    statusEl.textContent = '🟢 En ligne';
-                    statusEl.style.color = 'var(--sage-green)';
-                } else {
-                    statusEl.textContent = '🔴 Hors ligne';
-                    statusEl.style.color = 'var(--red)';
-                }
-
-                // Mise à jour du CPU et de la RAM
-                cpuEl.textContent = data.cpu !== null ? `${data.cpu.toFixed(1)} %` : '-- %';
-                memEl.textContent = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
-
-            } catch (error) {
-                console.error('Erreur monitoring:', error);
-                statusEl.textContent = 'Erreur réseau';
-                statusEl.style.color = 'var(--red)';
-            }
-        }
-
-        // Première exécution immédiate
-        loadMetrics();
-
-        // Rafraîchissement toutes les 15 secondes
-        setInterval(loadMetrics, 15000);
-
         /* ==========================================================
        MONITORING SERVEUR - PAGE DE DÉTAIL
        ========================================================== */

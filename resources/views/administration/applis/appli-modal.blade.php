@@ -105,7 +105,7 @@
                 >
             </div>
 
-            <div class="input-group input-full">
+            <div class="input-group">
                 <label for="description">Description</label>
                 <textarea
                     id="description"

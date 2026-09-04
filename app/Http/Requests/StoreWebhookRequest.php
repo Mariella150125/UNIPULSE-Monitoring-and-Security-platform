@@ -22,7 +22,8 @@ class StoreWebhookRequest extends FormRequest
             'name'               => ['required', 'string', 'max:150'],
             'connector_id'       => ['nullable', 'exists:connectors,id'],
             'application_id'     => ['nullable', 'exists:applications,id'],
-            'target_url'         => ['required', 'url', 'max:500'],
+            //si cést outbound
+            'target_url'         => ['required_if:direction,outbound', 'nullable', 'url'],
             'auth_method'        => ['required', 'in:hmac_signature,api_key,none'],
             'api_key_id'         => ['nullable', 'exists:api_keys,id'],
             'min_severity_level' => ['nullable', 'integer', 'min:0', 'max:4'],

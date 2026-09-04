@@ -28,7 +28,7 @@ class WebhookPageController extends Controller
 
         // ── KPIs Webhooks ──
         $webhookStats = [
-            'total' => Webhook::where('direction', 'outbound')->count(),
+            'total' => Webhook::count(), // 
         ];
 
         // ── Erreurs 24h (endpoints en erreur + livraisons webhook échouées) ──
@@ -79,7 +79,6 @@ class WebhookPageController extends Controller
             ->get();
 
         $webhooks = Webhook::with('eventTypes')
-            ->where('direction', 'outbound')
             ->orderByDesc('created_at')
             ->get();
 

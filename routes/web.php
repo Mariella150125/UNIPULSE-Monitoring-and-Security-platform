@@ -85,6 +85,8 @@ Route::resource('server', ServerController::class)
     ->except(['create']);
 Route::get('/server/{server}/delete', [ServerController::class, 'delete'])->name('servers.delete');
 Route::get('/servers/{id}/metrics', [ServerController::class, 'metrics'])->name('servers.metrics');
+Route::get('/dashboard/environment-chart', [ServerController::class, 'envChartData'])
+    ->name('dashboard.environment.chart');
 // applications 
 Route::resource('appli', ApplicationController::class)
     ->except(['create'])
@@ -94,7 +96,10 @@ Route::resource(
     'application-types',
     ApplicationTypeController::class
 )->except(['create', 'show', 'edit']);
-
+Route::get(
+    '/dashboard/application-environment-chart',
+    [ApplicationController::class, 'environmentChartData']
+)->name('dashboard.application.environment.chart');
 Route::get(
     '/search',
     [GlobalSearchController::class, 'index']
@@ -203,6 +208,8 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
     Route::get('{webhook}/deliveries',            [WebhookController::class, 'deliveries'])       ->name('deliveries');
     Route::get('{webhook}/deliveries/{delivery}', [WebhookController::class, 'deliveryDetail'])   ->name('delivery-detail');
     Route::post('{webhook}/deliveries/{delivery}/retry', [WebhookController::class, 'retryDelivery'])->name('retry-delivery');
+    // La route de réception
+
 });
 use App\Http\Controllers\WebhookPageController;
 
@@ -241,4 +248,34 @@ Route::prefix('monitoring')->name('monitoring.')->middleware('auth')->group(func
     Route::get('/servers/{id}', [ServerMonitoringController::class, 'show'])->name('servers.show');
     Route::get('/servers/{id}/metrics', [ServerMonitoringController::class, 'metrics'])->name('servers.metrics');
     
+});
+
+
+Route::get('/monitoring/apps', function () {
+    return view('coming-soon');
+});
+
+
+Route::get('/logs', function () {
+    return view('coming-soon');
+});
+
+Route::get('/security/vulnerabilities', function () {
+    return view('coming-soon');
+});
+
+Route::get('/security/compliance', function () {
+    return view('coming-soon');
+});
+
+Route::get('/security/audit-logs', function () {
+    return view('coming-soon');
+});
+
+Route::get('/alerts', function () {
+    return view('coming-soon');
+});
+
+Route::get('/reporting', function () {
+    return view('coming-soon');
 });

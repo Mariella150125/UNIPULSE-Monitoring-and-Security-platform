@@ -21,7 +21,19 @@
                         . $tld;
         }
     @endphp
-    
+    {{-- Affichage du message d'erreur si le lien a expiré --}}
+    @if(session('error'))
+        <div class="status-color" style="color: var(--red); margin-bottom: 15px;">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- Affichage du message de succès --}}
+    @if(session('status'))
+        <div class="status-color">
+            {{ session('status') }}
+        </div>
+    @endif
      <h4 class="lookpage"> Un lien a été envoyé au <strong>{{ $maskedEmail }}</strong></h4>
     
 
