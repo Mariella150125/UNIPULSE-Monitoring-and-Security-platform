@@ -97,8 +97,12 @@
                         <select name="environment" class="filter-btn">
                             <option value="">Tous les environnements</option>
                             <option value="Test"
-                                @selected(request('environment') == 'test')>
-                                test
+                                @selected(request('environment') == 'Test')>
+                                Test
+                            </option>
+                            <option value="Production"
+                                @selected(request('environment') == 'Production')>
+                                production
                             </option>
                         </select>
                         <select name="status" class="filter-btn">
@@ -110,7 +114,7 @@
                         </select>
                         <select name="os" class="filter-btn">
                             <option value="">Tous les OS</option>
-                            <option value="Linux" {{ request('os') === 'Linux' ? 'selected' : '' }}>Linux
+                            <option value="Linux" {{ request('os') === 'Linux' ? 'selected' : '' }}>Linux</option>
                         </select>
                         <button type="submit" class="filter-btn">
                             <i class="fa-solid fa-filter"></i>

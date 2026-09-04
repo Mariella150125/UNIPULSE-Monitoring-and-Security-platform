@@ -7,6 +7,7 @@ use App\Models\Server;
 use App\Models\ServerGroup;
 use App\Models\Application;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PrometheusService;
 
 class ServerController extends Controller
 {
@@ -117,6 +118,10 @@ class ServerController extends Controller
             'description'  => 'nullable|string',
             'tags'        => 'nullable|string',
             'group_id'    => 'nullable|exists:server_groups,id',
+            'prometheus_instance' => 'nullable|string|max:255', // <-- 
+            'prometheus_job'      => 'nullable|string|max:255', // <-- 
+            'wazuh_agent_id'      => 'nullable|string|max:255', // <-- AJOUTÉ
+            'wazuh_group'         => 'nullable|string|max:255', // <-- AJOUTÉ
         ]);
 
         $server->update($validated);
@@ -162,6 +167,10 @@ class ServerController extends Controller
             'description'  => 'nullable|string',
             'tags'        => 'nullable|string',
             'group_id'    => 'nullable|exists:server_groups,id',
+            'prometheus_instance' => 'nullable|string|max:255', 
+            'prometheus_job'      => 'nullable|string|max:255',
+            'wazuh_agent_id'      => 'nullable|string|max:255', 
+            'wazuh_group'         => 'nullable|string|max:255', 
         ]);
 
         Server::create($validated);
@@ -185,19 +194,25 @@ class ServerController extends Controller
      */
     public function envChartData()
     {
-        $data = Server::selectRaw('environment, count(*) as total')
-            ->groupBy('environment')
-            ->orderByDesc('total')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [
-                    $item->environment => $item->total
-                ];
-            });
+        $data = Server::query()
+        ->select('environment')
+        ->selectRaw('COUNT(*) as total')
+        ->groupBy('environment')
+        ->orderByDesc('total')
+        ->get();
+
+        $labels = [];
+        $values = [];
+
+        foreach ($data as $item) {
+            $labels[] = $item->environment ?? 'Non renseigné';
+            $values[] = (int) $item->total;
+        }
 
         return response()->json([
-            'labels' => array_keys($data->toArray()),
-            'data'   => array_values($data->toArray()),
+            'labels' => $labels,
+            'data' => $values,
         ]);
     }
+    
 }

@@ -82,9 +82,9 @@
             </div>
             <div class="donut-wrapper">
                 <div class="donut-chart">
-                    <canvas id="envDonutChart"></canvas>
+                    <canvas id="appEnvDonutChart"></canvas>
                 </div>
-                <div class="donut-legend" id="donutLegend"></div>
+                <div class="donut-legend" id="appDonutLegend"></div>
             </div>
         </div>
     </div>
@@ -465,5 +465,180 @@
     </div>
 
     @include('administration.applis.appli-modal')
+{{-- à enlever quand il y auara les vraies données--}}
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const availabilityCanvas =
+        document.getElementById('availabilityChart');
+
+    if (availabilityCanvas && typeof Chart !== 'undefined') {
+
+        new Chart(availabilityCanvas, {
+
+            type: 'line',
+
+            data: {
+                labels: [
+                    '04 Août',
+                    '05 Août',
+                    '06 Août',
+                    '07 Août',
+                    '08 Août',
+                    '09 Août',
+                    '10 Août'
+                ],
+
+                datasets: [
+
+                    {
+                        label: 'CRM',
+
+                        data: [
+                            99.2,
+                            99.5,
+                            98.9,
+                            99.7,
+                            99.4,
+                            99.8,
+                            99.6
+                        ],
+
+                        borderColor: '#56825E',
+                        backgroundColor: 'transparent',
+
+                        tension: 0.35,
+                        pointRadius: 3,
+                        fill: false
+                    },
+
+                    {
+                        label: 'Application Mobile',
+
+                        data: [
+                            98.4,
+                            98.9,
+                            98.2,
+                            99.1,
+                            98.7,
+                            99.3,
+                            98.8
+                        ],
+
+                        borderColor: '#1d4a40',
+                        backgroundColor: 'transparent',
+
+                        tension: 0.35,
+                        pointRadius: 3,
+                        fill: false
+                    },
+
+                    {
+                        label: 'API Client',
+
+                        data: [
+                            99.7,
+                            99.6,
+                            99.8,
+                            99.9,
+                            99.5,
+                            99.8,
+                            99.9
+                        ],
+
+                        borderColor: '#8fae94',
+                        backgroundColor: 'transparent',
+
+                        tension: 0.35,
+                        pointRadius: 3,
+                        fill: false
+                    },
+
+                    {
+                        label: 'Portail Web',
+
+                        data: [
+                            97.8,
+                            98.1,
+                            97.5,
+                            98.6,
+                            98.2,
+                            98.9,
+                            98.5
+                        ],
+
+                        borderColor: '#e08e3e',
+                        backgroundColor: 'transparent',
+
+                        tension: 0.35,
+                        pointRadius: 3,
+                        fill: false
+                    }
+                ]
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+
+                plugins: {
+
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line',
+                            padding: 20,
+                            font: {
+                                size: 13
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+
+                                return context.dataset.label +
+                                    ' : ' +
+                                    context.parsed.y +
+                                    '%';
+                            }
+                        }
+                    }
+                },
+
+                scales: {
+
+                    y: {
+                        min: 95,
+                        max: 100,
+
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 @endsection

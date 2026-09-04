@@ -85,7 +85,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return redirect()->route('users')
+        return redirect()->route('users.index')
             ->with('success', 'Utilisateur modifié.');
     }
     public function delete($id)
@@ -103,7 +103,7 @@ class UserController extends Controller
         //$this->service->delete($user);
          $user->delete();
 
-        return redirect()->back()->with('success', 'Utilisateur supprimé.');
+        return redirect()->route('users.index')->with('success', 'Utilisateur supprimé.');
     }
     // désactiver
     public function changeStatus($id)

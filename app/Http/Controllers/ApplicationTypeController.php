@@ -68,4 +68,5 @@ class ApplicationTypeController extends Controller
             ->route('application-types.index')
             ->with('success', 'Type d’application désactivé avec succès.');
     }
+    
 }

@@ -175,13 +175,20 @@ class AuthController extends Controller
         $user= User::where("email", $request->email)->first();
 
         if (!$user) {
-            abort(403, 'User Not Found');
+
+           return redirect()->route('look')
+                ->with('error', 'Aucun compte n\'est associé à cette adresse email.')
+                ->with('email', $request->email)
+                ->with('type', $user && $user->status === 'inactif' ? 'register' : 'forgot');
         }
 
         $is_valid = PasswordFacade::getRepository()->exists($user, $token);
 
         if (!$is_valid) {
-            abort(403, 'Invalid Link');
+             return redirect()->route('look')
+                ->with('error', 'Le lien de création de mot de passe a expiré ou est invalide. Veuillez en demander un nouveau.')
+                ->with('email', $request->email)
+                ->with('type', $user->status === 'inactif' ? 'register' : 'forgot');
         }
         return view('auth.password', [
             'token' => $token,

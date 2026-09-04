@@ -6,6 +6,17 @@
 @endsection
 
 @section('content')
+@if(session('success'))
+    <div class="success-message">
+        <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger" style="background: rgba(192, 57, 43, 0.1); border: 1px solid var(--red); color: var(--red); padding: 12px 18px; border-radius: 8px; margin-bottom: 20px;">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ session('error') }}
+    </div>
+@endif
 
 <div class="toast-container" id="toastContainer"></div>
 

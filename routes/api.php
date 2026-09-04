@@ -51,4 +51,5 @@ Route::prefix('v1')->middleware('auth.api')->group(function () {
         Route::get('{report}',    [ReportController::class, 'show'])     ->middleware('scope:reports:read');
         Route::post('/',          [ReportController::class, 'store'])    ->middleware('scope:reports:write');
     });
+Route::post('/webhooks/receive/{webhook}', [WebhookController::class, 'receive'])->name('webhooks.receive');
 });

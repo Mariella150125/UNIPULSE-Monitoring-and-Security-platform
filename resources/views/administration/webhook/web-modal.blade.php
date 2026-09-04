@@ -103,14 +103,25 @@
 <x-modal id="webhook-modal" title="Ajouter un webhook">
     <form id="webhook-form">
         @csrf
+        <!-- VALEURS CACHÉES PAR DÉFAUT -->
+        <input type="hidden" name="direction" value="inbound">
+        <input type="hidden" name="scope" value="application">
+
         <div class="input-group">
-            <label>Nom *</label>
-            <input type="text" name="name" required placeholder="ex. Slack Alert">
+            <label>Nom du webhook *</label>
+            <input type="text" name="name" required placeholder="ex. Réception alertes App X">
         </div>
+
         <div class="input-group">
-            <label>URL Cible *</label>
-            <input type="url" name="target_url" required placeholder="https://hooks.slack.com/services/...">
+            <label>Application concernée *</label>
+            <select name="application_id" required>
+                <option value="">Sélectionner l'application...</option>
+                @foreach(\App\Models\Application::orderBy('name')->get() as $app)
+                    <option value="{{ $app->id }}">{{ $app->name }}</option>
+                @endforeach
+            </select>
         </div>
+
         <div class="modal-grid-2">
             <div class="input-group">
                 <label>Méthode d'authentification</label>
@@ -131,8 +142,9 @@
                 </select>
             </div>
         </div>
+
         <div class="input-group" id="wh-apikey-group" style="display:none;">
-            <label>Clé API</label>
+            <label>Clé API requise pour l'authentification</label>
             <select name="api_key_id">
                 <option value="">Sélectionner...</option>
                 @foreach($apiKeys->where('status', 'active') as $ak)
@@ -140,7 +152,8 @@
                 @endforeach
             </select>
         </div>
-        <p class="modal-section-title">Événements à écouter *</p>
+
+        <p class="modal-section-title">Types d'événements à accepter *</p>
         <div class="event-checks" id="event-checks-container"></div>
     </form>
     @slot('footer')

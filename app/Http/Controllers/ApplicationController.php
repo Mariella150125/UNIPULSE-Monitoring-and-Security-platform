@@ -209,4 +209,16 @@ class ApplicationController extends Controller
         //$this->service->delete($application);
         return redirect()->route('appli.index')->with('success', 'Application supprimée avec succès.');
     }
+    public function environmentChartData()
+    {
+        $data = Application::selectRaw('environment, COUNT(*) as total')
+            ->groupBy('environment')
+            ->orderByDesc('total')
+            ->get();
+
+        return response()->json([
+            'labels' => $data->pluck('environment')->values()->toArray(),
+            'data' => $data->pluck('total')->map(fn ($value) => (int) $value)->values()->toArray(),
+        ]);
+    }
 }
