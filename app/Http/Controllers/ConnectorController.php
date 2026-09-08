@@ -52,8 +52,8 @@ class ConnectorController extends Controller
             'error'     => $all->where('status', 'error')->count(),
             'never'     => $all->where('status', 'never_tested')->count(),
         ];
-
-        return view('administration.connectors.agent', compact('connectors', 'kpis'));
+        $lastSync = \App\Models\Connector::whereNotNull('last_check_at')->max('last_check_at');
+        return view('administration.connectors.agent', compact('connectors', 'kpis','lastSync'));
     }
 
     /**

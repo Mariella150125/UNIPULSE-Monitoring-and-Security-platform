@@ -51,10 +51,12 @@ class ApplicationController extends Controller
             ->groupByRaw('DATE(checked_at)')
             ->orderBy('date')
             ->get();
+        $lastSync = \App\Models\Application::whereNotNull('last_sync_at')->max('last_sync_at');
+
 
         return view('administration.applis.appli', compact(
             'applications', 'applicationTypes', 'servers', 'users',
-            'activeApplications', 'environmentStats', 'availabilityStats'
+            'activeApplications', 'environmentStats', 'availabilityStats', 'lastSync'
         ));
     }
 
@@ -220,5 +222,13 @@ class ApplicationController extends Controller
             'labels' => $data->pluck('environment')->values()->toArray(),
             'data' => $data->pluck('total')->map(fn ($value) => (int) $value)->values()->toArray(),
         ]);
+    }
+    public function changeStatus(Request $request, $id)
+    {
+        $app = Application::findOrFail($id);
+        $app->status = $request->input('status', 'active');
+        $app->save();
+
+        return redirect()->back()->with('success', 'Statut de l\'application mis à jour avec succès.');
     }
 }

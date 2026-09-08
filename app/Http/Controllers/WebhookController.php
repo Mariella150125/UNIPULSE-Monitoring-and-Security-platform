@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+
 
 class WebhookController extends Controller
 {
@@ -20,16 +20,10 @@ class WebhookController extends Controller
     // LISTE & STATS
     // =========================================================================
 
-    /**
-     * Liste les webhooks avec filtres et KPI.
-     *
-     * GET ?direction=outbound&scope=platform&status=active&application_id=3
-     */
     public function index(Request $request): JsonResponse
     {
         $query = Webhook::with(['eventTypes', 'lastDelivery', 'application', 'connector']);
 
-        // --- Filtres ---
         if ($request->filled('direction')) {
             $query->where('direction', $request->direction);
         }
@@ -64,7 +58,6 @@ class WebhookController extends Controller
             'created_at'          => $w->created_at->format('d/m/Y'),
         ]);
 
-        // --- KPI ---
         $last24h = now()->subDay();
 
         $stats = [
@@ -84,15 +77,9 @@ class WebhookController extends Controller
     }
 
     // =========================================================================
-    // TYPES D'ÉVÉNEMENTS (pour les formulaires)
+    // TYPES D'ÉVÉNEMENTS
     // =========================================================================
 
-    /**
-     * Retourne les types d'événements disponibles,
-     * filtrés par direction si fournie.
-     *
-     * GET /webhooks/event-types?direction=outbound
-     */
     public function eventTypes(Request $request): JsonResponse
     {
         $query = WebhookEventType::query();
@@ -117,10 +104,6 @@ class WebhookController extends Controller
     // CRUD
     // =========================================================================
 
-    /**
-     * Crée un webhook avec ses abonnements.
-     * Si auth_method = hmac_signature, génère un secret et le retourne UNE FOIS.
-     */
     public function store(StoreWebhookRequest $request): JsonResponse
     {
         return DB::transaction(function () use ($request) {
@@ -133,7 +116,6 @@ class WebhookController extends Controller
                 $secretHash   = $sharedSecret;
             }
 
-            // Et dans le retour :
             if ($sharedSecret ?? null) {
                 $response['secret'] = $sharedSecret;
             }
@@ -152,7 +134,6 @@ class WebhookController extends Controller
                 'created_by'         => auth()->id(),
             ]);
 
-            // Abonnements aux événements
             $webhook->eventTypes()->sync($request->event_types);
 
             $response = [
@@ -160,7 +141,6 @@ class WebhookController extends Controller
                 'webhook' => $this->formatWebhook($webhook->fresh()->load('eventTypes')),
             ];
 
-            // Le secret en clair n'est retourné qu'ici
             if ($plainSecret) {
                 $response['secret'] = $plainSecret;
             }
@@ -169,63 +149,58 @@ class WebhookController extends Controller
         });
     }
 
+    public function editData(Webhook $webhook): JsonResponse
+    {
+        $webhook->load('eventTypes');
+        
+        return response()->json([
+            'id'                 => $webhook->id,
+            'name'               => $webhook->name,
+            'application_id'     => $webhook->application_id,
+            'auth_method'        => $webhook->auth_method,
+            'api_key_id'         => $webhook->api_key_id,
+            'min_severity_level' => $webhook->min_severity_level,
+            'event_types'        => $webhook->eventTypes->pluck('id')->toArray(),
+        ]);
+    }
+
     /**
-     * Détail complet d'un webhook avec ses dernières livraisons et stats.
+     * Affiche la page de détail du Webhook (Vue HTML)
      */
-    public function show(Webhook $webhook): JsonResponse
+    public function show(Webhook $webhook)
     {
         $webhook->load(['eventTypes', 'application', 'connector', 'creator']);
 
-        // 10 dernières livraisons
         $recentDeliveries = $webhook->deliveries()
             ->with('eventType')
             ->latest('delivered_at')
             ->limit(10)
-            ->get()
-            ->map(fn ($d) => $this->formatDelivery($d));
+            ->get();
 
-        // Stats de livraison globales
-        $totalDeliveries   = $webhook->deliveries()->count();
-        $successCount      = $webhook->deliveries()->where('success', true)->count();
-        $failureCount      = $totalDeliveries - $successCount;
-        $avgDuration       = $webhook->deliveries()->whereNotNull('duration_ms')->avg('duration_ms');
-        $successRate       = $totalDeliveries > 0 ? round(($successCount / $totalDeliveries) * 100, 1) : null;
+        $totalDeliveries = $webhook->deliveries()->count();
+        $successCount    = $webhook->deliveries()->where('success', true)->count();
+        $failureCount    = $totalDeliveries - $successCount;
+        $avgDuration     = $webhook->deliveries()->whereNotNull('duration_ms')->avg('duration_ms');
+        $successRate     = $totalDeliveries > 0 ? round(($successCount / $totalDeliveries) * 100, 1) : null;
 
-        // Historique des rotations de secret
         $secretHistory = $webhook->secretsHistory()
             ->with('rotatedBy')
             ->latest('rotated_at')
             ->limit(10)
-            ->get()
-            ->map(fn ($h) => [
-                'rotated_at' => $h->rotated_at->format('d/m/Y H:i'),
-                'rotated_by' => $h->rotatedBy?->name,
-                'reason'     => $h->reason,
-            ]);
+            ->get();
 
-        $data = $this->formatWebhook($webhook);
-        $data['application_name'] = $webhook->application?->name;
-        $data['connector_name']   = $webhook->connector?->name;
-        $data['created_by_name']  = $webhook->creator?->name;
-        $data['has_secret']       = !empty($webhook->secret_hash);
-        $data['auth_key_prefix']  = $webhook->authKey?->key_prefix;
-        $data['recent_deliveries'] = $recentDeliveries;
-        $data['delivery_stats']    = [
-            'total'           => $totalDeliveries,
-            'success_count'   => $successCount,
-            'failure_count'   => $failureCount,
-            'success_rate'    => $successRate,
-            'avg_duration_ms' => $avgDuration ? round($avgDuration) : null,
-        ];
-        $data['secret_history'] = $secretHistory;
-
-        return response()->json($data);
+        return view('administration.webhook.show', compact(
+            'webhook',
+            'recentDeliveries',
+            'totalDeliveries',
+            'successCount',
+            'failureCount',
+            'avgDuration',
+            'successRate',
+            'secretHistory'
+        ));
     }
 
-    /**
-     * Met à jour un webhook (nom, URL, auth, événements).
-     * Ne touche PAS à direction, scope, ni au secret.
-     */
     public function update(UpdateWebhookRequest $request, Webhook $webhook): JsonResponse
     {
         return DB::transaction(function () use ($request, $webhook) {
@@ -239,11 +214,9 @@ class WebhookController extends Controller
             }
             if ($request->has('auth_method')) {
                 $updates['auth_method'] = $request->auth_method;
-                // Si on passe de hmac à autre chose, on supprime le hash
                 if ($request->auth_method !== 'hmac_signature') {
                     $updates['secret_hash'] = null;
                 }
-                // Si on passe de api_key à autre chose
                 if ($request->auth_method !== 'api_key') {
                     $updates['api_key_id'] = null;
                 }
@@ -259,7 +232,6 @@ class WebhookController extends Controller
                 $webhook->update($updates);
             }
 
-            // Sync des événements
             if ($request->has('event_types')) {
                 $webhook->eventTypes()->sync($request->event_types);
             }
@@ -271,43 +243,26 @@ class WebhookController extends Controller
         });
     }
 
-    /**
-     * Supprime un webhook (cascade sur subscriptions, deliveries, secrets_history).
-     */
-    public function destroy(Webhook $webhook): JsonResponse
+    public function destroy(Webhook $webhook)
     {
-       try {
-            $webhook->delete();
-            return redirect()->route('webhook.index')->with('success', 'Webhook supprimé avec succès.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Impossible de supprimer ce webhook car il est lié à des livraisons ou des événements.');
-        } 
+       $webhook->delete();
+       return redirect()->route('webhooks.page')->with('success', 'Webhook supprimé avec succès.');
     }
 
     // =========================================================================
     // ACTIONS SPÉCIFIQUES
     // =========================================================================
 
-    /**
-     * Pause / reprend un webhook (toggle).
-     */
-    public function toggleStatus(Webhook $webhook): JsonResponse
+    public function toggleStatus(Request $request, Webhook $webhook)
     {
-        $newStatus = $webhook->status === 'active' ? 'paused' : 'active';
+        $newStatus = $request->input('status', $webhook->status === 'active' ? 'paused' : 'active');
         $webhook->update(['status' => $newStatus]);
 
-        $label = $newStatus === 'active' ? 'réactivé' : 'mis en pause';
+        $label = $newStatus === 'active' ? 'activé' : 'désactivé';
 
-        return response()->json([
-            'message' => "Webhook « {$webhook->name} » {$label}.",
-            'status'  => $newStatus,
-        ]);
+        return redirect()->back()->with('success', "Webhook « {$webhook->name} » {$label} avec succès.");
     }
 
-    /**
-     * Marque un webhook en erreur (appelé par le worker de livraison quand
-     * trop d'échecs consécutifs).
-     */
     public function markError(Webhook $webhook): JsonResponse
     {
         $webhook->update(['status' => 'error']);
@@ -317,10 +272,6 @@ class WebhookController extends Controller
         ]);
     }
 
-    /**
-     * Rotation du secret HMAC.
-     * Génère un nouveau secret, logue la rotation, retourne le secret UNE FOIS.
-     */
     public function rotateSecret(RotateWebhookSecretRequest $request, Webhook $webhook): JsonResponse
     {
         if ($webhook->auth_method !== 'hmac_signature') {
@@ -344,21 +295,14 @@ class WebhookController extends Controller
     // HISTORIQUE DES LIVRAISONS
     // =========================================================================
 
-    /**
-     * Liste paginée des livraisons d'un webhook.
-     *
-     * GET /webhooks/{webhook}/deliveries?success=false&page=2
-     */
     public function deliveries(Request $request, Webhook $webhook): JsonResponse
     {
         $query = $webhook->deliveries()->with('eventType');
 
-        // Filtre succès/échec
         if ($request->filled('success')) {
             $query->where('success', $request->boolean('success'));
         }
 
-        // Filtre par événement
         if ($request->filled('event_type_id')) {
             $query->where('event_type_id', $request->event_type_id);
         }
@@ -370,12 +314,8 @@ class WebhookController extends Controller
         return response()->json($deliveries);
     }
 
-    /**
-     * Détail d'une livraison spécifique (payload complet).
-     */
     public function deliveryDetail(Webhook $webhook, WebhookDelivery $delivery): JsonResponse
     {
-        // Vérifie que la livraison appartient bien au webhook
         if ($delivery->webhook_id !== $webhook->id) {
             abort(404);
         }
@@ -397,16 +337,6 @@ class WebhookController extends Controller
         ]);
     }
 
-    // =========================================================================
-    // RELANCE D'UNE LIVRAISON ÉCHOUÉE
-    // =========================================================================
-
-    /**
-     * Demande la relance d'une livraison échouée.
-     * Ici on ne fait que créer un nouvel enregistrement en attente —
-     * le worker de livraison s'en chargera.
-     * Pour le backend complet, ce sera un dispatch de job.
-     */
     public function retryDelivery(Webhook $webhook, WebhookDelivery $delivery): JsonResponse
     {
         if ($delivery->webhook_id !== $webhook->id) {
@@ -417,7 +347,6 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Cette livraison a réussi, pas besoin de relancer.'], 400);
         }
 
-        // Crée une nouvelle tentative
         $retry = $webhook->deliveries()->create([
             'event_type_id'    => $delivery->event_type_id,
             'direction'        => $delivery->direction,
@@ -477,9 +406,8 @@ class WebhookController extends Controller
         ];
     }
 
-        private function shortenUrl(?string $url, int $max = 50): string
+    private function shortenUrl(?string $url, int $max = 50): string
     {
-        // Si l'URL est vide (null), on renvoie un tiret pour l'affichage
         if (!$url) {
             return '—';
         }
@@ -498,30 +426,26 @@ class WebhookController extends Controller
 
         return $host . '/…';
     }
-     public function receive(Request $request, $webhookId)
+    
+    public function receive(Request $request, $webhookId)
     {
-        // 1. On cherche le webhook en base de données
         $webhook = Webhook::findOrFail($webhookId);
 
-        // 2. On vérifie qu'il est bien configuré pour recevoir des données
         if ($webhook->direction !== 'inbound' || $webhook->status !== 'active') {
             return response()->json(['error' => 'Webhook inactive or not inbound'], 403);
         }
 
-        // 3. (Sécurité basique) On récupère les données envoyées par le CRM
         $payload = $request->all();
 
-        // 4. On enregistre la livraison dans l'historique (pour que tu le voies dans ton tableau)
         WebhookDelivery::create([
             'webhook_id'   => $webhook->id,
-            'event_type_id' => $request->input('event_type_id', 1), // Tu peux adapter selon ton CRM
+            'event_type_id' => $request->input('event_type_id', 1),
             'direction'     => 'inbound',
             'payload'       => json_encode($payload),
             'success'       => true,
             'delivered_at'  => now(),
         ]);
 
-        // 5. On répond au CRM que tout s'est bien passé
         return response()->json(['message' => 'Webhook received successfully'], 200);
     }
 }

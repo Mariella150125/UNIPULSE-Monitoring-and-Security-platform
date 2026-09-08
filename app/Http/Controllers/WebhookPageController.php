@@ -86,11 +86,16 @@ class WebhookPageController extends Controller
             ->orderByDesc('created_at')
             ->get();
         $webhookEventTypes = WebhookEventType::orderBy('code')->get();
+         $lastEndpointCheck = ApplicationEndpoint::max('last_checked_at');
+        $lastWebhookDelivery = \DB::table('webhook_deliveries')->max('delivered_at');
+        $lastConnectorCheck = \App\Models\Connector::max('last_check_at');
 
+        $timestamps = array_filter([$lastEndpointCheck, $lastWebhookDelivery, $lastConnectorCheck]);
+        $lastSync = $timestamps ? \Carbon\Carbon::parse(max($timestamps)) : null;
         return view('administration.webhook.webh', compact(
             'endpointStats', 'webhookStats', 'totalErrors24h',
             'apiStats', 'eventCounts', 'maxEvents',
-            'endpoints', 'webhooks', 'apiKeys','webhookEventTypes'
+            'endpoints', 'webhooks', 'apiKeys','webhookEventTypes','lastSync' 
         ));
     }
 

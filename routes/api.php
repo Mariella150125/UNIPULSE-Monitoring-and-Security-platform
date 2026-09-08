@@ -1,16 +1,21 @@
 <?php
 
 use App\Http\Controllers\InboundWebhookController;
+use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\Api\V1\ServerController;
 use App\Http\Controllers\Api\V1\ApplicationController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\ReportController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('test', function(){
+    dd("Here");
+});
+
 // =============================================================
 // WEBHOOKS ENTRANTS (pas de clé API, vérification par signature)
 // =============================================================
-Route::post('/webhooks/inbound/{webhook}', InboundWebhookController::class)
+Route::post('/webhooks/inbound/{webhook}', [InboundWebhookController::class])
     ->name('webhooks.inbound')
     ->middleware('webhook.verify');
 
@@ -51,5 +56,5 @@ Route::prefix('v1')->middleware('auth.api')->group(function () {
         Route::get('{report}',    [ReportController::class, 'show'])     ->middleware('scope:reports:read');
         Route::post('/',          [ReportController::class, 'store'])    ->middleware('scope:reports:write');
     });
-Route::post('/webhooks/receive/{webhook}', [WebhookController::class, 'receive'])->name('webhooks.receive');
 });
+Route::post('/webhooks/receive/{webhook}', [WebhookController::class, 'receive'])->name('webhooks.receive');

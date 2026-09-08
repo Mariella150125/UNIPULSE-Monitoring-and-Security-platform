@@ -41,7 +41,8 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(10);
-
+                $lastSyncString = User::whereNotNull('last_login')->max('last_login');
+        $lastSync = $lastSyncString ? \Carbon\Carbon::parse($lastSyncString) : null;
         $totalUsers = User::count();
         $activeUsers = User::where('status' , 'actif')->count();
         $inactiveUsers = User::where('status' , 'inactif')->count();
@@ -52,7 +53,8 @@ class UserController extends Controller
             'totalUsers',
             'activeUsers',
             'inactiveUsers',
-            'admins'
+            'admins',
+            'lastSync'
             ));
     }
     //afficher un seul user
@@ -106,16 +108,15 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'Utilisateur supprimé.');
     }
     // désactiver
-    public function changeStatus($id)
+     public function changeStatus($id)
     {
         $user = User::findOrFail($id);
 
-        $user->status = $user->status === 'actif'
-            ? 'inactif'
-            : 'actif';
-
+        $user->status = $user->status === 'actif' ? 'inactif' : 'actif';
         $user->save();
 
-        return redirect()->back();
+        $message = $user->status === 'actif' ? 'Utilisateur activé avec succès.' : 'Utilisateur désactivé avec succès.';
+
+        return redirect()->back()->with('success', $message);
     }
 }

@@ -89,7 +89,7 @@
         </div>
     </div>
 
-    {{-- ─── Tableau ─── --}}
+   
     {{-- ─── Tableau ─── --}}
     <div class="panel">
         {{-- RECHERCHE + FILTRES --}}
@@ -322,44 +322,48 @@
 
                     {{-- ACTIONS --}}
                     <td>
-
-                        {{-- SHOW --}}
-                        <a
-                            href="{{ route('appli.show', $app->id) }}"
-                            class="icon-btn"
-                            title="Voir"
-                        >
-                            <i class="fa-solid fa-eye"></i>
-                        </a>
-
-
-                        {{-- EDIT --}}
-                        <a
-                            href="{{ route('appli.edit', $app->id) }}"
-                            class="icon-btn"
-                            title="Modifier"
-                        >
-                            <i class="fa-solid fa-pen"></i>
-                        </a>
-
-
-                        {{-- DELETE --}}
-                        <form
-                            action="{{ route('appli.destroy', $app->id) }}"
-                            method="POST"
-                            style="display:inline;"
-                        >
-
-                            @csrf
-                            @method('DELETE')
-
-                            <a href="{{ route('appli.delete', $app->id) }}" class="icon-btn" title="Supprimer">
-                                <i class="fa-solid fa-trash"></i>
+                        <div class="action-dropdown">
+                            <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
+                            <div class="action-dropdown-menu">
+                                <a href="{{ route('appli.show', $app->id) }}" class="dropdown-item">
+                                    <i class="fa-solid fa-eye"></i> Voir
+                                </a>
+                                <a href="{{ route('appli.edit', $app->id) }}" class="dropdown-item">
+                                    <i class="fa-solid fa-pen"></i> Modifier
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                
+                                {{-- ACTIVER / DÉSACTIVER --}}
+                                @if($app->status === 'active')
+                                    <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="suspended">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fa-solid fa-circle-pause"></i> Désactiver
+                                        </button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="active">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fa-solid fa-circle-play"></i> Activer
+                                        </button>
+                                    </form>
+                                @endif
 
-                        </form>
-
+                                {{-- SUPPRIMER (Lien vers ta page de confirmation existante) --}}
+                                <a href="{{ route('appli.delete', $app->id) }}" class="dropdown-item text-red">
+                                    <i class="fa-solid fa-trash"></i> Supprimer
+                                </a>
+                            </div>
+                        </div>
                     </td>
+                    
 
                 </tr>
 
@@ -460,185 +464,13 @@
 
     </div>
 
+
 </div>
-        
+    <p class="sync-time">
+        Dernière synchronisation : {{ $lastSync ? $lastSync->diffForHumans() : 'Jamais' }}
+    </p>    
     </div>
 
     @include('administration.applis.appli-modal')
-{{-- à enlever quand il y auara les vraies données--}}
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    const availabilityCanvas =
-        document.getElementById('availabilityChart');
-
-    if (availabilityCanvas && typeof Chart !== 'undefined') {
-
-        new Chart(availabilityCanvas, {
-
-            type: 'line',
-
-            data: {
-                labels: [
-                    '04 Août',
-                    '05 Août',
-                    '06 Août',
-                    '07 Août',
-                    '08 Août',
-                    '09 Août',
-                    '10 Août'
-                ],
-
-                datasets: [
-
-                    {
-                        label: 'CRM',
-
-                        data: [
-                            99.2,
-                            99.5,
-                            98.9,
-                            99.7,
-                            99.4,
-                            99.8,
-                            99.6
-                        ],
-
-                        borderColor: '#56825E',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    },
-
-                    {
-                        label: 'Application Mobile',
-
-                        data: [
-                            98.4,
-                            98.9,
-                            98.2,
-                            99.1,
-                            98.7,
-                            99.3,
-                            98.8
-                        ],
-
-                        borderColor: '#1d4a40',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    },
-
-                    {
-                        label: 'API Client',
-
-                        data: [
-                            99.7,
-                            99.6,
-                            99.8,
-                            99.9,
-                            99.5,
-                            99.8,
-                            99.9
-                        ],
-
-                        borderColor: '#8fae94',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    },
-
-                    {
-                        label: 'Portail Web',
-
-                        data: [
-                            97.8,
-                            98.1,
-                            97.5,
-                            98.6,
-                            98.2,
-                            98.9,
-                            98.5
-                        ],
-
-                        borderColor: '#e08e3e',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    }
-                ]
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-
-                plugins: {
-
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            pointStyle: 'line',
-                            padding: 20,
-                            font: {
-                                size: 13
-                            }
-                        }
-                    },
-
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-
-                                return context.dataset.label +
-                                    ' : ' +
-                                    context.parsed.y +
-                                    '%';
-                            }
-                        }
-                    }
-                },
-
-                scales: {
-
-                    y: {
-                        min: 95,
-                        max: 100,
-
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    },
-
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-});
-</script>
 @endsection

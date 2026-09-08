@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const rulesPanel = document.getElementById(rulesPanelId);
         const form = document.getElementById(formId);
 
-        // Si les éléments n'existent pas sur cette page, on arrête
         if (!passwordInput || !rulesPanel || !form) return;
 
         const rules = {
@@ -32,454 +31,188 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function updateRulesPanel(value) {
-
             Object.keys(rules).forEach(function (key) {
-
-                const li = rulesPanel.querySelector(
-                    '[data-rule="' + key + '"]'
-                );
-
+                const li = rulesPanel.querySelector('[data-rule="' + key + '"]');
                 if (!li) return;
-
-                li.classList.toggle(
-                    'valid',
-                    rules[key](value)
-                );
+                li.classList.toggle('valid', rules[key](value));
             });
         }
 
-        // Affichage des règles au focus
         passwordInput.addEventListener('focus', function () {
             rulesPanel.hidden = false;
         });
 
-        // Mise à jour en temps réel
         passwordInput.addEventListener('input', function () {
             updateRulesPanel(passwordInput.value);
         });
 
-        // Icône œil
         if (toggleIcon) {
-
             toggleIcon.addEventListener('click', function () {
-
-                const isHidden =
-                    passwordInput.type === 'password';
-
-                passwordInput.type =
-                    isHidden ? 'text' : 'password';
-
-                toggleIcon.classList.toggle(
-                    'fa-eye',
-                    !isHidden
-                );
-
-                toggleIcon.classList.toggle(
-                    'fa-eye-slash',
-                    isHidden
-                );
+                const isHidden = passwordInput.type === 'password';
+                passwordInput.type = isHidden ? 'text' : 'password';
+                toggleIcon.classList.toggle('fa-eye', !isHidden);
+                toggleIcon.classList.toggle('fa-eye-slash', isHidden);
             });
         }
 
-        /*
-         * LOGIN
-         *
-         * IMPORTANT :
-         * On ne bloque PAS l'envoi du formulaire.
-         */
         if (formId === 'login-form') {
-
-            form.addEventListener('submit', function () {
-                // Le formulaire est envoyé normalement à Laravel.
-            });
-
+            form.addEventListener('submit', function () {});
             return;
         }
 
-        /*
-         * SIGNUP / ACTIVATION
-         */
         form.addEventListener('submit', function (event) {
-
             updateRulesPanel(passwordInput.value);
             rulesPanel.hidden = false;
 
             if (!isPasswordValid(passwordInput.value)) {
-
                 event.preventDefault();
                 passwordInput.focus();
-
                 return;
             }
-
-            console.log(
-                'Formulaire valide (' + formId + ')'
-            );
         });
     }
 
+    initPasswordValidator('login-password', 'login-toggle-password', 'login-password-rules', 'login-form');
+    initPasswordValidator('signup-password', 'signup-toggle-password', 'signup-password-rules', 'signup-form');
+    initPasswordValidator('activation-password', 'activation-toggle-password', 'activation-password-rules', 'activation-form');
 
-    /* ==========================================================
-       INITIALISATION LOGIN
-       ========================================================== */
-
-    initPasswordValidator(
-        'login-password',
-        'login-toggle-password',
-        'login-password-rules',
-        'login-form'
-    );
-
-
-    /* ==========================================================
-       INITIALISATION SIGNUP
-       ========================================================== */
-
-    initPasswordValidator(
-        'signup-password',
-        'signup-toggle-password',
-        'signup-password-rules',
-        'signup-form'
-    );
-
-
-    /* ==========================================================
-       INITIALISATION ACTIVATION
-       ========================================================== */
-
-    initPasswordValidator(
-        'activation-password',
-        'activation-toggle-password',
-        'activation-password-rules',
-        'activation-form'
-    );
-
-
-    /* ==========================================================
-       ICÔNE ŒIL - CONFIRMATION MOT DE PASSE
-       ========================================================== */
-
-    const confirmToggle =
-        document.getElementById(
-            'confirmation-toggle-password'
-        );
-
-    const confirmInput =
-        document.getElementById(
-            'password-confirmation'
-        );
+    const confirmToggle = document.getElementById('confirmation-toggle-password');
+    const confirmInput = document.getElementById('password-confirmation');
 
     if (confirmToggle && confirmInput) {
-
         confirmToggle.addEventListener('click', function () {
-
-            const isHidden =
-                confirmInput.type === 'password';
-
-            confirmInput.type =
-                isHidden ? 'text' : 'password';
-
-            confirmToggle.classList.toggle(
-                'fa-eye',
-                !isHidden
-            );
-
-            confirmToggle.classList.toggle(
-                'fa-eye-slash',
-                isHidden
-            );
+            const isHidden = confirmInput.type === 'password';
+            confirmInput.type = isHidden ? 'text' : 'password';
+            confirmToggle.classList.toggle('fa-eye', !isHidden);
+            confirmToggle.classList.toggle('fa-eye-slash', isHidden);
         });
     }
 
-
-    /* ==========================================================
-       ÉTAPES DU FORMULAIRE SIGNUP
-       ========================================================== */
-
-    const signupForm =
-        document.getElementById('signup-form');
+    const signupForm = document.getElementById('signup-form');
 
     if (signupForm) {
-
-        const steps = Array.from(
-            signupForm.querySelectorAll('.form-step')
-        );
-
+        const steps = Array.from(signupForm.querySelectorAll('.form-step'));
         let currentStep = 1;
 
         function showStep(stepNumber) {
-
             steps.forEach(function (step) {
-
-                step.hidden =
-                    Number(step.dataset.step) !== stepNumber;
-
+                step.hidden = Number(step.dataset.step) !== stepNumber;
             });
-
             currentStep = stepNumber;
         }
 
         function isCurrentStepValid() {
-
-            const currentStepEl = steps.find(
-                step =>
-                    Number(step.dataset.step) === currentStep
-            );
-
+            const currentStepEl = steps.find(step => Number(step.dataset.step) === currentStep);
             if (!currentStepEl) return false;
 
-            const requiredFields =
-                currentStepEl.querySelectorAll('[required]');
-
+            const requiredFields = currentStepEl.querySelectorAll('[required]');
             for (const field of requiredFields) {
-
                 if (!field.value.trim()) {
-
                     field.focus();
-
                     return false;
                 }
             }
-
             return true;
         }
 
-        signupForm
-            .querySelectorAll('.next-btn')
-            .forEach(function (btn) {
-
-                btn.addEventListener('click', function () {
-
-                    if (isCurrentStepValid()) {
-
-                        showStep(currentStep + 1);
-                    }
-                });
+        signupForm.querySelectorAll('.next-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (isCurrentStepValid()) showStep(currentStep + 1);
             });
+        });
 
-        signupForm
-            .querySelectorAll('.prev-btn')
-            .forEach(function (btn) {
-
-                btn.addEventListener('click', function () {
-
-                    showStep(currentStep - 1);
-                });
+        signupForm.querySelectorAll('.prev-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                showStep(currentStep - 1);
             });
+        });
 
         showStep(1);
     }
 
-
-    /* ==========================================================
-       SIDEBAR & MENU
-       ========================================================== */
-
-    const sidebar =
-        document.querySelector('.sidebar');
-
-    const menuToggle =
-        document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.querySelector('.menu-toggle');
 
     if (sidebar && menuToggle) {
-
         menuToggle.addEventListener('click', function () {
-
             sidebar.classList.toggle('collapsed');
         });
     }
 
+    document.querySelectorAll('.nav-group-toggle').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+            const group = toggle.closest('.nav-group');
+            if (!group) return;
+            const items = group.querySelector('.nav-group-items');
+            if (!items) return;
 
-    /* ==========================================================
-       GROUPES DU MENU
-       ========================================================== */
+            const isOpen = group.classList.contains('open');
 
-    document
-        .querySelectorAll('.nav-group-toggle')
-        .forEach(function (toggle) {
-
-            toggle.addEventListener('click', function () {
-
-                const group =
-                    toggle.closest('.nav-group');
-
-                if (!group) return;
-
-                const items =
-                    group.querySelector('.nav-group-items');
-
-                if (!items) return;
-
-                const isOpen =
-                    group.classList.contains('open');
-
-                document
-                    .querySelectorAll('.nav-group.open')
-                    .forEach(function (openGroup) {
-
-                        if (openGroup !== group) {
-
-                            openGroup.classList.remove('open');
-
-                            const openItems =
-                                openGroup.querySelector(
-                                    '.nav-group-items'
-                                );
-
-                            if (openItems) {
-                                openItems.style.maxHeight = null;
-                            }
-                        }
-                    });
-
-                if (isOpen) {
-
-                    group.classList.remove('open');
-                    items.style.maxHeight = null;
-
-                } else {
-
-                    group.classList.add('open');
-
-                    items.style.maxHeight =
-                        items.scrollHeight + 'px';
+            document.querySelectorAll('.nav-group.open').forEach(function (openGroup) {
+                if (openGroup !== group) {
+                    openGroup.classList.remove('open');
+                    const openItems = openGroup.querySelector('.nav-group-items');
+                    if (openItems) openItems.style.maxHeight = null;
                 }
             });
+
+            if (isOpen) {
+                group.classList.remove('open');
+                items.style.maxHeight = null;
+            } else {
+                group.classList.add('open');
+                items.style.maxHeight = items.scrollHeight + 'px';
+            }
         });
+    });
 
-
-    /* ==========================================================
-       GRAPHIQUES — DASHBOARD PRINCIPAL
-       ========================================================== */
-
-    const labels = [
-        '22 Juil.',
-        '23 Juil.',
-        '24 Juil.',
-        '25 Juil.',
-        '26 Juil.',
-        '27 Juil.',
-        '28 Juil.'
-    ];
-
-
-    /* -------------------------
-       Graphique Alertes
-       ------------------------- */
-    /* ------------------------------------------------------
-   Donut — Répartition des serveurs par environnement
-   ------------------------------------------------------ */
+    const labels = ['22 Juil.', '23 Juil.', '24 Juil.', '25 Juil.', '26 Juil.', '27 Juil.', '28 Juil.'];
 
     var envDonutCanvas = document.getElementById('envDonutChart');
 
     if (envDonutCanvas && typeof Chart !== 'undefined') {
-
         fetch('/dashboard/environment-chart')
             .then(function (response) {
-
-                if (!response.ok) {
-                    throw new Error(
-                        'Erreur lors du chargement des environnements'
-                    );
-                }
-
+                if (!response.ok) throw new Error('Erreur');
                 return response.json();
             })
-
             .then(function (result) {
-
                 var labels = result.labels || [];
                 var data = result.data || [];
-
                 var legend = document.getElementById('donutLegend');
 
-                /* ------------------------------------------
-                Si aucune donnée
-                ------------------------------------------ */
-
                 if (labels.length === 0 || data.length === 0) {
-
-                    legend.innerHTML =
-                        '<p class="donut-empty">' +
-                        'Aucune donnée disponible' +
-                        '</p>';
-
+                    legend.innerHTML = '<p class="donut-empty">Aucune donnée disponible</p>';
                     return;
                 }
 
-                /* ------------------------------------------
-                Couleurs des environnements
-                ------------------------------------------ */
-
-                var environmentColors = [
-                    '#56825E',
-                    '#1d4a40',
-                    '#8fae94',
-                    '#c9d8cb',
-                    '#6f8f77',
-                    '#b5c7b8'
-                ];
-
-                /* ------------------------------------------
-                Création du donut
-                ------------------------------------------ */
+                var environmentColors = ['#56825E', '#1d4a40', '#8fae94', '#c9d8cb', '#6f8f77', '#b5c7b8'];
 
                 new Chart(envDonutCanvas, {
-
                     type: 'doughnut',
-
                     data: {
-
                         labels: labels,
-
                         datasets: [{
-
                             data: data,
-
                             backgroundColor: labels.map(function (_, index) {
-                                return environmentColors[
-                                    index % environmentColors.length
-                                ];
+                                return environmentColors[index % environmentColors.length];
                             }),
-
                             borderWidth: 0,
-
                             hoverOffset: 5
                         }]
                     },
-
                     options: {
-
                         responsive: true,
-
                         maintainAspectRatio: false,
-
                         cutout: '68%',
-
                         plugins: {
-
-                            legend: {
-                                display: false
-                            },
-
+                            legend: { display: false },
                             tooltip: {
-
                                 callbacks: {
-
                                     label: function (context) {
-
-                                        var label =
-                                            context.label || '';
-
-                                        var value =
-                                            context.parsed || 0;
-
-                                        return ' ' +
-                                            label +
-                                            ' : ' +
-                                            value +
-                                            ' serveur' +
-                                            (value > 1 ? 's' : '');
+                                        var label = context.label || '';
+                                        var value = context.parsed || 0;
+                                        return ' ' + label + ' : ' + value + ' serveur' + (value > 1 ? 's' : '');
                                     }
                                 }
                             }
@@ -487,1818 +220,568 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
-
-                /* ------------------------------------------
-                Légende personnalisée
-                ------------------------------------------ */
-
                 legend.innerHTML = '';
-
                 labels.forEach(function (label, index) {
-
                     var item = document.createElement('div');
-
                     item.className = 'legend-item';
-
                     item.innerHTML =
-
                         '<div class="legend-left">' +
-
-                            '<span class="legend-color" ' +
-                            'style="background-color:' +
-                            environmentColors[
-                                index % environmentColors.length
-                            ] +
-                            '"></span>' +
-
-                            '<span class="legend-label">' +
-                            label +
-                            '</span>' +
-
+                            '<span class="legend-color" style="background-color:' + environmentColors[index % environmentColors.length] + '"></span>' +
+                            '<span class="legend-label">' + label + '</span>' +
                         '</div>' +
-
-                        '<span class="legend-value">' +
-                        data[index] +
-                        '</span>';
-
+                        '<span class="legend-value">' + data[index] + '</span>';
                     legend.appendChild(item);
                 });
-
             })
-
             .catch(function (error) {
-
-                console.error(
-                    'Erreur donut environnement :',
-                    error
-                );
-
-                document.getElementById('donutLegend').innerHTML =
-                    '<p class="donut-empty">' +
-                    'Impossible de charger les données.' +
-                    '</p>';
+                console.error('Erreur donut environnement :', error);
+                document.getElementById('donutLegend').innerHTML = '<p class="donut-empty">Impossible de charger.</p>';
             });
     }
-    const ctxAlerts =
-        document.getElementById('alertChart');
 
+    const ctxAlerts = document.getElementById('alertChart');
     if (ctxAlerts && typeof Chart !== 'undefined') {
-
         new Chart(ctxAlerts, {
-
             type: 'line',
-
             data: {
-
                 labels: labels,
-
                 datasets: [{
-
                     label: 'Alertes critiques',
-
-                    data: [
-                        3, 5, 2, 6, 4, 7, 4
-                    ],
-
+                    data: [3, 5, 2, 6, 4, 7, 4],
                     borderColor: '#c0392b',
-
-                    backgroundColor:
-                        'rgba(192, 57, 43, 0.08)',
-
+                    backgroundColor: 'rgba(192, 57, 43, 0.08)',
                     fill: true,
-
                     tension: 0.35,
-
                     pointRadius: 3
                 }]
             },
-
             options: {
-
                 responsive: true,
-
                 maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-                        display: false
-                    }
-                },
-
+                plugins: { legend: { display: false } },
                 scales: {
-
-                    y: {
-
-                        min: 0,
-
-                        grid: {
-                            color: '#eef1ef'
-                        }
-                    },
-
-                    x: {
-
-                        grid: {
-                            display: false
-                        }
-                    }
+                    y: { min: 0, grid: { color: '#eef1ef' } },
+                    x: { grid: { display: false } }
                 }
             }
         });
     }
 
-
-    /* -------------------------
-       Graphique Score sécurité
-       ------------------------- */
-
-    const ctxSecurityScore =
-        document.getElementById('securityChart');
-
+    const ctxSecurityScore = document.getElementById('securityChart');
     if (ctxSecurityScore && typeof Chart !== 'undefined') {
-
         new Chart(ctxSecurityScore, {
-
             type: 'line',
-
             data: {
-
                 labels: labels,
-
                 datasets: [{
-
                     label: 'Score de sécurité (%)',
-
-                    data: [
-                        78, 80, 82, 81, 85, 88, 92
-                    ],
-
+                    data: [78, 80, 82, 81, 85, 88, 92],
                     borderColor: '#56825E',
-
-                    backgroundColor:
-                        'rgba(86, 130, 94, 0.08)',
-
+                    backgroundColor: 'rgba(86, 130, 94, 0.08)',
                     fill: true,
-
                     tension: 0.35,
-
                     pointRadius: 0
                 }]
             },
-
             options: {
-
                 responsive: true,
-
                 maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-
-                        display: true,
-
-                        position: 'top'
-                    }
-                },
-
+                plugins: { legend: { display: true, position: 'top' } },
                 scales: {
-
-                    y: {
-
-                        min: 0,
-
-                        grid: {
-                            display: false
-                        }
-                    },
-
-                    x: {
-
-                        grid: {
-                            display: false
-                        }
-                    }
+                    y: { min: 0, grid: { display: false } },
+                    x: { grid: { display: false } }
                 }
             }
         });
     }
 
-
-    /* -------------------------
-       Graphique Santé serveurs
-       ------------------------- */
-
-    const ctxServerHealth =
-        document.getElementById('serverChart');
-
+    const ctxServerHealth = document.getElementById('serverChart');
     if (ctxServerHealth && typeof Chart !== 'undefined') {
-
         new Chart(ctxServerHealth, {
-
             type: 'line',
-
             data: {
-
                 labels: labels,
-
                 datasets: [{
-
                     label: 'Santé des serveurs (%)',
-
-                    data: [
-                        78, 80, 82, 81, 85, 88, 92
-                    ],
-
+                    data: [78, 80, 82, 81, 85, 88, 92],
                     borderColor: '#56825E',
-
-                    backgroundColor:
-                        'rgba(86, 130, 94, 0.08)',
-
+                    backgroundColor: 'rgba(86, 130, 94, 0.08)',
                     fill: true,
-
                     tension: 0.35,
-
                     pointRadius: 0
                 }]
             },
-
             options: {
-
                 responsive: true,
-
                 maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-
-                        display: true,
-
-                        position: 'top'
-                    }
-                },
-
+                plugins: { legend: { display: true, position: 'top' } },
                 scales: {
-
-                    y: {
-
-                        min: 0,
-
-                        grid: {
-                            display: false
-                        }
-                    },
-
-                    x: {
-
-                        grid: {
-                            display: false
-                        }
-                    }
+                    y: { min: 0, grid: { display: false } },
+                    x: { grid: { display: false } }
                 }
             }
         });
     }
-    /* ------------------------------------------------------
-   Donut — Répartition des applications par environnement
------------------------------------------------------- */
 
-var appEnvDonutCanvas =
-    document.getElementById('appEnvDonutChart');
+    var appEnvDonutCanvas = document.getElementById('appEnvDonutChart');
+    if (appEnvDonutCanvas && typeof Chart !== 'undefined') {
+        fetch('/dashboard/application-environment-chart')
+            .then(function (response) {
+                if (!response.ok) throw new Error('Erreur');
+                return response.json();
+            })
+            .then(function (result) {
+                var labels = Array.isArray(result.labels) ? result.labels : [];
+                var data = Array.isArray(result.data) ? result.data.map(Number) : [];
+                var legend = document.getElementById('appDonutLegend');
 
-if (appEnvDonutCanvas && typeof Chart !== 'undefined') {
-
-    fetch('/dashboard/application-environment-chart')
-        .then(function (response) {
-
-            if (!response.ok) {
-                throw new Error(
-                    'Erreur lors du chargement des environnements'
-                );
-            }
-
-            return response.json();
-        })
-
-        .then(function (result) {
-
-            var labels = Array.isArray(result.labels)
-                ? result.labels
-                : [];
-
-            var data = Array.isArray(result.data)
-                ? result.data.map(Number)
-                : [];
-
-            var legend =
-                document.getElementById('appDonutLegend');
-
-            if (
-                labels.length === 0 ||
-                data.length === 0
-            ) {
-
-                if (legend) {
-                    legend.innerHTML =
-                        '<p style="color: var(--text-muted);">' +
-                        'Aucune donnée disponible' +
-                        '</p>';
+                if (labels.length === 0 || data.length === 0) {
+                    if (legend) legend.innerHTML = '<p style="color: var(--text-muted);">Aucune donnée disponible</p>';
+                    return;
                 }
 
-                return;
-            }
-
-            new Chart(appEnvDonutCanvas, {
-
-                type: 'doughnut',
-
-                data: {
-                    labels: labels,
-
-                    datasets: [{
-                        data: data,
-
-                        backgroundColor: [
-                            '#56825E',
-                            '#1d4a40',
-                            '#8fae94',
-                            '#c9d8cb'
-                        ],
-
-                        borderWidth: 0,
-                        hoverOffset: 5
-                    }]
-                },
-
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-
-                    cutout: '68%',
-
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-
-                                    return ' ' +
-                                        context.label +
-                                        ' : ' +
-                                        context.parsed +
-                                        ' application(s)';
+                new Chart(appEnvDonutCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#56825E', '#1d4a40', '#8fae94', '#c9d8cb'],
+                            borderWidth: 0,
+                            hoverOffset: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return ' ' + context.label + ' : ' + context.parsed + ' application(s)';
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                });
+
+                if (!legend) return;
+                legend.innerHTML = '';
+                var colors = ['#56825E', '#1d4a40', '#8fae94', '#c9d8cb'];
+                labels.forEach(function (label, index) {
+                    var item = document.createElement('div');
+                    item.className = 'donut-legend-item';
+                    item.innerHTML =
+                        '<span class="donut-legend-dot" style="background-color:' + colors[index % colors.length] + '"></span>' +
+                        '<span class="donut-legend-label">' + label + '</span>' +
+                        '<span class="donut-legend-value">' + data[index] + '</span>';
+                    legend.appendChild(item);
+                });
+            })
+            .catch(function (error) {
+                console.error('Erreur donut applications :', error);
+                var legend = document.getElementById('appDonutLegend');
+                if (legend) legend.innerHTML = '<p style="color: var(--red);">Impossible de charger.</p>';
             });
+    }
 
-            /* -------------------------
-               Légende personnalisée
-            ------------------------- */
-
-            if (!legend) {
-                return;
-            }
-
-            legend.innerHTML = '';
-
-            labels.forEach(function (label, index) {
-
-                var item = document.createElement('div');
-
-                item.className = 'donut-legend-item';
-
-                var colors = [
-                    '#56825E',
-                    '#1d4a40',
-                    '#8fae94',
-                    '#c9d8cb'
-                ];
-
-                item.innerHTML =
-                    '<span class="donut-legend-dot" ' +
-                    'style="background-color:' +
-                    colors[index % colors.length] +
-                    '"></span>' +
-
-                    '<span class="donut-legend-label">' +
-                    label +
-                    '</span>' +
-
-                    '<span class="donut-legend-value">' +
-                    data[index] +
-                    '</span>';
-
-                legend.appendChild(item);
-            });
-        })
-
-        .catch(function (error) {
-
-            console.error(
-                'Erreur donut applications :',
-                error
-            );
-
-            var legend =
-                document.getElementById('appDonutLegend');
-
-            if (legend) {
-                legend.innerHTML =
-                    '<p style="color: var(--red);">' +
-                    'Impossible de charger les données.' +
-                    '</p>';
-            }
-        });
-}
-
-
-/* ------------------------------------------------------
-   Couleurs des environnements
------------------------------------------------------- */
-
-function getAppEnvironmentColor(index) {
-
-    var colors = [
-        '#56825E',
-        '#1d4a40',
-        '#8fae94',
-        '#c9d8cb'
-    ];
-
-    return colors[index % colors.length];
-}
-
-
-    /* ==========================================================
-       DÉCONNEXION
-       ========================================================== */
-
-    const logoutLink =
-        document.getElementById('logout-link');
-
-    const logoutForm =
-        document.getElementById('logout-form');
-
+    const logoutLink = document.getElementById('logout-link');
+    const logoutForm = document.getElementById('logout-form');
     if (logoutLink && logoutForm) {
-
         logoutLink.addEventListener('click', function (e) {
-
             e.preventDefault();
-
             logoutForm.submit();
         });
     }
 
-
-    /* ==========================================================
-       RECHERCHE EN TEMPS RÉEL — UTILISATEURS
-       ========================================================== */
-
-    const searchInput =
-        document.querySelector(
-            'input[name="search"]'
-        );
-
+    const searchInput = document.querySelector('input[name="search"]');
     if (searchInput) {
-
         let timer;
-
-        searchInput.addEventListener(
-            'input',
-            function () {
-
-                clearTimeout(timer);
-
-                timer = setTimeout(function () {
-
-                    const form =
-                        searchInput.closest('form');
-
-                    if (form) {
-                        form.submit();
-                    }
-
-                }, 500);
-            }
-        );
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                const form = searchInput.closest('form');
+                if (form) form.submit();
+            }, 500);
+        });
     }
 
-
-    /* ==========================================================
-       MODALS — OUVERTURE / FERMETURE
-       ========================================================== */
-
-    document
-        .querySelectorAll('[data-modal-open]')
-        .forEach(function (button) {
-
-            button.addEventListener('click', function () {
-
-                const modalId =
-                    this.dataset.modalOpen;
-
-                const modal =
-                    document.getElementById(modalId);
-
-                if (modal) {
-
-                    modal.classList.add('open');
-
-                    document.body.classList.add(
-                        'modal-open'
-                    );
-                }
-            });
+    document.querySelectorAll('[data-modal-open]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const modalId = this.dataset.modalOpen;
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('open');
+                document.body.classList.add('modal-open');
+            }
         });
+    });
 
-
-    document
-        .querySelectorAll('[data-modal-close]')
-        .forEach(function (button) {
-
-            button.addEventListener('click', function () {
-
-                const modalId =
-                    this.dataset.modalClose;
-
-                const modal =
-                    document.getElementById(modalId);
-
-                if (modal) {
-
-                    modal.classList.remove('open');
-
-                    document.body.classList.remove(
-                        'modal-open'
-                    );
-                }
-            });
+    document.querySelectorAll('[data-modal-close]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const modalId = this.dataset.modalClose;
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('open');
+                document.body.classList.remove('modal-open');
+            }
         });
+    });
 
+    const hostingSelect = document.getElementById('is_hosted');
+    const serverField = document.getElementById('server-field');
+    const portField = document.getElementById('port-field');
+    const deploymentPathField = document.getElementById('deployment-path-field');
+    const serverSelect = document.getElementById('server_id');
+    const portInput = document.getElementById('port');
+    const deploymentPathInput = document.getElementById('deployment_path');
 
-    /* ==========================================================
-       APPLICATIONS
-       Gestion hébergement
-       ========================================================== */
-
-    const hostingSelect =
-        document.getElementById('is_hosted');
-
-    const serverField =
-        document.getElementById('server-field');
-
-    const portField =
-        document.getElementById('port-field');
-
-    const deploymentPathField =
-        document.getElementById(
-            'deployment-path-field'
-        );
-
-    const serverSelect =
-        document.getElementById('server_id');
-
-    const portInput =
-        document.getElementById('port');
-
-    const deploymentPathInput =
-        document.getElementById('deployment_path');
-
-
-    if (
-        hostingSelect &&
-        serverField &&
-        portField &&
-        deploymentPathField &&
-        serverSelect
-    ) {
-
+    if (hostingSelect && serverField && portField && deploymentPathField && serverSelect) {
         function updateHostingFields() {
-
-            const isHosted =
-                hostingSelect.value === '1';
-
-
+            const isHosted = hostingSelect.value === '1';
             if (isHosted) {
-
-                /* APPLICATION HÉBERGÉE */
-
                 serverField.style.display = 'block';
-
                 portField.style.display = 'block';
-
-                deploymentPathField.style.display =
-                    'block';
-
-                // Le serveur devient obligatoire
+                deploymentPathField.style.display = 'block';
                 serverSelect.required = true;
-
-
             } else {
-
-                /* APPLICATION NON HÉBERGÉE */
-
                 serverField.style.display = 'none';
-
                 portField.style.display = 'none';
-
-                deploymentPathField.style.display =
-                    'none';
-
-                // Le serveur n'est plus obligatoire
+                deploymentPathField.style.display = 'none';
                 serverSelect.required = false;
-
-                // Nettoyage des valeurs
                 serverSelect.value = '';
-
-                if (portInput) {
-                    portInput.value = '';
-                }
-
-                if (deploymentPathInput) {
-                    deploymentPathInput.value = '';
-                }
+                if (portInput) portInput.value = '';
+                if (deploymentPathInput) deploymentPathInput.value = '';
             }
         }
-
-
-        hostingSelect.addEventListener(
-            'change',
-            updateHostingFields
-        );
-
-
-        // État initial
+        hostingSelect.addEventListener('change', updateHostingFields);
         updateHostingFields();
     }
 
-
-    /* ==========================================================
-       MENU UTILISATEUR TOPBAR
-       ========================================================== */
-
-    const userMenuToggle =
-        document.getElementById('user-menu-toggle');
-
-    const userDropdown =
-        document.getElementById('user-dropdown');
-
+    const userMenuToggle = document.getElementById('user-menu-toggle');
+    const userDropdown = document.getElementById('user-dropdown');
     if (userMenuToggle && userDropdown) {
-
-        userMenuToggle.addEventListener(
-            'click',
-            function (event) {
-
-                event.stopPropagation();
-
-                userDropdown.classList.toggle('open');
+        userMenuToggle.addEventListener('click', function (event) {
+            event.stopPropagation();
+            userDropdown.classList.toggle('open');
+        });
+        document.addEventListener('click', function (event) {
+            if (!userDropdown.contains(event.target) && !userMenuToggle.contains(event.target)) {
+                userDropdown.classList.remove('open');
             }
-        );
-
-
-        document.addEventListener(
-            'click',
-            function (event) {
-
-                if (
-                    !userDropdown.contains(event.target) &&
-                    !userMenuToggle.contains(event.target)
-                ) {
-
-                    userDropdown.classList.remove('open');
-                }
-            }
-        );
+        });
     }
 
-    /* ==========================================================
-   CALENDRIER / PÉRIODE DU DASHBOARD
-   ========================================================== */
-
     const dateRangeToggle = document.getElementById('date-range-toggle');
-    const dateRangeMenu   = document.getElementById('date-range-menu');
-
+    const dateRangeMenu = document.getElementById('date-range-menu');
     if (dateRangeToggle && dateRangeMenu) {
-
-        // Ouvrir / fermer
         dateRangeToggle.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
             dateRangeMenu.classList.toggle('open');
         });
-
-        // Cliquer sur une option → envoyer au backend
         dateRangeMenu.querySelectorAll('[data-range]').forEach(function (button) {
-
             button.addEventListener('click', function (event) {
-
                 event.preventDefault();
                 event.stopPropagation();
-
                 const range = this.dataset.range;
-
-                // Période personnalisée → ouvrir un datepicker (à toi d'implémenter)
                 if (range === 'custom') {
                     dateRangeMenu.classList.remove('open');
-                    // TODO: ouvrir un datepicker ici
                     return;
                 }
-
-                // Construire l'URL avec le paramètre range
                 const url = new URL(window.location.href);
                 url.searchParams.set('range', range);
                 window.location.href = url.toString();
             });
         });
-
-        // Fermer en cliquant ailleurs
         document.addEventListener('click', function (event) {
-            if (
-                !dateRangeMenu.contains(event.target) &&
-                !dateRangeToggle.contains(event.target)
-            ) {
+            if (!dateRangeMenu.contains(event.target) && !dateRangeToggle.contains(event.target)) {
                 dateRangeMenu.classList.remove('open');
             }
         });
     }
 
-    
-
-
-    /* ==========================================================
-       MENU LANGUE
-       ========================================================== */
-
-    const language =
-        document.querySelector('.language');
-
+    const language = document.querySelector('.language');
     if (language) {
-
-        const languageButton =
-            language.querySelector('.lang-active');
-
-        const languageOptions =
-            language.querySelectorAll('[data-lang]');
-
-
+        const languageButton = language.querySelector('.lang-active');
+        const languageOptions = language.querySelectorAll('[data-lang]');
         if (languageButton) {
-
-            // Ouvrir / fermer le menu
-            languageButton.addEventListener(
-                'click',
-                function (event) {
-
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    language.classList.toggle('open');
-                }
-            );
+            languageButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                language.classList.toggle('open');
+            });
         }
-
-
-        // Choisir une langue
-        languageOptions.forEach(
-            function (button) {
-
-                button.addEventListener(
-                    'click',
-                    function (event) {
-
-                        event.preventDefault();
-                        event.stopPropagation();
-
-                        const lang =
-                            this.dataset.lang;
-
-                        console.log(
-                            'Langue sélectionnée :',
-                            lang
-                        );
-
-                        language.classList.remove(
-                            'open'
-                        );
-                    }
-                );
-            }
-        );
-
-
-        // Fermer en cliquant ailleurs
-        document.addEventListener(
-            'click',
-            function () {
-
+        languageOptions.forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const lang = this.dataset.lang;
                 language.classList.remove('open');
-            }
-        );
+            });
+        });
+        document.addEventListener('click', function () {
+            language.classList.remove('open');
+        });
     }
-
-
-    /* ==========================================================
-       CONNECTEURS
-       ========================================================== */
-
-
-    /* ----------------------------------------------------------
-       Recherche / filtres
-       ---------------------------------------------------------- */
 
     let connectorSearchTimeout;
-
-    const connectorSearch =
-        document.getElementById('connector-search');
-
-    const filterType =
-        document.getElementById('filter-type');
-
-    const filterStatus =
-        document.getElementById('filter-status');
-
+    const connectorSearch = document.getElementById('connector-search');
+    const filterType = document.getElementById('filter-type');
+    const filterStatus = document.getElementById('filter-status');
 
     function applyConnectorFilters() {
-
-        const params =
-            new URLSearchParams();
-
-        const search =
-            connectorSearch
-                ? connectorSearch.value.trim()
-                : '';
-
-        const type =
-            filterType
-                ? filterType.value
-                : '';
-
-        const status =
-            filterStatus
-                ? filterStatus.value
-                : '';
-
-
-        if (search) {
-            params.set('search', search);
-        }
-
-        if (type) {
-            params.set('type', type);
-        }
-
-        if (status) {
-            params.set('status', status);
-        }
-
-
-        const qs =
-            params.toString();
-
-        window.location =
-            '/connecteurs' +
-            (qs ? '?' + qs : '');
+        const params = new URLSearchParams();
+        const search = connectorSearch ? connectorSearch.value.trim() : '';
+        const type = filterType ? filterType.value : '';
+        const status = filterStatus ? filterStatus.value : '';
+        if (search) params.set('search', search);
+        if (type) params.set('type', type);
+        if (status) params.set('status', status);
+        const qs = params.toString();
+        window.location = '/connecteurs' + (qs ? '?' + qs : '');
     }
-
 
     if (connectorSearch) {
-
-        connectorSearch.addEventListener(
-            'input',
-            function () {
-
-                clearTimeout(
-                    connectorSearchTimeout
-                );
-
-                connectorSearchTimeout =
-                    setTimeout(
-                        applyConnectorFilters,
-                        400
-                    );
-            }
-        );
+        connectorSearch.addEventListener('input', function () {
+            clearTimeout(connectorSearchTimeout);
+            connectorSearchTimeout = setTimeout(applyConnectorFilters, 400);
+        });
     }
-
-
-    if (filterType) {
-
-        filterType.addEventListener(
-            'change',
-            applyConnectorFilters
-        );
-    }
-
-
-    if (filterStatus) {
-
-        filterStatus.addEventListener(
-            'change',
-            applyConnectorFilters
-        );
-    }
-
-
-    /* ----------------------------------------------------------
-       MODALE CONNECTEUR
-       ---------------------------------------------------------- */
+    if (filterType) filterType.addEventListener('change', applyConnectorFilters);
+    if (filterStatus) filterStatus.addEventListener('change', applyConnectorFilters);
 
     function openCreateModal() {
-
-        const modal =
-            document.getElementById(
-                'connector-modal'
-            );
-
-        const form =
-            document.getElementById(
-                'connector-form'
-            );
-
-        const method =
-            document.getElementById('_method');
-
-        const connectorId =
-            document.getElementById(
-                'modal-connector-id'
-            );
-
-        const testArea =
-            document.getElementById(
-                'modal-test-area'
-            );
-
-        const testResult =
-            document.getElementById(
-                'modal-test-result'
-            );
-
-
+        const modal = document.getElementById('connector-modal');
+        const form = document.getElementById('connector-form');
+        const method = document.getElementById('_method');
+        const connectorId = document.getElementById('modal-connector-id');
+        const testArea = document.getElementById('modal-test-area');
+        const testResult = document.getElementById('modal-test-result');
         if (!modal || !form) return;
-
-
-        const title =
-            modal.querySelector('h3');
-
-        if (title) {
-            title.textContent =
-                'Ajouter un connecteur';
-        }
-
-
+        const title = modal.querySelector('h3');
+        if (title) title.textContent = 'Ajouter un connecteur';
         form.action = '/connecteurs';
-
-        if (method) {
-            method.value = 'POST';
-        }
-
-        if (connectorId) {
-            connectorId.value = '';
-        }
-
-
+        if (method) method.value = 'POST';
+        if (connectorId) connectorId.value = '';
         form.reset();
-
-
-        if (testArea) {
-            testArea.style.display = 'none';
-        }
-
-        if (testResult) {
-            testResult.textContent = '';
-        }
-
-
+        if (testArea) testArea.style.display = 'none';
+        if (testResult) testResult.textContent = '';
         onConnectorTypeChange();
     }
 
-
-    /* ----------------------------------------------------------
-       OUVERTURE CRÉATION CONNECTEUR
-       ---------------------------------------------------------- */
-
-    document
-        .querySelectorAll(
-            '[data-modal-open="connector-modal"]'
-        )
-        .forEach(function (btn) {
-
-            btn.addEventListener(
-                'click',
-                function () {
-
-                    openCreateModal();
-                }
-            );
-        });
-
-
-    /* ----------------------------------------------------------
-       MODIFICATION CONNECTEUR
-       ---------------------------------------------------------- */
+    document.querySelectorAll('[data-modal-open="connector-modal"]').forEach(function (btn) {
+        btn.addEventListener('click', function () { openCreateModal(); });
+    });
 
     function openEditModal(connectorId) {
-
-        fetch(
-            '/connecteurs/' +
-            connectorId +
-            '/edit-data'
-        )
-
+        fetch('/connecteurs/' + connectorId + '/edit-data')
             .then(function (r) {
-
-                if (!r.ok) {
-                    throw new Error(
-                        'Non autorisé'
-                    );
-                }
-
+                if (!r.ok) throw new Error('Non autorisé');
                 return r.json();
             })
-
             .then(function (data) {
-
-                const modal =
-                    document.getElementById(
-                        'connector-modal'
-                    );
-
-                const form =
-                    document.getElementById(
-                        'connector-form'
-                    );
-
-
+                const modal = document.getElementById('connector-modal');
+                const form = document.getElementById('connector-form');
                 if (!modal || !form) return;
-
-
-                const title =
-                    modal.querySelector('h3');
-
-                if (title) {
-
-                    title.textContent =
-                        'Modifier le connecteur';
-                }
-
-
-                form.action =
-                    '/connecteurs/' +
-                    connectorId;
-
-
-                const method =
-                    document.getElementById(
-                        '_method'
-                    );
-
-                if (method) {
-                    method.value = 'PUT';
-                }
-
-
-                const modalConnectorId =
-                    document.getElementById(
-                        'modal-connector-id'
-                    );
-
-                if (modalConnectorId) {
-                    modalConnectorId.value =
-                        connectorId;
-                }
-
-
-                const type =
-                    document.getElementById('type');
-
-                const name =
-                    document.getElementById('name');
-
-                const baseUrl =
-                    document.getElementById(
-                        'base_url'
-                    );
-
-                const apiPort =
-                    document.getElementById(
-                        'api_port'
-                    );
-
-                const authUsername =
-                    document.getElementById(
-                        'auth_username'
-                    );
-
-                const authPassword =
-                    document.getElementById(
-                        'auth_password'
-                    );
-
-                const extraConfig =
-                    document.getElementById(
-                        'extra_config_raw'
-                    );
-
-
-                if (type) {
-                    type.value = data.type;
-                }
-
-                if (name) {
-                    name.value = data.name;
-                }
-
-                if (baseUrl) {
-                    baseUrl.value = data.base_url;
-                }
-
-                if (apiPort) {
-                    apiPort.value =
-                        data.api_port || '';
-                }
-
-                if (authUsername) {
-                    authUsername.value =
-                        data.auth_username || '';
-                }
-
-                if (authPassword) {
-                    authPassword.value = '';
-                }
-
-                if (extraConfig) {
-
-                    extraConfig.value =
-                        data.extra_config
-                            ? JSON.stringify(
-                                data.extra_config,
-                                null,
-                                2
-                            )
-                            : '';
-                }
-
-
+                const title = modal.querySelector('h3');
+                if (title) title.textContent = 'Modifier le connecteur';
+                form.action = '/connecteurs/' + connectorId;
+                const method = document.getElementById('_method');
+                if (method) method.value = 'PUT';
+                const modalConnectorId = document.getElementById('modal-connector-id');
+                if (modalConnectorId) modalConnectorId.value = connectorId;
+                
+                document.getElementById('type').value = data.type;
+                document.getElementById('name').value = data.name;
+                document.getElementById('base_url').value = data.base_url;
+                document.getElementById('api_port').value = data.api_port || '';
+                document.getElementById('auth_username').value = data.auth_username || '';
+                document.getElementById('auth_password').value = '';
+                document.getElementById('extra_config_raw').value = data.extra_config ? JSON.stringify(data.extra_config, null, 2) : '';
+                
                 onConnectorTypeChange();
             })
-
-            .catch(function (err) {
-
-                alert(
-                    'Erreur : ' +
-                    err.message
-                );
-            });
+            .catch(function (err) { alert('Erreur : ' + err.message); });
     }
 
-
-    /* ----------------------------------------------------------
-       CHAMPS CONDITIONNELS SELON LE TYPE
-       ---------------------------------------------------------- */
-
     function onConnectorTypeChange() {
-
-        const typeElement =
-            document.getElementById('type');
-
-        const portGroup =
-            document.getElementById(
-                'port-group'
-            );
-
-        const testArea =
-            document.getElementById(
-                'modal-test-area'
-            );
-
-        const portInput =
-            document.getElementById(
-                'api_port'
-            );
-
-
-        if (
-            !typeElement ||
-            !portGroup ||
-            !testArea ||
-            !portInput
-        ) {
-            return;
-        }
-
-
-        const type =
-            typeElement.value;
-
-
+        const typeElement = document.getElementById('type');
+        const portGroup = document.getElementById('port-group');
+        const testArea = document.getElementById('modal-test-area');
+        const portInput = document.getElementById('api_port');
+        if (!typeElement || !portGroup || !testArea || !portInput) return;
+        const type = typeElement.value;
         if (type === 'wazuh') {
-
             portGroup.style.display = '';
-
             portInput.placeholder = '55000';
-
-            if (!portInput.value) {
-                portInput.value = '55000';
-            }
-
+            if (!portInput.value) portInput.value = '55000';
             testArea.style.display = '';
-
-
         } else if (type === 'prometheus') {
-
             portGroup.style.display = '';
-
             portInput.placeholder = '9090';
-
-            if (
-                !portInput.value ||
-                portInput.value === '55000'
-            ) {
-                portInput.value = '9090';
-            }
-
+            if (!portInput.value || portInput.value === '55000') portInput.value = '9090';
             testArea.style.display = '';
-
-
         } else {
-
             portGroup.style.display = 'none';
-
             testArea.style.display = 'none';
         }
     }
 
-
-    /* ----------------------------------------------------------
-       CHANGEMENT DU TYPE DE CONNECTEUR
-       ---------------------------------------------------------- */
-
-    const connectorType =
-        document.getElementById('type');
-
-    if (connectorType) {
-
-        connectorType.addEventListener(
-            'change',
-            onConnectorTypeChange
-        );
-    }
-
-
-    /* ----------------------------------------------------------
-       TEST DEPUIS LA MODALE
-       ---------------------------------------------------------- */
+    const connectorType = document.getElementById('type');
+    if (connectorType) connectorType.addEventListener('change', onConnectorTypeChange);
 
     async function testFromModal() {
-
-        const btn =
-            document.getElementById(
-                'modal-test-btn'
-            );
-
-        const result =
-            document.getElementById(
-                'modal-test-result'
-            );
-
-
+        const btn = document.getElementById('modal-test-btn');
+        const result = document.getElementById('modal-test-result');
         if (!btn || !result) return;
-
-
-        const originalHTML =
-            btn.innerHTML;
-
-
-        btn.innerHTML =
-            '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
-
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
         btn.disabled = true;
-
         result.textContent = '';
-
-
-        const rawConfig =
-            document.getElementById(
-                'extra_config_raw'
-            ).value.trim();
-
-
+        const rawConfig = document.getElementById('extra_config_raw').value.trim();
         let extraConfig = null;
-
-
         if (rawConfig) {
-
-            try {
-
-                extraConfig =
-                    JSON.parse(rawConfig);
-
-            } catch (e) {
-                extraConfig = null;
-            }
+            try { extraConfig = JSON.parse(rawConfig); } catch (e) { extraConfig = null; }
         }
-
-
         try {
-
-            const response =
-                await fetch(
-                    '/connecteurs/test-preview',
-                    {
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type':
-                                'application/json',
-
-                            'X-CSRF-TOKEN':
-                                document.querySelector(
-                                    'meta[name="csrf-token"]'
-                                ).content,
-
-                            'Accept':
-                                'application/json'
-                        },
-
-                        body:
-                            JSON.stringify({
-
-                                type:
-                                    document.getElementById(
-                                        'type'
-                                    ).value,
-
-                                name:
-                                    document.getElementById(
-                                        'name'
-                                    ).value,
-
-                                base_url:
-                                    document.getElementById(
-                                        'base_url'
-                                    ).value,
-
-                                api_port:
-                                    document.getElementById(
-                                        'api_port'
-                                    ).value ||
-                                    null,
-
-                                auth_username:
-                                    document.getElementById(
-                                        'auth_username'
-                                    ).value ||
-                                    null,
-
-                                auth_password:
-                                    document.getElementById(
-                                        'auth_password'
-                                    ).value ||
-                                    null,
-
-                                extra_config:
-                                    extraConfig
-                            })
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
+            const response = await fetch('/connecteurs/test-preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: document.getElementById('type').value,
+                    name: document.getElementById('name').value,
+                    base_url: document.getElementById('base_url').value,
+                    api_port: document.getElementById('api_port').value || null,
+                    auth_username: document.getElementById('auth_username').value || null,
+                    auth_password: document.getElementById('auth_password').value || null,
+                    extra_config: extraConfig
+                })
+            });
+            const data = await response.json();
             if (data.success) {
-
-                result.style.color =
-                    'var(--sage-green)';
-
-                result.textContent =
-                    '✓ ' +
-                    data.message +
-                    ' (' +
-                    data.response_time +
-                    ' ms)';
-
+                result.style.color = 'var(--sage-green)';
+                result.textContent = '✓ ' + data.message + ' (' + data.response_time + ' ms)';
             } else {
-
-                result.style.color =
-                    'var(--red)';
-
-                result.textContent =
-                    '✗ ' +
-                    data.message;
+                result.style.color = 'var(--red)';
+                result.textContent = '✗ ' + data.message;
             }
-
-
         } catch (error) {
-
-            result.style.color =
-                'var(--red)';
-
-            result.textContent =
-                'Erreur réseau : ' +
-                error.message;
-
-
+            result.style.color = 'var(--red)';
+            result.textContent = 'Erreur réseau : ' + error.message;
         } finally {
-
-            btn.innerHTML =
-                originalHTML;
-
+            btn.innerHTML = originalHTML;
             btn.disabled = false;
         }
     }
-
-
-    /* ----------------------------------------------------------
-       TEST DE CONNEXION — PAGE CONNECTEUR
-       ---------------------------------------------------------- */
 
     async function runTest(id, btn) {
-
         if (!btn) return;
-
-
-        const original =
-            btn.innerHTML;
-
-
-        btn.innerHTML =
-            '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
-
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
         btn.disabled = true;
-
-
-        const resultCard =
-            document.getElementById(
-                'test-result-card'
-            );
-
-
-        if (resultCard) {
-            resultCard.style.display = 'none';
-        }
-
-
+        const resultCard = document.getElementById('test-result-card');
+        if (resultCard) resultCard.style.display = 'none';
         try {
-
-            const r =
-                await fetch(
-                    '/connecteurs/' +
-                    id +
-                    '/test',
-                    {
-                        method: 'POST',
-
-                        headers: {
-
-                            'X-CSRF-TOKEN':
-                                document.querySelector(
-                                    'meta[name="csrf-token"]'
-                                ).content,
-
-                            'Accept':
-                                'application/json'
-                        }
-                    }
-                );
-
-
-            const data =
-                await r.json();
-
-
-            const content =
-                document.getElementById(
-                    'test-result-content'
-                );
-
-
+            const r = await fetch('/connecteurs/' + id + '/test', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await r.json();
+            const content = document.getElementById('test-result-content');
             if (!content) return;
-
-
             if (data.success) {
-
-                content.innerHTML =
-
-                    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
-
-                        '<span class="status-dot online" style="width:14px;height:14px;"></span>' +
-
-                        '<strong style="font-size:16px;color:var(--sage-green);">Connexion réussie</strong>' +
-
-                    '</div>' +
-
-                    '<div><strong>Temps de réponse</strong><p>' +
-
-                        data.response_time +
-
-                        ' ms</p></div>' +
-
-                    '<div><strong>Nouveau statut</strong><p>' +
-
-                        (
-                            data.status === 'connected'
-                                ? 'Connecté'
-                                : data.status
-                        ) +
-
-                        '</p></div>' +
-
-                    '<div><strong>Vérifié à</strong><p>' +
-
-                        (
-                            data.last_check_at ||
-                            '—'
-                        ) +
-
-                        '</p></div>' +
-
-                    (
-                        data.metadata
-
-                            ? '<div><strong>Détails</strong><pre style="background:var(--input-bg);padding:10px;border-radius:6px;font-size:13px;overflow-x:auto;">' +
-
-                                JSON.stringify(
-                                    data.metadata,
-                                    null,
-                                    2
-                                ) +
-
-                              '</pre></div>'
-
-                            : ''
-                    );
-
-
+                content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><span class="status-dot online" style="width:14px;height:14px;"></span><strong style="font-size:16px;color:var(--sage-green);">Connexion réussie</strong></div><div><strong>Temps de réponse</strong><p>' + data.response_time + ' ms</p></div><div><strong>Nouveau statut</strong><p>' + (data.status === 'connected' ? 'Connecté' : data.status) + '</p></div><div><strong>Vérifié à</strong><p>' + (data.last_check_at || '—') + '</p></div>' + (data.metadata ? '<div><strong>Détails</strong><pre style="background:var(--input-bg);padding:10px;border-radius:6px;font-size:13px;overflow-x:auto;">' + JSON.stringify(data.metadata, null, 2) + '</pre></div>' : '');
             } else {
-
-                content.innerHTML =
-
-                    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
-
-                        '<span class="status-dot offline" style="width:14px;height:14px;"></span>' +
-
-                        '<strong style="font-size:16px;color:var(--red);">Échec de connexion</strong>' +
-
-                    '</div>' +
-
-                    '<div><strong>Erreur</strong><p style="color:var(--red);">' +
-
-                        data.message +
-
-                        '</p></div>' +
-
-                    '<div><strong>Nouveau statut</strong><p>' +
-
-                        (
-                            data.status === 'error'
-                                ? 'En erreur'
-                                : data.status
-                        ) +
-
-                        '</p></div>';
+                content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><span class="status-dot offline" style="width:14px;height:14px;"></span><strong style="font-size:16px;color:var(--red);">Échec de connexion</strong></div><div><strong>Erreur</strong><p style="color:var(--red);">' + data.message + '</p></div><div><strong>Nouveau statut</strong><p>' + (data.status === 'error' ? 'En erreur' : data.status) + '</p></div>';
             }
-
-
-            if (resultCard) {
-                resultCard.style.display = '';
-            }
-
-
+            if (resultCard) resultCard.style.display = '';
         } catch (e) {
-
-            const content =
-                document.getElementById(
-                    'test-result-content'
-                );
-
-
-            if (content) {
-
-                content.innerHTML =
-
-                    '<div style="display:flex;align-items:center;gap:12px;">' +
-
-                        '<span class="status-dot offline" style="width:14px;height:14px;"></span>' +
-
-                        '<strong style="color:var(--red);">Erreur réseau</strong>' +
-
-                    '</div>' +
-
-                    '<p style="color:var(--text-muted);margin-top:8px;">Impossible de contacter le serveur.</p>';
-            }
-
-
-            if (resultCard) {
-                resultCard.style.display = '';
-            }
-
-
+            const content = document.getElementById('test-result-content');
+            if (content) content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><span class="status-dot offline" style="width:14px;height:14px;"></span><strong style="color:var(--red);">Erreur réseau</strong></div><p style="color:var(--text-muted);margin-top:8px;">Impossible de contacter le serveur.</p>';
+            if (resultCard) resultCard.style.display = '';
         } finally {
-
-            btn.innerHTML =
-                original;
-
+            btn.innerHTML = original;
             btn.disabled = false;
         }
     }
 
-
-    /* ----------------------------------------------------------
-       AFFICHER / MASQUER MOT DE PASSE
-       ---------------------------------------------------------- */
-
-    function togglePasswordVisibility(
-        inputId,
-        btn
-    ) {
-
-        const input =
-            document.getElementById(inputId);
-
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
         if (!input || !btn) return;
-
-
-        const icon =
-            btn.querySelector('i');
-
+        const icon = btn.querySelector('i');
         if (!icon) return;
-
-
         if (input.type === 'password') {
-
             input.type = 'text';
-
-            icon.className =
-                'fa-solid fa-eye-slash';
-
+            icon.className = 'fa-solid fa-eye-slash';
         } else {
-
             input.type = 'password';
-
-            icon.className =
-                'fa-solid fa-eye';
+            icon.className = 'fa-solid fa-eye';
         }
     }
 
-
-    /* ----------------------------------------------------------
-       FORMULAIRE CONNECTEUR
-       Parser extra_config avant submit
-       ---------------------------------------------------------- */
-
-    const connectorForm =
-        document.getElementById(
-            'connector-form'
-        );
-
-
+    const connectorForm = document.getElementById('connector-form');
     if (connectorForm) {
-
-        connectorForm.addEventListener(
-            'submit',
-            function (e) {
-
-                const rawField =
-                    document.getElementById(
-                        'extra_config_raw'
-                    );
-
-                if (!rawField) return;
-
-
-                const raw =
-                    rawField.value.trim();
-
-
-                const old =
-                    this.querySelector(
-                        'input[name="extra_config"]'
-                    );
-
-
-                if (old) {
-                    old.remove();
-                }
-
-
-                if (raw) {
-
-                    try {
-
-                        const hidden =
-                            document.createElement(
-                                'input'
-                            );
-
-                        hidden.type = 'hidden';
-
-                        hidden.name =
-                            'extra_config';
-
-                        hidden.value =
-                            JSON.stringify(
-                                JSON.parse(raw)
-                            );
-
-                        this.appendChild(
-                            hidden
-                        );
-
-
-                    } catch (err) {
-
-                        e.preventDefault();
-
-                        alert(
-                            'Le champ "Configuration avancée" doit contenir du JSON valide.'
-                        );
-                    }
+        connectorForm.addEventListener('submit', function (e) {
+            const rawField = document.getElementById('extra_config_raw');
+            if (!rawField) return;
+            const raw = rawField.value.trim();
+            const old = this.querySelector('input[name="extra_config"]');
+            if (old) old.remove();
+            if (raw) {
+                try {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'extra_config';
+                    hidden.value = JSON.stringify(JSON.parse(raw));
+                    this.appendChild(hidden);
+                } catch (err) {
+                    e.preventDefault();
+                    alert('Le champ "Configuration avancée" doit contenir du JSON valide.');
                 }
             }
-        );
+        });
     }
 
-
-    /* ==========================================================
-       EXPOSITION DES FONCTIONS POUR LES BOUTONS BLADE
-       ========================================================== */
-
-    /*
-     * Ces fonctions sont utilisées si tes boutons Blade
-     * contiennent par exemple :
-     *
-     * onclick="openEditModal(id)"
-     * onclick="testFromModal()"
-     * onclick="runTest(id, this)"
-     * onclick="togglePasswordVisibility(...)"
-     */
-
-    window.openCreateModal =
-        openCreateModal;
-
-    window.openEditModal =
-        openEditModal;
-
-    window.onConnectorTypeChange =
-        onConnectorTypeChange;
-
-    window.testFromModal =
-        testFromModal;
-
-    window.runTest =
-        runTest;
-
-    window.togglePasswordVisibility =
-        togglePasswordVisibility;
-
+    window.openCreateModal = openCreateModal;
+    window.openEditModal = openEditModal;
+    window.onConnectorTypeChange = onConnectorTypeChange;
+    window.testFromModal = testFromModal;
+    window.runTest = runTest;
+    window.togglePasswordVisibility = togglePasswordVisibility;
 
     const successMessage = document.getElementById('success-message');
-
     if (successMessage) {
-
         setTimeout(function () {
-
             successMessage.style.transition = 'opacity 0.5s ease';
             successMessage.style.opacity = '0';
-
-            setTimeout(function () {
-                successMessage.remove();
-            }, 500);
-
-        }, 3000);
+            setTimeout(function () { successMessage.remove(); }, 500);
+        }, 10000);
     }
-    /* ==========================================================
-   SIDEBAR MOBILE
-   ========================================================== */
 
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-
     if (sidebarToggle && sidebar) {
-
         sidebarToggle.addEventListener('click', function () {
             sidebar.classList.toggle('open');
             if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
         });
-
         if (sidebarOverlay) {
             sidebarOverlay.addEventListener('click', function () {
                 sidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
             });
         }
-
-        // Fermer la sidebar quand on clique sur un lien (mobile)
         sidebar.querySelectorAll('.nav-item').forEach(function (link) {
             link.addEventListener('click', function () {
                 if (window.innerWidth < 1024) {
@@ -2308,9 +791,6 @@ function getAppEnvironmentColor(index) {
             });
         });
     }
-        /* ==========================================================
-       PAGE API & WEBHOOKS
-       ========================================================== */
 
     function toast(message, type) {
         var container = document.getElementById('toastContainer');
@@ -2325,7 +805,6 @@ function getAppEnvironmentColor(index) {
         }, 3500);
     }
 
-    // data-open-modal (vue Blade)
     document.querySelectorAll('[data-open-modal]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var id = this.dataset.openModal;
@@ -2334,28 +813,22 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // Fermer en cliquant sur l'overlay
     document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
         overlay.addEventListener('click', function (e) {
             if (e.target === overlay) overlay.classList.remove('open');
         });
     });
 
-    // Fermer avec Escape
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay.open').forEach(function (m) {
-                m.classList.remove('open');
-            });
+            document.querySelectorAll('.modal-overlay.open').forEach(function (m) { m.classList.remove('open'); });
         }
     });
 
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(function () {
             toast('Copié dans le presse-papiers.', 'success');
-        }).catch(function () {
-            toast('Impossible de copier.', 'error');
-        });
+        }).catch(function () { toast('Impossible de copier.', 'error'); });
     }
 
     var copyCurlBtn = document.getElementById('copyCurl');
@@ -2373,7 +846,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Filtre texte ──
     document.querySelectorAll('[data-filter-table]').forEach(function (input) {
         input.addEventListener('input', function () {
             var tableId = this.dataset.filterTable;
@@ -2386,7 +858,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Filtre méthode ──
     document.querySelectorAll('[data-filter-method]').forEach(function (select) {
         select.addEventListener('change', function () {
             var table = document.getElementById(this.dataset.filterMethod);
@@ -2398,7 +869,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Filtre statut ──
     document.querySelectorAll('[data-filter-status]').forEach(function (select) {
         select.addEventListener('change', function () {
             var table = document.getElementById(this.dataset.filterStatus);
@@ -2410,7 +880,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Filtre événement ──
     document.querySelectorAll('[data-filter-event]').forEach(function (select) {
         select.addEventListener('change', function () {
             var table = document.getElementById(this.dataset.filterEvent);
@@ -2424,10 +893,8 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-       // ── Charger événements dans modal webhook ──
     var eventContainer = document.getElementById('event-checks-container');
     if (eventContainer) {
-        // On ajoute ?direction=inbound à l'URL pour ne récupérer QUE les événements entrants
         fetch('/webhooks/event-types?direction=inbound')
             .then(function (r) { return r.json(); })
             .then(function (response) {
@@ -2450,9 +917,7 @@ function getAppEnvironmentColor(index) {
                 eventContainer.innerHTML = '<p class="text-muted">Impossible de charger les événements.</p>';
             });
     }
-    
-    
-    // ── En-têtes dynamiques endpoint ──
+
     var headerIndex = 1;
     var addHeaderBtn = document.getElementById('add-header-btn');
     var headerRows = document.getElementById('header-rows');
@@ -2474,13 +939,11 @@ function getAppEnvironmentColor(index) {
         if (btn) btn.closest('.header-row').remove();
     });
 
-    // ── CSRF ──
     function getCsrf() {
         var meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
     }
 
-    // ── Clé API — Générer ──
     var apiKeyForm = document.getElementById('api-key-form');
     if (apiKeyForm) {
         apiKeyForm.addEventListener('submit', function (e) {
@@ -2508,7 +971,6 @@ function getAppEnvironmentColor(index) {
         });
     }
 
-    // ── Clé API — Toggle ──
     document.querySelectorAll('[data-toggle-key]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var keyId = this.dataset.toggleKey;
@@ -2525,7 +987,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Clé API — Régénérer ──
     document.querySelectorAll('[data-regen-key]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             if (!confirm('Régénérer cette clé ? L\'ancienne sera immédiatement invalide.')) return;
@@ -2547,7 +1008,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Clé API — Révoquer ──
     document.querySelectorAll('[data-revoke-key]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             if (!confirm('Révoquer définitivement cette clé ?')) return;
@@ -2564,7 +1024,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Endpoint — Charger cURL ──
     document.querySelectorAll('[data-load-curl]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var epId = this.dataset.loadCurl;
@@ -2580,7 +1039,7 @@ function getAppEnvironmentColor(index) {
             .catch(function () { curlBlock.innerHTML = '<code><span class="text-muted">Impossible de charger.</span></code>'; });
         });
     });
-    // ── Endpoint — Tester ──
+
     document.querySelectorAll('[data-test-endpoint]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var epId = this.dataset.testEndpoint;
@@ -2604,7 +1063,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Endpoint — Modifier ──
     document.querySelectorAll('[data-edit-endpoint]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var epId = this.dataset.editEndpoint;
@@ -2631,7 +1089,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Endpoint — Supprimer ──
     document.querySelectorAll('[data-delete-endpoint]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var epId = this.dataset.deleteEndpoint;
@@ -2643,7 +1100,6 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Webhook — Supprimer ──
     document.querySelectorAll('[data-delete-webhook]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var whId = this.dataset.deleteWebhook;
@@ -2655,7 +1111,61 @@ function getAppEnvironmentColor(index) {
         });
     });
 
-    // ── Endpoint form — Soumission ──
+    // ── Webhook — Ouvrir Modale Création ──
+    document.querySelectorAll('[data-open-modal="webhook-modal"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var modal = document.getElementById('webhook-modal');
+            var form = document.getElementById('webhook-form');
+            if (modal && form) {
+                document.querySelector('#webhook-modal h3').textContent = 'Ajouter un Webhook';
+                form.reset();
+                var hiddenId = document.getElementById('wh-id');
+                if (hiddenId) hiddenId.value = '';
+                document.querySelectorAll('input[name="event_types[]"]').forEach(function(cb) { cb.checked = false; });
+                modal.classList.add('open');
+            }
+        });
+    });
+
+    // ── Webhook — Modifier ──
+    document.querySelectorAll('[data-edit-webhook]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var whId = this.dataset.editWebhook;
+            var modal = document.getElementById('webhook-modal');
+            var form = document.getElementById('webhook-form');
+            if (!modal || !form) return;
+
+            document.querySelector('#webhook-modal h3').textContent = 'Modifier le webhook';
+
+            fetch('/webhooks/' + whId + '/edit-data')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    form.querySelector('[name="name"]').value = data.name;
+                    form.querySelector('[name="application_id"]').value = data.application_id;
+                    form.querySelector('[name="auth_method"]').value = data.auth_method;
+                    form.querySelector('[name="min_severity_level"]').value = data.min_severity_level;
+                    form.querySelector('[name="api_key_id"]').value = data.api_key_id || '';
+
+                    document.querySelectorAll('input[name="event_types[]"]').forEach(function(cb) {
+                        cb.checked = data.event_types.includes(parseInt(cb.value));
+                    });
+
+                    var hiddenId = document.getElementById('wh-id');
+                    if (!hiddenId) {
+                        hiddenId = document.createElement('input');
+                        hiddenId.type = 'hidden';
+                        hiddenId.id = 'wh-id';
+                        hiddenId.name = 'id';
+                        form.appendChild(hiddenId);
+                    }
+                    hiddenId.value = whId;
+
+                    modal.classList.add('open');
+                })
+                .catch(function() { toast('Impossible de charger le webhook.', 'error'); });
+        });
+    });
+
     var endpointForm = document.getElementById('endpoint-form');
     if (endpointForm) {
         endpointForm.addEventListener('submit', function (e) {
@@ -2699,7 +1209,6 @@ function getAppEnvironmentColor(index) {
         });
     }
 
-        // ── Webhook form — Soumission ──
     var webhookForm = document.getElementById('webhook-form');
     if (webhookForm) {
         webhookForm.addEventListener('submit', function (e) {
@@ -2707,22 +1216,24 @@ function getAppEnvironmentColor(index) {
             var fd = new FormData(this);
             var eventTypes = fd.getAll('event_types[]');
             
+            var whId = document.getElementById('wh-id') ? document.getElementById('wh-id').value : '';
+            var isEdit = whId && whId !== '';
+            var url = isEdit ? '/webhooks/' + whId : '/webhooks';
+            var method = isEdit ? 'PUT' : 'POST';
+
             var payload = {
                 name: fd.get('name'),
-                direction: fd.get('direction'), // Récupère 'inbound' du champ caché
-                scope: fd.get('scope'),         // Récupère 'application' du champ caché
-                application_id: fd.get('application_id'), // <-- AJOUTÉ
+                direction: fd.get('direction'), 
+                scope: fd.get('scope'),         
+                application_id: fd.get('application_id'),
                 auth_method: fd.get('auth_method'),
                 api_key_id: fd.get('api_key_id') || null,
                 min_severity_level: fd.get('min_severity_level'),
                 event_types: eventTypes
             };
             
-            // Pour un webhook entrant, il n'y a pas d'URL cible à fournir à Laravel
-            // (L'URL cible, c'est Laravel lui-même qui la générera pour que l'app externe lui envoie les données)
-            
-            fetch('/webhooks', {
-                method: 'POST',
+            fetch(url, {
+                method: method,
                 headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
@@ -2741,13 +1252,10 @@ function getAppEnvironmentColor(index) {
             .catch(function () { toast('Erreur.', 'error'); });
         });
     }
-        /* ==========================================================
-       PAGE SETTINGS (Onglets et sauvegarde)
-       ========================================================== */
+
     const form = document.getElementById('settingsForm');
     const saveBtn = document.getElementById('saveSettingsBtn');
     
-    // SÉCURITÉ : Si on n'est pas sur la page des settings, on arrête tout
     if (form && saveBtn) {
         const noChangesText = document.getElementById('noChangesText');
         const tabBtns = document.querySelectorAll('.tab-btn');
@@ -2756,7 +1264,6 @@ function getAppEnvironmentColor(index) {
         
         let hasChanged = false;
 
-        // Gestion des onglets
         if (tabBtns.length > 0) {
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2771,68 +1278,56 @@ function getAppEnvironmentColor(index) {
             });
         }
 
-        // Détection de modification pour activer le bouton Enregistrer
         form.addEventListener('input', function() {
             if (!hasChanged) {
                 hasChanged = true;
                 saveBtn.disabled = false;
-                saveBtn.classList.add('btn-active-state'); // Classe CSS pour changer le style
+                saveBtn.classList.add('btn-active-state');
                 if (noChangesText) noChangesText.style.display = 'none';
             }
         });
 
-        // Effet de chargement lors du clic sur "Enregistrer"
         form.addEventListener('submit', function() {
             saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
             saveBtn.disabled = true;
         });
     }
-        /* ==========================================================
-       MONITORING SERVEUR (Style Grafana)
-       ========================================================== */
+
     function initGrafanaMonitoring() {
         const panels = document.querySelectorAll('.grafana-panel');
-        if (panels.length === 0) return; // Si pas de panneaux sur la page, on arrête
+        if (panels.length === 0) return;
 
         async function loadAllMetrics() {
             panels.forEach(async (panel) => {
                 const serverId = panel.dataset.serverId;
-                
                 try {
                     const response = await fetch(`/monitoring/servers/${serverId}/metrics`);
                     if (!response.ok) return;
-                    
                     const data = await response.json();
                     if (!data.success) return;
 
-                    // 1. Mise à jour du Statut
                     const statusEl = document.getElementById(`status-${serverId}`);
-                    
                     if (data.status === 'online') {
                         statusEl.innerHTML = '<span class="status-dot online"></span> En ligne';
                     } else {
                         statusEl.innerHTML = '<span class="status-dot offline"></span> Hors ligne';
                     }
 
-                    // 2. Mise à jour CPU
                     const cpuVal = data.cpu !== null ? `${data.cpu.toFixed(1)} %` : '-- %';
                     const cpuPct = data.cpu !== null ? data.cpu : 0;
                     document.getElementById(`cpu-val-${serverId}`).textContent = cpuVal;
-                    
                     const cpuBar = document.getElementById(`cpu-bar-${serverId}`);
                     cpuBar.style.width = `${cpuPct}%`;
-                    cpuBar.className = 'metric-bar'; // Reset class
+                    cpuBar.className = 'metric-bar';
                     if (cpuPct > 80) cpuBar.classList.add('critical');
                     else if (cpuPct > 60) cpuBar.classList.add('warning');
 
-                    // 3. Mise à jour RAM
                     const ramVal = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
                     const ramPct = data.memory !== null ? data.memory : 0;
                     document.getElementById(`ram-val-${serverId}`).textContent = ramVal;
-                    
                     const ramBar = document.getElementById(`ram-bar-${serverId}`);
                     ramBar.style.width = `${ramPct}%`;
-                    ramBar.className = 'metric-bar'; // Reset class
+                    ramBar.className = 'metric-bar';
                     if (ramPct > 80) ramBar.classList.add('critical');
                     else if (ramPct > 60) ramBar.classList.add('warning');
 
@@ -2841,20 +1336,14 @@ function getAppEnvironmentColor(index) {
                 }
             });
         }
-
-        // Première exécution
         loadAllMetrics();
-
-        // Rafraîchissement toutes les 15 secondes
         setInterval(loadAllMetrics, 15000);
     }
     initGrafanaMonitoring();
-        /* ==========================================================
-       MONITORING SERVEUR - PAGE DE DÉTAIL
-       ========================================================== */
+
     function initServerMonitoringDetail() {
         const monitorCard = document.querySelector('.monitor-card');
-        if (!monitorCard) return; // Si on n'est pas sur la page de détail, on arrête
+        if (!monitorCard) return;
 
         const serverId = monitorCard.dataset.serverId;
         const statusEl = document.getElementById('server-status');
@@ -2865,7 +1354,6 @@ function getAppEnvironmentColor(index) {
             try {
                 const response = await fetch(`/monitoring/servers/${serverId}/metrics`);
                 if (!response.ok) return;
-                
                 const data = await response.json();
                 if (!data.success) return;
 
@@ -2886,15 +1374,27 @@ function getAppEnvironmentColor(index) {
                 statusEl.style.color = 'var(--red)';
             }
         }
-
-        // Première exécution
         loadMetrics();
-
-        // Rafraîchissement toutes les 15 secondes
         setInterval(loadMetrics, 15000);
     }
-
-    // On lance la fonction quand la page est prête
     initServerMonitoringDetail();
-// ATTENTION : Ne mets pas de }); ici. Laisse la grande accolade de ton fichier JS se fermer normalement plus bas.
-});
+
+    document.querySelectorAll('.action-dropdown-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = this.nextElementSibling;
+            document.querySelectorAll('.action-dropdown-menu.open').forEach(function(openMenu) {
+                if (openMenu !== menu) openMenu.classList.remove('open');
+            });
+            menu.classList.toggle('open');
+        });
+    });
+
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.action-dropdown-menu.open').forEach(function(menu) {
+            menu.classList.remove('open');
+        });
+    });
+
+}); // Fin du DOMContentLoaded (et fin du fichier)

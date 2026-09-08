@@ -44,7 +44,7 @@ Route::post('/resend-welcome', [AuthController::class, 'resendWelcomeLink'])->na
 // créer un user
 Route::get('/sign', [AuthController::class, 'register'])->name('sign');
 Route::post('/sign', [AuthController::class, 'store'])->name('sign.store');
-
+Route::patch('/users/{id}/status', [UserController::class, 'changeStatus'])->name('users.status');
 
 Route::get('/look', function () {
     return view('auth.look');
@@ -87,10 +87,12 @@ Route::get('/server/{server}/delete', [ServerController::class, 'delete'])->name
 Route::get('/servers/{id}/metrics', [ServerController::class, 'metrics'])->name('servers.metrics');
 Route::get('/dashboard/environment-chart', [ServerController::class, 'envChartData'])
     ->name('dashboard.environment.chart');
+Route::patch('/server/{id}/status', [ServerController::class, 'changeStatus'])->name('server.status');
 // applications 
 Route::resource('appli', ApplicationController::class)
     ->except(['create'])
     ->middleware('auth');
+Route::patch('/appli/{app}/status', [ApplicationController::class, 'changeStatus'])->name('appli.status');
 Route::get('/appli/{applications}/delete', [ApplicationController::class, 'delete'])->name('appli.delete');
 Route::resource(
     'application-types',
@@ -162,6 +164,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('throttle.connector.test');
     Route::get('/connecteurs/{connector}/edit-data', [ConnectorController::class, 'editData'])->name('connectors.edit-data');
     Route::post('/connecteurs/test-preview', [ConnectorController::class, 'testPreview'])->name('connectors.test-preview');
+    Route::patch('/connecteurs/{id}/status', [ConnectorController::class, 'changeStatus'])->name('connectors.status');
 });
 
 
@@ -200,6 +203,7 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
     Route::delete('{webhook}',         [WebhookController::class, 'destroy'])           ->name('destroy');
 
     // Actions spécifiques
+    Route::patch('{webhook}/status',   [WebhookController::class, 'toggleStatus'])     ->name('status');
     Route::post('{webhook}/toggle',    [WebhookController::class, 'toggleStatus'])      ->name('toggle');
     Route::post('{webhook}/error',     [WebhookController::class, 'markError'])         ->name('mark-error');
     Route::post('{webhook}/rotate-secret', [WebhookController::class, 'rotateSecret'])  ->name('rotate-secret');
@@ -211,11 +215,13 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
     // La route de réception
 
 });
+Route::post('/webhooks/receive/{webhookId}', [WebhookController::class, 'receive'])->name('webhooks.receive');
 use App\Http\Controllers\WebhookPageController;
 
 Route::get('/web', [WebhookPageController::class, 'index'])
 ->middleware('auth')
 ->name('webhooks.page');
+Route::get('/webhooks/{webhook}/edit-data', [WebhookController::class, 'editData'])->name('webhooks.edit-data');
 
 Route::get('/settings/platform', [PlatformSettingController::class, 'index'])->name('settings.platform.index');
 Route::put('/settings/platform', [PlatformSettingController::class, 'update'])->name('settings.platform.update');

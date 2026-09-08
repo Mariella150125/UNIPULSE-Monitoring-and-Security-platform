@@ -2,6 +2,13 @@
 
 @section('content')
 
+@if ($errors->any())
+    <div class="flash-message error">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
 <div class="main-content">
 <div class="dashboard-content">
 

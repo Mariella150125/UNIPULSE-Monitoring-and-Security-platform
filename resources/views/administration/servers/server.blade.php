@@ -173,22 +173,57 @@
                                         'healthy' => 'En bonne santé',
                                         'critical' => 'Critique',
                                         'warning' => 'Warning',
+                                        'maintenance' => 'En maintenance',
                                         default   => 'Inconnu',
                                     };
                                 @endphp
                                 <span class="status-dot {{ $dotClass }}" style="{{ $dotStyle }}"></span>
                                 {{ $statusLabel }}
                             </td>
+                            
+                            {{-- ACTIONS (3 POINTS) --}}
                             <td>
-                                <a href="{{ route('server.show', $server) }}" class="icon-btn" title="Voir">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                                <a href="{{ route('server.edit', $server) }}" class="icon-btn" title="Modifier">
-                                    <i class="fa-solid fa-pen"></i>
-                                </a>
-                                <a href="{{ route('servers.delete', $server->id) }}" class="icon-btn" title="Supprimer" style="color:var(--c-red);">
-                                    <i class="fa-solid fa-trash"></i>
-                                </a>
+                                <div class="action-dropdown">
+                                    <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                    </button>
+                                    <div class="action-dropdown-menu">
+                                        <a href="{{ route('server.show', $server) }}" class="dropdown-item">
+                                            <i class="fa-solid fa-eye"></i> Voir
+                                        </a>
+                                        <a href="{{ route('server.edit', $server) }}" class="dropdown-item">
+                                            <i class="fa-solid fa-pen"></i> Modifier
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        
+                                        {{-- ACTIVER / DÉSACTIVER --}}
+                                        @if($server->global_status === 'maintenance')
+                                            <form action="{{ route('server.status', $server->id) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="status" value="unknown">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fa-solid fa-circle-play"></i> Activer
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form action="{{ route('server.status', $server->id) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="status" value="maintenance">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fa-solid fa-circle-pause"></i> Désactiver
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        <div class="dropdown-divider"></div>
+                                        
+                                        <a href="{{ route('servers.delete', $server->id) }}" class="dropdown-item text-red">
+                                            <i class="fa-solid fa-trash"></i> Supprimer
+                                        </a>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -204,10 +239,9 @@
             {{ $servers->withQueryString()->links() }}
         </div>
 
-        <p class="sync-time">Dernière synchronisation : il y a 2 min</p>
+        <p class="sync-time">Dernière synchronisation : {{ $lastSync ? $lastSync->diffForHumans() : 'Jamais' }}
+        </p>
 
         @include('administration.servers.server-modal')
 
 @endsection
-
-

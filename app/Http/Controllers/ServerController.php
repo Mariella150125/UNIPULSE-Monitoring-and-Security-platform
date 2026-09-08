@@ -67,7 +67,7 @@ class ServerController extends Controller
             ->groupBy('os')
             ->orderByDesc('total')
             ->get();
-
+         $lastSync = \App\Models\Server::whereNotNull('global_status_updated_at')->max('global_status_updated_at');
         return view('administration.servers.server', compact(
             'servers',
             'groups',
@@ -77,6 +77,7 @@ class ServerController extends Controller
             'hostedApps',
             'envDistribution',
             'osDistribution',
+            'lastSync'
         ));
     }
 
@@ -214,5 +215,12 @@ class ServerController extends Controller
             'data' => $values,
         ]);
     }
-    
+        public function changeStatus(Request $request, $id)
+    {
+        $server = Server::findOrFail($id);
+        $server->global_status = $request->input('status', 'unknown');
+        $server->save();
+
+        return redirect()->back()->with('success', 'Statut du serveur mis à jour avec succès.');
+    }
 }
