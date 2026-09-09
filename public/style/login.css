@@ -677,8 +677,9 @@ h2 {
 /* KPI — indicateur de variation */
 .kpi-change {
     position: absolute;
-    top: 16px;
+    bottom: 16px;
     right: 18px;
+    top: 10px;
     font-size: 11px;
     font-weight: 600;
     display: flex;
@@ -704,6 +705,7 @@ h2 {
     grid-template-columns: auto 1fr;
     min-width: 0;
     gap: 0 20px;
+    position: relative;
 }
 .kpi-icon {
     width: 40px;
@@ -955,6 +957,22 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
 .status-dot.offline { background: var(--red); }
 .status-dot.warning { background: var(--orange); }
 .status-dot.critical { background: var(--red); }
+
+/* Couleurs des points de statut pour les applications */
+.status-dot.status-active { background: var(--sage-green); }
+.status-dot.status-maintenance { background: var(--orange); }
+.status-dot.status-suspended { background: var(--red); }
+.status-dot.status-retired { background: var(--red); opacity: 0.5; }
+
+/* Pour les statuts en cours de création, on met en gris */
+.status-dot.status-planned, 
+.status-dot.status-development, 
+.status-dot.status-testing, 
+.status-dot.status-staging { background: var(--text-muted); }
+
+textarea{
+    border-radius: 3px;
+}
 
 .quick-actions { display: flex; flex-direction: column; gap: 8px; }
 .quick-actions button {

@@ -52,7 +52,7 @@
             <div class="kpi-icon c-orange"><i class="fa-solid fa-cloud"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 0.2%</span>
             <p class="kpi-label">App en maintenance</p>
-            <p class="kpi-value">--</p>
+            <p class="kpi-value">{{ $maintenance}}</p>
         </div>
     </div>
 
@@ -123,10 +123,10 @@
                     </option>
 
                     <option
-                        value="Staging"
-                        @selected(request('environment') === 'staging')
+                        value="Préproduction"
+                        @selected(request('environment') === 'preproduction')
                     >
-                        Staging
+                        Préproduction
                     </option>
 
                     <option
@@ -137,10 +137,10 @@
                     </option>
 
                     <option
-                        value="QA"
+                        value="test"
                         @selected(request('environment') === 'test')
                     >
-                        QA
+                        Test
                     </option>
 
                 </select>
@@ -264,28 +264,26 @@
                     </td>
 
 
-                    {{-- STATUT --}}
+                                    {{-- STATUT --}}
                     <td>
-
-                        @if($app->status === 'active')
-
-                            <span class="status-dot online"></span>
-                            Actif
-
-                        @elseif($app->status === 'maintenance')
-
-                            <span class="status-dot warning"></span>
-                            En maintenance
-
-                        @else
-
-                            <span class="status-dot offline"></span>
-                            {{ ucfirst($app->status) }}
-
-                        @endif
-
-                    </td>
-
+                        {{-- Le point coloré (CSS s'occupe de la couleur automatiquement) --}}
+                        <span class="status-dot status-{{ $app->status }}"></span>
+                        
+                        {{-- Le texte (on utilise un petit tableau pour traduire proprement) --}}
+                        @php
+                            $labels = [
+                                'active'      => 'Active',
+                                'maintenance' => 'En maintenance',
+                                'suspended'   => 'Suspendue',
+                                'retired'     => 'Retirée',
+                                'planned'     => 'Planifiée',
+                                'development' => 'En développement',
+                                'testing'     => 'En test',
+                                'staging'     => 'Préproduction',
+                            ];
+                        @endphp
+                        {{ $labels[$app->status] ?? ucfirst($app->status) }}
+                    </td>   
 
                     {{-- VERSION --}}
                     <td>
@@ -319,51 +317,76 @@
 
                     </td>
 
-
-                    {{-- ACTIONS --}}
-                    <td>
-                        <div class="action-dropdown">
-                            <button class="icon-btn action-dropdown-toggle" title="Actions">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <div class="action-dropdown-menu">
-                                <a href="{{ route('appli.show', $app->id) }}" class="dropdown-item">
-                                    <i class="fa-solid fa-eye"></i> Voir
-                                </a>
-                                <a href="{{ route('appli.edit', $app->id) }}" class="dropdown-item">
-                                    <i class="fa-solid fa-pen"></i> Modifier
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                
-                                {{-- ACTIVER / DÉSACTIVER --}}
-                                @if($app->status === 'active')
-                                    <form action="{{ route('appli.status', $app->id) }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="suspended">
-                                        <button type="submit" class="dropdown-item">
-                                            <i class="fa-solid fa-circle-pause"></i> Désactiver
-                                        </button>
-                                    </form>
-                                @else
-                                    <form action="{{ route('appli.status', $app->id) }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="active">
-                                        <button type="submit" class="dropdown-item">
-                                            <i class="fa-solid fa-circle-play"></i> Activer
-                                        </button>
-                                    </form>
-                                @endif
-
-                                {{-- SUPPRIMER (Lien vers ta page de confirmation existante) --}}
-                                <a href="{{ route('appli.delete', $app->id) }}" class="dropdown-item text-red">
-                                    <i class="fa-solid fa-trash"></i> Supprimer
-                                </a>
-                            </div>
-                        </div>
-                    </td>
+                
                     
+                                            {{-- MENU D'ACTIONS (3 POINTS) --}}
+                        <td>
+                            <div class="action-dropdown">
+                                <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <a href="{{ route('appli.show', $app->id) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-eye"></i> Voir
+                                    </a>
+                                    <a href="{{ route('appli.edit', $app->id) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-pen"></i> Modifier
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {{-- GESTION DES STATUTS --}}
+                                    
+                                    @if($app->status !== 'active')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="active">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-play"></i> Activer
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($app->status !== 'maintenance')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="maintenance">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-screwdriver-wrench"></i> Mettre en maintenance
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($app->status !== 'suspended')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="suspended">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-pause"></i> Suspendre
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($app->status !== 'retired')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="retired">
+                                            <button type="submit" class="dropdown-item text-red">
+                                                <i class="fa-solid fa-circle-xmark"></i> Retirer
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <div class="dropdown-divider"></div>
+                                    <a href="{{ route('appli.delete', $app->id) }}" class="dropdown-item text-red">
+                                        <i class="fa-solid fa-trash"></i> Supprimer définitivement
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
 
                 </tr>
 

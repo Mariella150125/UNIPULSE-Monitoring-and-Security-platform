@@ -1396,5 +1396,24 @@ document.addEventListener('DOMContentLoaded', function () {
             menu.classList.remove('open');
         });
     });
+        /* ==========================================================
+       MODALE APPLICATION - GESTION DES ONGLETS
+       ========================================================== */
+    const appModal = document.getElementById('application-modal');
+    if (appModal) {
+        const appTabs = appModal.querySelectorAll('.tab-btn');
+        const appTabContents = appModal.querySelectorAll('.tab-content');
+
+        appTabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                appTabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                appTabContents.forEach(c => c.classList.remove('active'));
+                const tabContent = appModal.querySelector('#tab-' + tab);
+                if (tabContent) tabContent.classList.add('active');
+            });
+        });
+    }
 
 }); // Fin du DOMContentLoaded (et fin du fichier)

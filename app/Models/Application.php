@@ -9,6 +9,7 @@ use App\Traits\AuditsActivity;
 class Application extends Model
 {
     use AuditsActivity; 
+
     protected $fillable = [
         'name',
         'description',
@@ -47,6 +48,18 @@ class Application extends Model
 
         // Criticité
         'criticality',
+
+        // Frontend
+        'frontend_language',
+        'frontend_framework',
+        'frontend_url',
+        'frontend_version',
+
+        // Base de données (SGBD)
+        'database_type',
+        'database_name',
+        'database_host',
+        'database_port',
     ];
 
     protected $casts = [
