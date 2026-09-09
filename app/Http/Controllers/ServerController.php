@@ -124,7 +124,15 @@ class ServerController extends Controller
             'wazuh_agent_id'      => 'nullable|string|max:255', // <-- AJOUTÉ
             'wazuh_group'         => 'nullable|string|max:255', // <-- AJOUTÉ
         ]);
-
+       
+        $env = strtolower($validated['environment']);
+        $validated['criticality'] = match($env) {
+            'production'  => 'critical',
+            'staging'     => 'high',
+            'test'        => 'medium',
+            'development' => 'low',
+            default       => 'medium',
+        };
         $server->update($validated);
 
         return redirect()->route('server.index')->with('success', 'Serveur modifié.');
@@ -173,7 +181,17 @@ class ServerController extends Controller
             'wazuh_agent_id'      => 'nullable|string|max:255', 
             'wazuh_group'         => 'nullable|string|max:255', 
         ]);
+                
+        $env = strtolower($validated['environment']);
+        $validated['criticality'] = match($env) {
+            'production'  => 'critical',
+            'staging'     => 'high',
+            'test'        => 'medium',
+            'development' => 'low',
+            default       => 'medium',
+        };
 
+        
         Server::create($validated);
 
         return redirect()->route('server.index')->with('success', 'Serveur ajouté avec succès.');

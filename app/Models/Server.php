@@ -24,6 +24,7 @@ class Server extends Model
         'description',
         'tags',
         'group_id',
+        'criticality',
         'prometheus_instance',
         'prometheus_job',
         'prometheus_reachable',

@@ -115,6 +115,11 @@
                         <select name="os" class="filter-btn">
                             <option value="">Tous les OS</option>
                             <option value="Linux" {{ request('os') === 'Linux' ? 'selected' : '' }}>Linux</option>
+                            <option value="Unix" {{ request('os') === 'Unix' ? 'selected' : '' }}>Unix</option>
+                            <option value="Windows Server" {{ request('os') === 'Windows Server' ? 'selected' : '' }}>Windows Server</option>
+                        </select>
+                        </select>
+
                         </select>
                         <button type="submit" class="filter-btn">
                             <i class="fa-solid fa-filter"></i>
