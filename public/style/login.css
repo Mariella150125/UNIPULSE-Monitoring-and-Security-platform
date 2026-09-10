@@ -891,6 +891,13 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
 }
 .badge-critical { background: var(--red); color: black; }
 .badge-major { background: var(--orange); }
+.badge-success { background: var(--sage-green); color: white; }
+
+/* Petites animations pour le tri et les filtres */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 .server-table { 
     width: 100%; 
@@ -1249,6 +1256,8 @@ textarea{
     align-items: center;
     gap: 10px;
     font-weight: 500;
+    text-decoration: none; 
+    color: inherit;
 }
 .app-icon-sm {
     width: 30px;
@@ -2055,7 +2064,19 @@ form.entity-details .form-actions {
     table-layout: auto; /* Modifié de fixed à auto pour garder la largeur naturelle */
     min-width: 700px; /* Ajouté pour forcer le scroll horizontal au lieu d'écraser le tableau */
 }
+/* ==========================================================
+   CARTE DE DÉPENDANCES (MF-38)
+   ========================================================== */
+.dependency-panel {
+    margin-top: 24px;
+}
 
+.dependency-network-container {
+    height: 500px;
+    background: var(--page-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
 /* Details grid : 1 colonne */
 .details-grid {
     grid-template-columns: 1fr;
@@ -2519,7 +2540,16 @@ form.entity-details .form-actions {
     color: var(--text-dark);
     margin: 0 0 20px;
 }
-
+/* Ajustement des KPI pour la fiche monitoring */
+#tab-overview .kpi-card,
+#tab-performance .kpi-card,
+#tab-security .kpi-card {
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    min-width: 0;
+    gap: 0 20px;
+}
 /* Grille du formulaire de paramètres */
 .settings-form-grid {
     display: grid;

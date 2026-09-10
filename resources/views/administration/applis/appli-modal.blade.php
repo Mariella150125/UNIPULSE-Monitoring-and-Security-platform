@@ -52,6 +52,15 @@
                         
                     </select>
                 </div>
+                <div class="input-group">
+                    <label for="application_group_id">Groupe d'application</label>
+                    <select id="application_group_id" name="application_group_id">
+                        <option value="">Aucun groupe</option>
+                        @foreach($applicationGroups as $group)
+                            <option value="{{ $group->id }}">{{ $group->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
             <div class="input-group">
                 <label for="description">Description</label>
@@ -132,8 +141,10 @@
             </div>
         </div>
 
-        <!-- ONGLET 5 : HÉBERGEMENT & SÉCURITÉ -->
+               <!-- ONGLET 5 : HÉBERGEMENT & SÉCURITÉ -->
         <div class="tab-content" id="tab-hosting">
+            
+            <p class="modal-section-title">Hébergement</p>
             <div class="modal-grid-2">
                 <div class="input-group input-full">
                     <label for="is_hosted">Application hébergée ? *</label>
@@ -162,25 +173,63 @@
                 </div>
             </div>
 
-            <p class="modal-section-title">Monitoring & Sécurité</p>
+            <p class="modal-section-title">Monitoring Prometheus (MF-1)</p>
             <div class="modal-grid-2">
                 <div class="input-group">
-                    <label for="monitoring_enabled">Monitoring</label>
+                    <label for="monitoring_enabled">Monitoring Activé ?</label>
                     <select id="monitoring_enabled" name="monitoring_enabled">
-                        <option value="1">Activé</option>
-                        <option value="0">Désactivé</option>
+                        <option value="1">Oui</option>
+                        <option value="0">Non</option>
                     </select>
                 </div>
+                <div class="input-group">
+                    <label for="prometheus_job">Job Prometheus</label>
+                    <input type="text" id="prometheus_job" name="prometheus_job" placeholder="Ex : application_api">
+                </div>
+                <div class="input-group">
+                    <label for="metrics_endpoint">Endpoint des métriques</label>
+                    <input type="text" id="metrics_endpoint" name="metrics_endpoint" placeholder="/metrics">
+                </div>
+                <div class="input-group">
+                    <label for="scrape_interval">Intervalle de collecte</label>
+                    <input type="text" id="scrape_interval" name="scrape_interval" placeholder="Ex : 15s">
+                </div>
+                <div class="input-group input-full">
+                    <label for="url_health_check">URL de Health-Check (si pas de Prometheus)</label>
+                    <input type="url" id="url_health_check" name="url_health_check" placeholder="https://app.exemple.com/health">
+                </div>
+            </div>
+
+            <p class="modal-section-title">Sécurité Wazuh</p>
+            <div class="modal-grid-2">
                 <div class="input-group">
                     <label for="wazuh_enabled">Surveillance Wazuh</label>
                     <select id="wazuh_enabled" name="wazuh_enabled">
                         <option value="1">Activée</option>
-                        <option value="0">Désactivée</option>
+                        <option value="0">Désactivé</option>
                     </select>
                 </div>
             </div>
+            <p class="modal-section-title">Sécurité Wazuh (MF-23, MF-26)</p>
+            <div class="modal-grid-2">
+                <div class="input-group">
+                    <label for="wazuh_enabled">Surveillance Wazuh</label>
+                    <select id="wazuh_enabled" name="wazuh_enabled">
+                        <option value="1">Activée</option>
+                        <option value="0">Désactivé</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="wazuh_agent_id">Agent ID Wazuh</label>
+                    <input type="text" id="wazuh_agent_id" name="wazuh_agent_id" placeholder="Ex: 001">
+                </div>
+                <div class="input-group">
+                    <label for="wazuh_group">Groupe Wazuh</label>
+                    <input type="text" id="wazuh_group" name="wazuh_group" placeholder="Ex: webservers">
+                </div>
+            </div>
         </div>
-
+        
     </form>
 
     <x-slot:footer>

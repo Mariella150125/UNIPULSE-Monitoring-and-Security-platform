@@ -42,10 +42,14 @@
                     <i class="fa-solid fa-chevron-down nav-group-arrow"></i>
                 </button>
                 <div class="nav-group-items" style="{{ (request()->is('monitoring/*') || request()->is('logs')) ? 'max-height: 500px;' : '' }}">
-                    <a href="/monitoring/apps" class="nav-item {{ request()->is('monitoring/apps') ? 'active' : '' }}"><i class="fa-solid fa-window-restore"></i><span>Applications</span></a>
+                    <a href="/monitoring/dashboard" class="nav-item {{ request()->is('/monitoring/dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+                    <a href="/monitoring/applications" class="nav-item {{ request()->is('monitoring/applications') ? 'active' : '' }}"><i class="fa-solid fa-window-restore"></i><span>Applications</span></a>
                     <a href="/monitoring/servers" class="nav-item {{ request()->is('monitoring/servers') ? 'active' : '' }}"><i class="fa-solid fa-server"></i><span>Serveurs</span></a>
-                    <a href="/logs" class="nav-item {{ request()->is('logs') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Logs</span></a>
+                    <a href="/monitoring/logs" class="nav-item {{ request()->is('/monitoring/logs') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Logs</span></a>
+                    <a href="/monitoring/compare" class="nav-item {{ request()->is('monitoring/compare') ? 'active' : '' }}"><i class="fa-solid fa-code-compare"></i><span>Comparaison</span></a>
+                    
                 </div>
+    
             </div>
 
             {{-- Groupe repliable : Sécurité & Conformité --}}

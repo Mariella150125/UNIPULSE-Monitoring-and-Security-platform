@@ -15,7 +15,11 @@ use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\PlatformSettingController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ServerMonitoringController;
-
+use App\Http\Controllers\ApplicationMonitoringController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\MonitoringDashboardController;
+use App\Http\Controllers\ApplicationGroupController;
+use App\Http\Controllers\MonitoringComparisonController;
 
 
 // 1. Afficher la page (GET)
@@ -254,9 +258,18 @@ Route::prefix('monitoring')->name('monitoring.')->middleware('auth')->group(func
     Route::get('/servers/{id}', [ServerMonitoringController::class, 'show'])->name('servers.show');
     Route::get('/servers/{id}/metrics', [ServerMonitoringController::class, 'metrics'])->name('servers.metrics');
     
+    // sous-module application
+    Route::get('/applications/{id}', [ApplicationMonitoringController::class, 'show'])->name('application.show');
+    Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('application.index');
+    // sous-module log
+    Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+    // dashboard
+    Route::get('/dashboard', [MonitoringDashboardController::class, 'index'])->name('dashboard');
+    // Comparaison
+     Route::get('/compare', [MonitoringComparisonController::class, 'index'])->name('compare.index');
 });
 
-
+Route::resource('application-groups', ApplicationGroupController::class)->except(['create', 'show', 'edit']);
 Route::get('/monitoring/apps', function () {
     return view('coming-soon');
 });

@@ -45,6 +45,8 @@ class Application extends Model
 
         // Sécurité Wazuh
         'wazuh_enabled',
+        'wazuh_agent_id',   // <-- AJOUTÉ
+        'wazuh_group',      // <-- AJOUTÉ
 
         // Criticité
         'criticality',
@@ -92,5 +94,10 @@ class Application extends Model
     public function applicationType(): BelongsTo
     {
         return $this->belongsTo(ApplicationType::class);
+    }
+
+    public function applicationGroup()
+    {
+        return $this->belongsTo(ApplicationGroup::class);
     }
 }

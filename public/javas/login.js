@@ -1319,8 +1319,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const cpuBar = document.getElementById(`cpu-bar-${serverId}`);
                     cpuBar.style.width = `${cpuPct}%`;
                     cpuBar.className = 'metric-bar';
-                    if (cpuPct > 80) cpuBar.classList.add('critical');
-                    else if (cpuPct > 60) cpuBar.classList.add('warning');
+                    if (cpuPct > 65) cpuBar.classList.add('critical');
+                    else if (cpuPct > 65) cpuBar.classList.add('warning');
 
                     const ramVal = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
                     const ramPct = data.memory !== null ? data.memory : 0;
@@ -1328,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const ramBar = document.getElementById(`ram-bar-${serverId}`);
                     ramBar.style.width = `${ramPct}%`;
                     ramBar.className = 'metric-bar';
-                    if (ramPct > 80) ramBar.classList.add('critical');
+                    if (ramPct > 75) ramBar.classList.add('critical');
                     else if (ramPct > 60) ramBar.classList.add('warning');
 
                 } catch (error) {
@@ -1415,5 +1415,309 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+        // monitoring applicatif 
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
+    // 1. Au clic sur un onglet, on mémorise son nom dans l'URL
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            tabContents.forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            history.replaceState(null, null, '#tab-' + tab); // Mémorise l'onglet
+        });
+    });
+
+    // 2. Au chargement de la page, on lit l'URL pour réouvrir le bon onglet
+    const initialTab = window.location.hash ? window.location.hash.replace('#tab-', '') : 'overview';
+    const activeTabBtn = document.querySelector(`.tab-btn[data-tab="${initialTab}"]`);
+    const activeTabContent = document.getElementById('tab-' + initialTab);
+    
+    if (activeTabBtn && activeTabContent) {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        activeTabBtn.classList.add('active');
+        activeTabContent.classList.add('active');
+    }
+    
+
+    // Tri des vulnérabilités par CVSS décroissant (MF-29)
+    const sortBtn = document.getElementById('sort-cvss-btn');
+    if (sortBtn) {
+        sortBtn.addEventListener('click', function() {
+            const tbody = document.querySelector('#vulns-table tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort((a, b) => parseFloat(b.dataset.cvss) - parseFloat(a.dataset.cvss));
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    }
+
+    // Filtre des logs par niveau (MF-32)
+    const logFilter = document.getElementById('log-filter');
+    if (logFilter) {
+        logFilter.addEventListener('change', function() {
+            const level = this.value;
+            document.querySelectorAll('#logs-table tbody tr').forEach(row => {
+                if (!level || row.dataset.level === level) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+    /* ==========================================================
+       GRAPHIQUE DE LATENCE APPLICATION (Façon Grafana)
+       ========================================================== */
+    const appResponseChart = document.getElementById('appResponseTimeChart');
+    if (appResponseChart && typeof Chart !== 'undefined') {
+        
+        // Récupère les vraies données envoyées par Laravel depuis la variable globale
+        const rawData = window.latencyHistory || [];
+        
+        // Sépare les labels (heures) et les valeurs (ms) pour Chart.js
+        const labels = rawData.map(item => item.x);
+        const dataValues = rawData.map(item => item.y);
+
+        // Si pas de données, on met un tableau vide pour ne pas faire planter Chart.js
+        if (labels.length > 0) {
+            new Chart(appResponseChart, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temps de réponse (ms)',
+                        data: dataValues,
+                        borderColor: '#1d4a40',
+                        backgroundColor: 'rgba(29, 74, 64, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#eef1ef' },
+                            ticks: { callback: (value) => value + ' ms' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    }
+     // Gestion du filtre de période du graphique de latence
+         
+    const latencyRangeSelect = document.getElementById('latency-range-select');
+    if (latencyRangeSelect) {
+        latencyRangeSelect.addEventListener('change', function() {
+            // On garde le hashtag de l'onglet pour ne pas perdre l'onglet Performance
+            const currentHash = window.location.hash || '';
+            window.location.href = window.location.pathname + '?range=' + this.value + currentHash;
+        });
+    }  
+    const availabilityCanvas = document.getElementById('availabilityChart');
+    if (availabilityCanvas && typeof Chart !== 'undefined') {
+        
+        // On lit les vraies données envoyées par Laravel
+        const labels = window.availabilityLabels || [];
+        const data = window.availabilityData || [];
+
+        new Chart(availabilityCanvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Disponibilité globale (%)',
+                    data: data,
+                    borderColor: '#1d4a40',
+                    backgroundColor: 'rgba(29, 74, 64, 0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top' }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        grid: { color: '#eef1ef' },
+                        ticks: { callback: (value) => value + '%' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+    // Graphique Tendance Disponibilité
+    const availTrendCtx = document.getElementById('availTrendChart');
+    if (availTrendCtx && typeof Chart !== 'undefined') {
+        new Chart(availTrendCtx, {
+            type: 'line',
+            data: {
+                labels: window.availTrendLabels || [],
+                datasets: [{
+                    label: 'Disponibilité (%)',
+                    data: window.availTrendData || [],
+                    borderColor: '#56825E',
+                    backgroundColor: 'rgba(86, 130, 94, 0.1)',
+                    fill: true, tension: 0.4, pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { min: 90, max: 100, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } }
+            }
+        });
+    }
+
+    // Graphique Tendance Temps de réponse
+    const respTrendCtx = document.getElementById('respTrendChart');
+    if (respTrendCtx && typeof Chart !== 'undefined') {
+        new Chart(respTrendCtx, {
+            type: 'line',
+            data: {
+                labels: window.respTrendLabels || [],
+                datasets: [{
+                    label: 'Temps de réponse (ms)',
+                    data: window.respTrendData || [],
+                    borderColor: '#1d4a40',
+                    backgroundColor: 'rgba(29, 74, 64, 0.1)',
+                    fill: true, tension: 0.4, pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'ms' } }, x: { grid: { display: false } } }
+            }
+        });
+        
+    }
+    /* ==========================================================
+       CARTE DE DÉPENDANCES (MF-38)
+       ========================================================== */
+    window.addEventListener('load', function() {
+        const dependencyNetwork = document.getElementById('dependency-network');
+        if (dependencyNetwork && typeof vis !== 'undefined') {
+            
+            const nodes = new vis.DataSet(window.dependencyNodes || []);
+            const edges = new vis.DataSet(window.dependencyEdges || []);
+
+            const data = { nodes: nodes, edges: edges };
+            
+            const options = {
+                layout: { improvedLayout: true },
+                physics: { 
+                    stabilization: true,
+                    barnesHut: { gravitationalConstant: -8000, springConstant: 0.04 }
+                },
+                interaction: { 
+                    hover: true, 
+                    zoomView: true
+                },
+                edges: {
+                    arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+                    smooth: true,
+                    color: { color: '#8a9490', highlight: '#1d4a40' }
+                },
+                nodes: {
+                    font: { color: 'white', size: 14 }
+                }
+            };
+
+            new vis.Network(dependencyNetwork, data, options);
+        }
+    });
+    /* ==========================================================
+       GRAPHIQUE DE COMPARAISON (MF-36)
+       ========================================================== */
+    const comparisonCtx = document.getElementById('comparisonChart');
+    if (comparisonCtx && typeof Chart !== 'undefined') {
+        
+        const labels = window.compareLabels || [];
+        const data1 = window.compareData1 || [];
+        const data2 = window.compareData2 || [];
+
+        new Chart(comparisonCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: window.compareName1,
+                        data: data1,
+                        borderColor: '#1d4a40', // Vert foncé
+                        backgroundColor: 'rgba(29, 74, 64, 0.1)',
+                        fill: false, // On ne remplit pas pour bien voir l'autre courbe
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: window.compareName2,
+                        data: data2,
+                        borderColor: '#e08e3e', // Orange
+                        backgroundColor: 'rgba(224, 142, 62, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#eef1ef' },
+                        ticks: { 
+                            callback: function(value) {
+                                return value + (window.compareMetric.includes('%') ? '%' : ' ms');
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
 }); // Fin du DOMContentLoaded (et fin du fichier)

@@ -22,7 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhook.verify'          => \App\Http\Middleware\VerifyWebhookSignature::class,
         ]);
         $middleware->validateCsrfTokens(except: [
-            '/webhooks/receive/*'
+            '/webhooks/receive/*',
+            '/api/logs/ingest' 
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

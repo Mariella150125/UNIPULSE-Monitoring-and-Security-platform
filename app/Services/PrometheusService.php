@@ -22,7 +22,7 @@ class PrometheusService
         return !empty($this->baseUrl);
     }
 
-    // Exécute une requête PromQL
+    // Exécute une requête PromQL instantanée
     public function query(string $query): ?array
     {
         if (!$this->isConfigured()) return null;
@@ -32,6 +32,33 @@ class PrometheusService
         ]);
 
         return $response->successful() ? $response->json() : null;
+    }
+
+    // NOUVEAU : Exécute une requête PromQL sur une période (pour les graphiques)
+    public function queryRange(string $query, int $hours = 24, string $step = '1h'): array
+    {
+        if (!$this->isConfigured()) return [];
+
+        $end = time();
+        $start = $end - ($hours * 3600);
+
+        $response = Http::timeout(10)->get($this->baseUrl . '/api/v1/query_range', [
+            'query' => $query,
+            'start' => $start,
+            'end'   => $end,
+            'step'  => $step
+        ]);
+
+        if (!$response->successful()) return [];
+
+        $result = $response->json('data.result.0.values');
+        if (empty($result)) return [];
+
+        // On formate pour Chart.js : [timestamp, valeur]
+        return array_map(fn($item) => [
+            'x' => date('H:i', $item[0]),
+            'y' => round((float) $item[1] * 1000) // On convertit les secondes de Prometheus en millisecondes
+        ], $result);
     }
 
     // 1. Statut (Online/Offline)

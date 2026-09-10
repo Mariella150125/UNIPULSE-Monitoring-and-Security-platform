@@ -20,6 +20,18 @@
             </div>
             <i class="fa-solid fa-chevron-right settings-arrow"></i>
         </a>
+    {{-- NOUVEAU : GROUPES D'APPLICATIONS --}}
+        <a href="{{ route('application-groups.index') }}" class="settings-card">
+            <div class="settings-card-icon">
+                <i class="fa-solid fa-cubes"></i>
+            </div>
+            <div>
+                <h3>Groupes d'applications</h3>
+                <p>Organiser les applications par groupes (Frontend, Backend, etc.).</p>
+            </div>
+            <i class="fa-solid fa-chevron-right settings-arrow"></i>
+        </a>
+
 
         <a href="{{ route('server-groups.index') }}" class="settings-card">
             <div class="settings-card-icon">

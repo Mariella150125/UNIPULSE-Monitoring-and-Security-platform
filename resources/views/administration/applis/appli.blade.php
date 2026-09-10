@@ -241,14 +241,14 @@
                     </td>
 
                     {{-- APPLICATION --}}
-                    <td class="app-name-cell">
+                    <td>
 
-                        <span class="app-icon-sm c-teal">
-                            <i class="fa-solid fa-globe"></i>
-                        </span>
-
-                        {{ $app->name }}
-
+                       <a href="{{ route('monitoring.application.show', $app->id) }}" class="app-name-cell">
+                            <span class="app-icon-sm c-teal">
+                                <i class="fa-solid fa-globe"></i>
+                            </span>
+                            {{ $app->name }}
+                        </a> 
                     </td>
 
 
@@ -291,16 +291,18 @@
                     </td>
 
 
-                    {{-- DISPONIBILITÉ --}}
+                                    {{-- DISPONIBILITÉ --}}
                     <td>
-
-                        {{-- Pour l'instant, cette donnée viendra de Prometheus --}}
-                        <span class="avail-value">
-                            —
+                        @php
+                            // On récupère le pourcentage calculé par le contrôleur, 100% par défaut si pas d'historique
+                            $appAvail = isset($availabilities[$app->id]) ? round($availabilities[$app->id]) : 100;
+                            // Couleur dynamique (Vert > 95%, Orange > 80%, Rouge sinon)
+                            $availColor = $appAvail >= 95 ? 'var(--dark-teal)' : ($appAvail >= 80 ? 'var(--orange)' : 'var(--red)');
+                        @endphp
+                        <span class="avail-value" style="color: {{ $availColor }}; font-weight: 600;">
+                            {{ $appAvail }}%
                         </span>
-
                     </td>
-
 
                     {{-- DERNIÈRE VÉRIFICATION --}}
                     <td>
@@ -495,5 +497,9 @@
     </div>
 
     @include('administration.applis.appli-modal')
-
+<script>
+    // Pont de données : PHP génère le JSON et le donne au JavaScript
+    window.availabilityLabels = @json($availabilityLabels);
+    window.availabilityData = @json($availabilityData);
+</script>
 @endsection

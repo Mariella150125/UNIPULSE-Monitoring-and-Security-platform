@@ -58,3 +58,7 @@ Route::prefix('v1')->middleware('auth.api')->group(function () {
     });
 });
 Route::post('/webhooks/receive/{webhook}', [WebhookController::class, 'receive'])->name('webhooks.receive');
+use App\Http\Controllers\Api\LogIngestController;
+
+// Route d'ingestion des logs 
+Route::post('/logs/ingest', [LogIngestController::class, 'store'])->name('logs.ingest');
