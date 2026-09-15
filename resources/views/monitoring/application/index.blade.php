@@ -161,16 +161,26 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($sslStats as $ssl)
+                        @forelse($sslStats as $ssl)
             <tr>
                 <td><strong>{{ $ssl['name'] }}</strong></td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
+                        @php
+                            // On vérifie si 'days' est un vrai chiffre
+                            $isNumeric = is_numeric($ssl['days']);
+                            $barWidth = $isNumeric ? min(100, ($ssl['days'] / 90) * 100) : 0;
+                        @endphp
+                        
                         <div style="flex: 1; height: 8px; background: var(--page-bg); border-radius: 4px; overflow: hidden;">
-                            {{-- La barre se remplit, max 90 jours pour l'échelle visuelle --}}
-                            <div style="width: {{ min(100, ($ssl['days'] / 90) * 100) }}%; height: 100%; background: {{ $ssl['color'] }}; transition: width 0.5s ease;"></div>
+                            @if($isNumeric)
+                                <div style="width: {{ $barWidth }}%; height: 100%; background: {{ $ssl['color'] }}; transition: width 0.5s ease;"></div>
+                            @else
+                                <div style="width: 100%; height: 100%; background: repeating-linear-gradient(45deg, var(--border-color), var(--border-color) 5px, transparent 5px, transparent 10px);"></div>
+                            @endif
                         </div>
-                        <span style="font-size: 12px; font-weight: 600; color: {{ $ssl['color'] }}; width: 50px; text-align: right;">{{ $ssl['days'] }} j</span>
+                        
+                        <span style="font-size: 12px; font-weight: 600; color: {{ $ssl['color'] }}; width: 50px; text-align: right;">{{ $ssl['days'] }} @if($isNumeric) j @endif</span>
                     </div>
                 </td>
             </tr>

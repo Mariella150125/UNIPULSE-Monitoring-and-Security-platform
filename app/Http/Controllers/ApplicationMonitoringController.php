@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Application;
-use Illuminate\Support\Facades\Http;
-use App\Services\WazuhService;
+use App\Models\ApplicationAvailability;
+use App\Models\ApplicationGroup;
 use App\Services\PrometheusService;
+use App\Services\ScoringService;
+use App\Services\WazuhService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\View\View;
 
 class ApplicationMonitoringController extends Controller
 {
-        public function index(Request $request)
+    public function index(Request $request): View
     {
         // 1. On récupère tous les groupes pour le menu déroulant
-        $applicationGroups = \App\Models\ApplicationGroup::orderBy('name')->get();
+        $applicationGroups = ApplicationGroup::orderBy('name')->get();
 
         // 2. On filtre les applications selon le groupe choisi
         $query = Application::query();
@@ -35,7 +39,7 @@ class ApplicationMonitoringController extends Controller
             $responseTime = '—';
             $availability = 100;
             
-            $availRecord = \App\Models\ApplicationAvailability::where('application_id', $app->id)->latest()->first();
+            $availRecord = ApplicationAvailability::where('application_id', $app->id)->latest()->first();
             if ($availRecord) {
                 $availability = $availRecord->is_available ? 100 : 0;
             }
@@ -60,13 +64,11 @@ class ApplicationMonitoringController extends Controller
             ];
         }
 
-        // --- Données SSL ---
+        // --- Données SSL (On affiche '—' sur la liste pour ne pas ralentir la page) ---
         $sslStats = [];
         foreach ($applications as $app) {
             if ($app->url && str_starts_with($app->url, 'https://')) {
-                $daysLeft = rand(10, 90); 
-                $sslColor = $daysLeft < 15 ? 'var(--red)' : ($daysLeft < 45 ? 'var(--orange)' : 'var(--sage-green)');
-                $sslStats[] = ['name' => $app->name, 'days' => $daysLeft, 'color' => $sslColor];
+                $sslStats[] = ['name' => $app->name, 'days' => '—', 'color' => 'var(--text-muted)'];
             }
         }
 
@@ -78,16 +80,21 @@ class ApplicationMonitoringController extends Controller
         return view('monitoring.application.index', compact(
             'totalApps', 'availableApps', 'unavailableApps', 'availabilityPercent',
             'appStats', 'trendLabels', 'availTrend', 'respTrend', 'sslStats',
-            'applicationGroups' // <-- On n'oublie pas de l'envoyer à la vue
+            'applicationGroups'
         ));
     }
 
-        public function show(string $id)
-    {
+    public function show(
+        Request $request, 
+        string $id, 
+        PrometheusService $prometheus, 
+        ScoringService $scoringService, 
+        WazuhService $wazuhService
+    ): View {
         $application = Application::with(['applicationType', 'server', 'responsibleUser'])->findOrFail($id);
         
         // Récupération du filtre de temps (24h, 7j, 30j)
-        $range = request()->get('range', '24h');
+        $range = $request->get('range', '24h');
         $hours = match($range) {
             '7d' => 168,
             '30d' => 720,
@@ -97,16 +104,16 @@ class ApplicationMonitoringController extends Controller
         // ---------------------------------------------------------
         // 1. PROMETHEUS (Performance & HTTP)
         // ---------------------------------------------------------
-        $prometheus = app(\App\Services\PrometheusService::class);
-
         // CALCUL DE LA VRAIE DISPONIBILITÉ (Basé sur application_availabilities)
-        $totalChecks = \App\Models\ApplicationAvailability::where('application_id', $application->id)->count();
-        $successChecks = \App\Models\ApplicationAvailability::where('application_id', $application->id)->where('is_available', true)->count();
-        $availabilityPercent = $totalChecks > 0 ? round(($successChecks / $totalChecks) * 100) : 100; // 100% par défaut si pas d'historique
+        $totalChecks = ApplicationAvailability::where('application_id', $application->id)->count();
+        $successChecks = ApplicationAvailability::where('application_id', $application->id)->where('is_available', true)->count();
+        $availabilityPercent = $totalChecks > 0 ? round(($successChecks / $totalChecks) * 100) : 100;
 
         $metrics = [
             'availability' => $availabilityPercent . ' %',
             'response_time' => '— ms',
+            'error_rate' => '— %',
+            'api_traffic' => '— Req/s',
             'http_status' => 'N/A',
             'http_version' => 'HTTP/1.1',
             'gpd' => '— ms',
@@ -124,7 +131,6 @@ class ApplicationMonitoringController extends Controller
             $query = "probe_duration_seconds{instance=\"$application->url\"}";
             
             if (method_exists($prometheus, 'queryRange')) {
-                // On envoie le nombre d'heures choisi par l'utilisateur
                 $step = $hours > 24 ? '6h' : '1h';
                 $latencyHistory = $prometheus->queryRange($query, $hours, $step);
             }
@@ -140,6 +146,8 @@ class ApplicationMonitoringController extends Controller
                 $metrics['apd'] = $durationMs . ' ms';
                 $metrics['http_status'] = '200 OK (Prometheus)';
                 $metrics['services_status'] = 'Opérationnel';
+                $metrics['error_rate'] = mt_rand(0, 1) . ' %'; // Mock si Prometheus
+                $metrics['api_traffic'] = mt_rand(100, 500) . ' Req/s'; // Mock si Prometheus
                 $metrics['source'] = 'Prometheus';
             }
         }
@@ -159,13 +167,15 @@ class ApplicationMonitoringController extends Controller
                 $metrics['services_status'] = $response->successful() ? 'Opérationnel' : 'En erreur';
                 $metrics['source'] = 'Health-Check (Laravel)';
 
-                // Si pas d'historique Prometheus, on génère un faux historique basé sur la période choisie
+                // Calcul simulé du taux d'erreur et du trafic API pour le Health-Check
+                $metrics['error_rate'] = mt_rand(0, 2) . ' %';
+                $metrics['api_traffic'] = mt_rand(50, 500) . ' Req/s';
+
                 if (empty($latencyHistory)) {
                     for ($i = $hours; $i > 0; $i--) {
-                        $time = strtotime("-$i hours");
-                        // Si > 24h, on affiche le jour et l'heure, sinon juste l'heure
-                        $label = $hours > 24 ? date('d/m H:i', $time) : date('H:i', $time);
-                        $latencyHistory[] = ['x' => $label, 'y' => $duration + rand(-15, 15)];
+                        $time = Carbon::now()->subHours($i);
+                        $label = $hours > 24 ? $time->format('d/m H:i') : $time->format('H:i');
+                        $latencyHistory[] = ['x' => $label, 'y' => $duration + mt_rand(-15, 15)];
                     }
                 }
             } catch (\Exception $e) {
@@ -175,25 +185,27 @@ class ApplicationMonitoringController extends Controller
             }
         }
 
-            // ---------------------------------------------------------
-        // 2. LARAVEL/PHP (Certificat SSL) - SRS MF-17 à 20
         // ---------------------------------------------------------
+        // 2. SÉCURITÉ (ASVS Score + SSL) - SRS MF-17 à 20
+        // ---------------------------------------------------------
+        $scoreData = $scoringService->getAppScore($application);
+
         $security = [
-            'global_score' => 78,
-            'level' => 'MEDIUM',
-            'owasp_score' => '85 %',
+            'global_score' => $scoreData['score'],
+            'level' => $scoreData['level'],
+            'owasp_score' => $scoreData['score'] . ' %',
             'ssl_status' => 'PND',
             'ssl_expiry_date' => '—',
-            'ssl_days_left' => 0
+            'ssl_days_left' => null
         ];
 
+        // On récupère les détails SSL pour l'affichage
         if ($application->url && str_starts_with($application->url, 'https://')) {
             $parsedUrl = parse_url($application->url);
             $host = $parsedUrl['host'] ?? null;
             $port = $parsedUrl['port'] ?? 443;
 
             if ($host) {
-                // MÉTHODE 1 : Lecture fine du certificat (Donne la date exacte)
                 $context = stream_context_create([
                     "ssl" => [
                         "capture_ssl_cert" => true,
@@ -212,7 +224,7 @@ class ApplicationMonitoringController extends Controller
                         $cert = openssl_x509_parse($peerCert);
                         if ($cert && isset($cert['validTo_time_t'])) {
                             $expiryTimestamp = $cert['validTo_time_t'];
-                            $security['ssl_expiry_date'] = date('d/m/Y', $expiryTimestamp);
+                            $security['ssl_expiry_date'] = Carbon::parse($expiryTimestamp)->format('d/m/Y');
                             $security['ssl_days_left'] = round(($expiryTimestamp - time()) / 86400);
 
                             if ($security['ssl_days_left'] < 0) {
@@ -224,23 +236,6 @@ class ApplicationMonitoringController extends Controller
                             }
                         }
                     }
-                    fclose($stream);
-                } 
-                
-                            // MÉTHODE 2 : Fallback si le pare-feu bloque la Méthode 1
-                if ($security['ssl_status'] === 'PND') {
-                    try {
-                        $response = Http::timeout(5)->withoutVerifying()->head($application->url);
-                        if ($response->successful()) {
-                            $security['ssl_status'] = 'VLD';
-                            $security['ssl_expiry_date'] = '—'; // <-- Propre
-                            $security['ssl_days_left'] = null;  // <-- On met null au lieu de texte
-                        } else {
-                            $security['ssl_status'] = 'EXP';
-                        }
-                    } catch (\Exception $e) {
-                        $security['ssl_status'] = 'EXP';
-                    }
                 }
             }
         }
@@ -248,7 +243,6 @@ class ApplicationMonitoringController extends Controller
         // ---------------------------------------------------------
         // 3. WAZUH (Sécurité & Logs)
         // ---------------------------------------------------------
-        $wazuhService = app(\App\Services\WazuhService::class);
         $vulnerabilities = $wazuhService->getVulnerabilities($application->server->wazuh_agent_id ?? '');
 
         if (empty($vulnerabilities)) {
@@ -265,7 +259,6 @@ class ApplicationMonitoringController extends Controller
             $logs = [];
         }
 
-        // On passe aussi le 'range' actuel à la vue pour que le menu déroulant reste sélectionné
         return view('monitoring.application.show', compact(
             'application', 'metrics', 'security', 'vulnerabilities', 'logs',
             'latencyHistory', 'range'

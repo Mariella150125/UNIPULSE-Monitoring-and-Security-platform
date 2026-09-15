@@ -1,4 +1,5 @@
 <div class="main-area">
+    
 
     <header class="topbar">
         <button class="sidebar-toggle" id="sidebar-toggle">
@@ -57,11 +58,29 @@
             </div>
 
         </div>
+        <div class="notif-wrapper" style="position: relative;">
+            <button class="icon-btn notif-btn" id="notif-toggle" style="position: relative;">
+                <i class="fa-regular fa-bell"></i>
+                <span class="notif-badge" id="notif-count" style="display: none;">0</span>
+            </button>
 
-        <button class="icon-btn notif-btn">
-            <i class="fa-regular fa-bell"></i>
-            <span class="notif-badge">6</span>
-        </button>
+            <!-- Dropdown des notifications -->
+            <div class="notif-dropdown" id="notif-dropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 350px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;">
+                <div class="notif-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 16px;">Alertes Récentes</h3>
+                    <a href="/alerts" style="font-size: 12px; color: var(--teal);">Voir tout l'historique</a>
+                </div>
+                <div class="notif-list" id="notif-list" style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">Chargement...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Son d'alerte caché -->
+        <audio id="alert-sound" preload="auto">
+            <source src="{{ asset('sounds/alert.mp3') }}" type="audio/mpeg">
+        </audio>
+    
 
         <div class="language">
 

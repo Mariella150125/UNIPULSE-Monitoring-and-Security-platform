@@ -1330,6 +1330,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     ramBar.className = 'metric-bar';
                     if (ramPct > 75) ramBar.classList.add('critical');
                     else if (ramPct > 60) ramBar.classList.add('warning');
+                    
+                                // Gestion du DISK
+                    const diskVal = data.disk !== null ? `${data.disk.toFixed(1)} %` : '-- %';
+                    const diskPct = data.disk !== null ? data.disk : 0;
+                    document.getElementById(`disk-val-${serverId}`).textContent = diskVal;
+                    const diskBar = document.getElementById(`disk-bar-${serverId}`);
+                    diskBar.style.width = `${diskPct}%`;
+                    diskBar.className = 'metric-bar';
+                    if (diskPct > 80) diskBar.classList.add('critical');
+                    else if (diskPct > 60) diskBar.classList.add('warning');
 
                 } catch (error) {
                     console.error('Erreur monitoring pour serveur ' + serverId, error);
@@ -1341,14 +1351,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     initGrafanaMonitoring();
 
-    function initServerMonitoringDetail() {
+       function initServerMonitoringDetail() {
         const monitorCard = document.querySelector('.monitor-card');
         if (!monitorCard) return;
 
         const serverId = monitorCard.dataset.serverId;
         const statusEl = document.getElementById('server-status');
+        
         const cpuEl = document.getElementById('cpu-value');
         const memEl = document.getElementById('memory-value');
+        const cpuBar = document.getElementById('cpu-bar');
+        const ramBar = document.getElementById('ram-bar');
+        
+        const diskEl = document.getElementById('disk-value');
+        const diskBar = document.getElementById('disk-bar');
 
         async function loadMetrics() {
             try {
@@ -1365,8 +1381,34 @@ document.addEventListener('DOMContentLoaded', function () {
                     statusEl.style.color = 'var(--red)';
                 }
 
+                // --- CPU ---
                 cpuEl.textContent = data.cpu !== null ? `${data.cpu.toFixed(1)} %` : '-- %';
+                if (cpuBar) {
+                    cpuBar.style.width = `${data.cpu ?? 0}%`;
+                    cpuBar.className = 'metric-bar'; // Reset
+                    if (data.cpu > 80) cpuBar.classList.add('critical');
+                    else if (data.cpu > 60) cpuBar.classList.add('warning');
+                }
+
+                // --- RAM ---
                 memEl.textContent = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
+                if (ramBar) {
+                    ramBar.style.width = `${data.memory ?? 0}%`;
+                    ramBar.className = 'metric-bar'; // Reset
+                    if (data.memory > 80) ramBar.classList.add('critical');
+                    else if (data.memory > 60) ramBar.classList.add('warning');
+                }
+
+                // --- DISK ---
+                if (diskEl) {
+                    diskEl.textContent = data.disk !== null ? `${data.disk.toFixed(1)} %` : '-- %';
+                }
+                if (diskBar) {
+                    diskBar.style.width = `${data.disk ?? 0}%`;
+                    diskBar.className = 'metric-bar'; // Reset
+                    if (data.disk > 80) diskBar.classList.add('critical');
+                    else if (data.disk > 60) diskBar.classList.add('warning');
+                }
 
             } catch (error) {
                 console.error('Erreur monitoring:', error);
@@ -1374,6 +1416,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusEl.style.color = 'var(--red)';
             }
         }
+
         loadMetrics();
         setInterval(loadMetrics, 15000);
     }
@@ -1665,59 +1708,397 @@ document.addEventListener('DOMContentLoaded', function () {
         const data1 = window.compareData1 || [];
         const data2 = window.compareData2 || [];
 
+        // On détermine l'unité en cherchant les parenthèses dans le label envoyé par Laravel
+        const metricText = window.compareMetric || '';
+        let unit = '';
+        if (metricText.includes('%')) unit = '%';
+        else if (metricText.includes('ms')) unit = ' ms';
+        else if (metricText.includes('Req/s')) unit = ' Req/s';
+        else if (metricText.includes('MB/s')) unit = ' MB/s';
+
         new Chart(comparisonCtx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
-                    {
-                        label: window.compareName1,
-                        data: data1,
-                        borderColor: '#1d4a40', // Vert foncé
-                        backgroundColor: 'rgba(29, 74, 64, 0.1)',
-                        fill: false, // On ne remplit pas pour bien voir l'autre courbe
-                        tension: 0.4,
-                        borderWidth: 2
+                    { 
+                        label: window.compareName1, 
+                        data: data1, 
+                        borderColor: '#1d4a40', 
+                        backgroundColor: 'rgba(29, 74, 64, 0.1)', 
+                        fill: false, tension: 0.4, borderWidth: 2 
                     },
-                    {
-                        label: window.compareName2,
-                        data: data2,
-                        borderColor: '#e08e3e', // Orange
-                        backgroundColor: 'rgba(224, 142, 62, 0.1)',
-                        fill: false,
-                        tension: 0.4,
-                        borderWidth: 2
+                    { 
+                        label: window.compareName2, 
+                        data: data2, 
+                        borderColor: '#e08e3e', 
+                        backgroundColor: 'rgba(224, 142, 62, 0.1)', 
+                        fill: false, tension: 0.4, borderWidth: 2 
                     }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + unit;
+                            }
+                        }
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: '#eef1ef' },
-                        ticks: { 
-                            callback: function(value) {
-                                return value + (window.compareMetric.includes('%') ? '%' : ' ms');
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#eef1ef' }, 
+                        ticks: { callback: v => v + unit } 
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+    /* ==========================================================
+       GRAPHIQUES HISTORIQUES SERVEUR (MF-12) & FILTRES
+       ========================================================== */
+    
+    // Options de base pour les graphiques
+    const chartOptions = {
+        responsive: true, 
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { 
+            y: { beginAtZero: true, grid: { color: '#eef1ef' } }, 
+            x: { grid: { display: false } } 
+        }
+    };
+
+    // 1. Initialisation des 4 graphiques
+    const serverCpuCtx = document.getElementById('serverCpuChart');
+    if (serverCpuCtx && typeof Chart !== 'undefined') {
+        new Chart(serverCpuCtx, {
+            type: 'line',
+            data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'CPU (%)', data: window.serverCpuHistory || [], borderColor: '#1d4a40', backgroundColor: 'rgba(29, 74, 64, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
+            options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, max: 100, ticks: { callback: v => v + '%' } } } }
+        });
+    }
+
+    const serverRamCtx = document.getElementById('serverRamChart');
+    if (serverRamCtx && typeof Chart !== 'undefined') {
+        new Chart(serverRamCtx, {
+            type: 'line',
+            data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'RAM (%)', data: window.serverRamHistory || [], borderColor: '#e08e3e', backgroundColor: 'rgba(224, 142, 62, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
+            options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, max: 100, ticks: { callback: v => v + '%' } } } }
+        });
+    }
+
+    const serverDiskCtx = document.getElementById('serverDiskChart');
+    if (serverDiskCtx && typeof Chart !== 'undefined') {
+        new Chart(serverDiskCtx, {
+            type: 'line',
+            data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'Disque (%)', data: window.serverDiskHistory || [], borderColor: '#c0392b', backgroundColor: 'rgba(192, 57, 43, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
+            options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, max: 100, ticks: { callback: v => v + '%' } } } }
+        });
+    }
+
+    const serverNetworkCtx = document.getElementById('serverNetworkChart');
+    if (serverNetworkCtx && typeof Chart !== 'undefined') {
+        new Chart(serverNetworkCtx, {
+            type: 'line',
+            data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'Réseau (MB/s)', data: window.serverNetworkHistory || [], borderColor: '#56825E', backgroundColor: 'rgba(86, 130, 94, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
+            options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, ticks: { callback: v => v + ' MB/s' } } } }
+        });
+    }
+
+    // 2. Gestion des filtres de période (30min, 24h, 48h, 7j, 30j)
+    const serverRangeSelects = document.querySelectorAll('[data-chart-range]');
+    serverRangeSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const range = this.value;
+            
+            // On met à jour le texte de TOUS les menus déroulants pour qu'ils restent synchronisés
+            serverRangeSelects.forEach(s => { s.value = range; });
+
+            let nbPoints = 24;
+            if (range === '30min') nbPoints = 30;
+            else if (range === '48h') nbPoints = 48;
+            else if (range === '7d') nbPoints = 168;
+            else if (range === '30d') nbPoints = 120;
+
+            // On régénère de fausses données pour la période choisie
+            const newLabels = [];
+            const newCpuData = [];
+            const newRamData = [];
+            const newDiskData = [];
+            const newNetData = [];
+            
+            for (let i = nbPoints; i > 0; i--) {
+                newLabels.push('T-' + i);
+                newCpuData.push(Math.floor(Math.random() * 60) + 20);
+                newRamData.push(Math.floor(Math.random() * 40) + 40);
+                newDiskData.push(Math.floor(Math.random() * 30) + 50);
+                newNetData.push(Math.floor(Math.random() * 50) + 1);
+            }
+
+            // On met à jour les 4 graphiques
+            const cpuChart = Chart.getChart('serverCpuChart');
+            if (cpuChart) { cpuChart.data.labels = newLabels; cpuChart.data.datasets[0].data = newCpuData; cpuChart.update(); }
+            
+            const ramChart = Chart.getChart('serverRamChart');
+            if (ramChart) { ramChart.data.labels = newLabels; ramChart.data.datasets[0].data = newRamData; ramChart.update(); }
+
+            const diskChart = Chart.getChart('serverDiskChart');
+            if (diskChart) { diskChart.data.labels = newLabels; diskChart.data.datasets[0].data = newDiskData; diskChart.update(); }
+
+            const netChart = Chart.getChart('serverNetworkChart');
+            if (netChart) { netChart.data.labels = newLabels; netChart.data.datasets[0].data = newNetData; netChart.update(); }
+        });
+    });    
+    /* ==========================================================
+       GRAPHIQUE POSTURE SÉCURITÉ (DEMI-CERCLE)
+       ========================================================== */
+    const securityCtx = document.getElementById('securityChart');
+    if (securityCtx && typeof Chart !== 'undefined') {
+        
+        const hexColors = (window.securityColors || []).map(c => {
+            if (c.includes('sage')) return '#56825E';
+            if (c.includes('orange')) return '#e08e3e';
+            return '#c0392b';
+        });
+
+        new Chart(securityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: window.securityLabels || [],
+                datasets: [{
+                    label: 'Score',
+                    data: window.securityData || [],
+                    backgroundColor: hexColors,
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false,
+                cutout: '70%',         // Cohérent avec tes autres donuts
+                circumference: 180,    // Demi-cercle (180 degrés)
+                rotation: 270,         // Commence à gauche et va vers la droite
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ' : ' + context.parsed + '%';
                             }
                         }
-                    },
-                    x: {
-                        grid: { display: false }
                     }
                 }
             }
         });
     }
+    // Fonction qui interroge le serveur
+    function checkCriticalAlerts() {
+        fetch('/alerts/check-critical')
+            .then(response => response.json())
+            .then(data => {
+                if (data.has_critical && !isUrgentAlerting) {
+                    triggerUrgentAlert(data.alerts[0]); // Déclenche le son et le clignotement
+                }
+            });
+    }
+
+    // Lancer la vérification toutes les 30 secondes
+    setInterval(checkCriticalAlerts, 30000);
+    checkCriticalAlerts(); // Lancer une fois au chargement
+    const notifToggle = document.getElementById('notif-toggle');
+        const notifDropdown = document.getElementById('notif-dropdown');
+
+        // Ouvrir/Fermer le menu
+        if (notifToggle) {
+            notifToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notifDropdown.style.display = notifDropdown.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Fermer si on clique en dehors
+            document.addEventListener('click', function(e) {
+                if (!notifDropdown.contains(e.target) && !notifToggle.contains(e.target)) {
+                    notifDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // Fonction pour charger les alertes dans le menu
+        function loadAlertsInTopbar() {
+            fetch('/alerts/check-critical') // On réutilise cette route pour la démo
+                .then(response => response.json())
+                .then(data => {
+                    const notifCount = document.getElementById('notif-count');
+                    const notifList = document.getElementById('notif-list');
+                    
+                    let activeAlerts = data.alerts || [];
+                    let count = activeAlerts.length;
+
+                    if (count > 0) {
+                        notifCount.textContent = count;
+                        notifCount.style.display = 'flex';
+                    } else {
+                        notifCount.style.display = 'none';
+                    }
+
+                    // Construire la liste
+                    if (count > 0) {
+                        notifList.innerHTML = activeAlerts.map(alert => `
+                            <a href="/alerts/${alert.id}" style="display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border-color); text-decoration: none; color: inherit;">
+                                <div style="color: ${alert.priority === 'critical' ? 'var(--red)' : 'var(--orange)'};">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <strong style="display: block; font-size: 14px;">${alert.title}</strong>
+                                    <small style="color: var(--text-muted);">${alert.source || 'Système'} - ${alert.code || 'ALR-'+alert.id}</small>
+                                </div>
+                            </a>
+                        `).join('');
+                    } else {
+                        notifList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);"><i class="fa-solid fa-check-circle" style="color: var(--sage-green); font-size: 24px; margin-bottom: 10px; display: block;"></i>Aucune alerte active.</div>';
+                    }
+                })
+                .catch(error => console.error('Erreur:', error));
+        }
+
+        // Charger au démarrage
+        loadAlertsInTopbar();
+        // Recharger toutes les 30 secondes
+        setInterval(loadAlertsInTopbar, 30000);
+//popup
+    function triggerUrgentAlert(alertData) {
+        isUrgentAlerting = true;
+        document.body.classList.add('critical-alert-flash');
+        
+        // A. Le pop-up HTML classique (utile si l'utilisateur est sur l'onglet)
+        const popup = document.getElementById('critical-popup');
+        const popupTitle = document.getElementById('popup-title');
+        const popupDesc = document.getElementById('popup-description');
+        
+        if (popupTitle && alertData.title) popupTitle.innerText = alertData.title;
+        if (popupDesc && alertData.description) popupDesc.innerText = alertData.description;
+        if (popup) popup.style.display = 'block';
+
+        // B. LA NOTIFICATION SYSTÈME (Même si l'utilisateur est sur un autre logiciel !)
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const systemNotif = new Notification('🚨 ALERTE CRITIQUE UNIPULSE', {
+                body: alertData.title + '\n' + (alertData.description || 'Intervention requise immédiatement !'),
+                icon: '{{ asset("images/logo-unipulse.png") }}', // Mets une icône de ton site ici (optionnel)
+                tag: 'critical-alert', // Empêche d'avoir 50 pop-up si l'alerte résonne
+                requireInteraction: true // La notification reste affichée jusqu'à ce qu'on clique dessus
+            });
+
+            // Quand on clique sur la notification système, ça ouvre l'onglet du navigateur
+            systemNotif.onclick = function() {
+                window.focus();
+                this.close();
+            };
+        }
+
+        // C. Le son
+        const sound = document.getElementById('alert-sound');
+        const unlockBtn = document.getElementById('unlock-sound-btn');
+        
+        if (sound) {
+            sound.loop = true;
+            sound.play().then(() => {
+                if (unlockBtn) unlockBtn.style.display = 'none';
+            }).catch(() => {
+                if (unlockBtn) unlockBtn.style.display = 'block';
+            });
+        }
+    }
+   // alertes 
+
+
+        function triggerUrgentAlert(alertData) {
+            isUrgentAlerting = true;
+            document.body.classList.add('critical-alert-flash');
+            
+            const popup = document.getElementById('critical-popup');
+            const popupTitle = document.getElementById('popup-title');
+            const popupDesc = document.getElementById('popup-description');
+            
+            if (popupTitle && alertData.title) popupTitle.innerText = alertData.title;
+            if (popupDesc && alertData.description) popupDesc.innerText = alertData.description;
+            if (popup) popup.style.display = 'block';
+
+            const sound = document.getElementById('alert-sound');
+            const unlockBtn = document.getElementById('unlock-sound-btn');
+            
+            if (sound) {
+                sound.loop = true;
+                sound.play().then(() => {
+                    if (unlockBtn) unlockBtn.style.display = 'none';
+                }).catch(() => {
+                    if (unlockBtn) unlockBtn.style.display = 'block';
+                });
+            }
+        }
+
+        // ON SÉCURISE L'ÉCOUTEUR DU BOUTON DE DÉBLOCAGE
+        const unlockBtn = document.getElementById('unlock-sound-btn');
+        if (unlockBtn) {
+            unlockBtn.addEventListener('click', function() {
+                document.getElementById('alert-sound').play().then(() => {
+                    this.style.display = 'none';
+                });
+            });
+        }
+
+       window.stopUrgentAlert = function() {
+            isUrgentAlerting = false;
+            document.body.classList.remove('critical-alert-flash');
+            const popup = document.getElementById('critical-popup');
+            if (popup) popup.style.display = 'none';
+
+            const sound = document.getElementById('alert-sound');
+            if (sound) {
+                sound.pause();
+                sound.currentTime = 0;
+            }
+
+            fetch('/alerts/check-critical')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.has_critical && data.alerts.length > 0) {
+                        const alertId = data.alerts[0].id;
+                        
+                        // On utilise POST et on ajoute _method: 'PUT' dans le corps
+                        fetch('/alerts/' + alertId + '/acknowledge', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                _method: 'PUT'
+                            })
+                        });
+                    }
+                });
+        };
+        setInterval(checkCriticalAlerts, 30000);
+        checkCriticalAlerts();
+        let isUrgentAlerting = false;
+
+        // 1. Demander la permission d'envoyer des notifications système
+        if ('Notification' in window) {
+            if (Notification.permission === 'default') {
+                // On demande la permission (le navigateur affichera une popup "Autoriser / Bloquer")
+                Notification.requestPermission();
+            }
+        }
+    
 }); // Fin du DOMContentLoaded (et fin du fichier)

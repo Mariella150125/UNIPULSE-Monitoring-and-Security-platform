@@ -2077,6 +2077,59 @@ form.entity-details .form-actions {
     border-radius: 12px;
     border: 1px solid var(--border-color);
 }
+/* Indicateur de source de données */
+.source-indicator {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: var(--page-bg);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Terminal Logs (Façon Grafana) */
+.terminal-log {
+    background: #1a1e2e;
+    color: #c8ccd4;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    border-radius: 0 0 24px 24px;
+    overflow: auto;
+    max-height: 400px;
+}
+.terminal-line {
+    padding: 10px 20px;
+    border-bottom: 1px solid #2a2e3e;
+    display: flex;
+    gap: 15px;
+}
+.term-time { 
+    color: #8a9490; 
+    white-space: nowrap; 
+}
+.term-level { 
+    font-weight: bold; 
+    width: 70px; 
+}
+.term-error { 
+    color: #ff4d4d; 
+}
+.term-warn { 
+    color: #ffa940; 
+}
+.term-info { 
+    color: #52c41a; 
+}
+.term-source { 
+    color: #82aaff; 
+    width: 80px; 
+}
+.term-message { 
+    flex: 1; 
+}
 /* Details grid : 1 colonne */
 .details-grid {
     grid-template-columns: 1fr;
@@ -2433,6 +2486,21 @@ form.entity-details .form-actions {
         max-width: 120px;
     }
 }
+/* Animation pour les alertes persistantes non traitées */
+    @keyframes pulse-row {
+        0% { background-color: rgba(192, 57, 43, 0.05); }
+        50% { background-color: rgba(192, 57, 43, 0.15); }
+        100% { background-color: rgba(192, 57, 43, 0.05); }
+    }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-menu {
+        display: none; position: absolute; right: 0; background: var(--panel-bg);
+        border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; min-width: 120px; z-index: 100;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .dropdown:hover .dropdown-menu { display: block; }
+    .dropdown-menu a { display: block; padding: 8px 12px; text-decoration: none; color: var(--text-main); border-radius: 4px; }
+    .dropdown-menu a:hover { background: var(--page-bg); }
 
 /* ==========================================================
    PAGE SETTINGS & TABS
@@ -2733,7 +2801,7 @@ form.entity-details .form-actions {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 /* ==========================================================
-   MONITORING SERVEUR (Style Grafana)
+   MONITORING SERVEUR
    ========================================================== */
 .grafana-grid {
     display: grid;
@@ -2939,6 +3007,67 @@ form.entity-details .form-actions {
     height: 1px;
     background: var(--border-color);
     margin: 4px 0;
+}
+/* ==========================================================
+   STYLE DE L'IMPRESSION / EXPORT PDF
+   ========================================================== */
+@media print {
+    /* Cacher tout ce qui n'est pas le rapport */
+    .sidebar, .topbar, .page-title, .btn, .btn-export-trigger, #exportDropdownMenu, .sidebar-overlay {
+        display: none !important;
+    }
+    
+    /* Mettre le contenu sur fond blanc et enlever les ombres */
+    .main-content {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    .dashboard-content {
+        padding: 0 !important;
+        background: #fff !important;
+    }
+    .panel {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        border-radius: 0 !important;
+        page-break-inside: avoid;
+    }
+
+    /* Forcer les couleurs de fond à s'imprimer */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
+/* Le conteneur qui ressemble à une feuille A4 */
+.report-document {
+    background: #fff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px;
+}
+.report-document h1, .report-document h2 {
+    color: var(--dark-teal);
+}
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+.report-table th {
+    background: var(--dark-teal);
+    color: #fff;
+    padding: 12px;
+    text-align: left;
+}
+.report-table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px;
+}
+.report-table tr:last-child td {
+    border-bottom: none;
 }
 
 /* ----------------------------------------------------------

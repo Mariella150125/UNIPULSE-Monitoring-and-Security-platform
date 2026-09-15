@@ -60,9 +60,9 @@
                     <i class="fa-solid fa-chevron-down nav-group-arrow"></i>
                 </button>
                 <div class="nav-group-items" style="{{ request()->is('security/*') ? 'max-height: 500px;' : '' }}">
-                    <a href="/security/vulnerabilities" class="nav-item {{ request()->is('security/vulnerabilities') ? 'active' : '' }}"><i class="fa-solid fa-bug"></i><span>Vulnérabilités</span></a>
+                    {{--<a href="/security/vulnerabilities" class="nav-item {{ request()->is('security/vulnerabilities') ? 'active' : '' }}"><i class="fa-solid fa-bug"></i><span>Vulnérabilités</span></a>--}}
                     <a href="/security/compliance" class="nav-item {{ request()->is('security/compliance') ? 'active' : '' }}"><i class="fa-solid fa-circle-check"></i><span>Conformité</span></a>
-                    <a href="/security/audit-logs" class="nav-item {{ request()->is('security/audit-logs') ? 'active' : '' }}"><i class="fa-solid fa-file-lines"></i><span>Journaux d'audit</span></a>
+                    <a href="/security/recommendations" class="nav-item {{ request()->is('security/recommandations') ? 'active' : '' }}"><i class="fa-solid fa-circle-check"></i><span>Recommandations</span></a>
                 </div>
             </div>
 
@@ -70,9 +70,11 @@
 
             <a href="/alerts" class="nav-item {{ request()->is('alerts') ? 'active' : '' }}">
                 <i class="fa-solid fa-bell"></i><span>Alertes</span>
-                <span class="nav-badge">6</span>
+                @if(isset($alertant) && $alertant > 0)
+                    <span class="nav-badge">{{ $alertant }}</span>
+                @endif
             </a>
-            <a href="/reporting" class="nav-item {{ request()->is('reporting') ? 'active' : '' }}"><i class="fa-solid fa-chart-simple"></i><span>Reporting</span></a>
+            <a href="/reports" class="nav-item {{ request()->is('reports') ? 'active' : '' }}"><i class="fa-solid fa-chart-simple"></i><span>Reporting</span></a>
 
         </nav>
 

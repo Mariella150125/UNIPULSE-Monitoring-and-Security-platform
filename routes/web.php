@@ -20,7 +20,12 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\MonitoringDashboardController;
 use App\Http\Controllers\ApplicationGroupController;
 use App\Http\Controllers\MonitoringComparisonController;
-
+use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AlertSettingController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\MaintenanceWindowController;
+use App\Http\Controllers\ReportController;
 
 // 1. Afficher la page (GET)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -229,7 +234,7 @@ Route::get('/webhooks/{webhook}/edit-data', [WebhookController::class, 'editData
 
 Route::get('/settings/platform', [PlatformSettingController::class, 'index'])->name('settings.platform.index');
 Route::put('/settings/platform', [PlatformSettingController::class, 'update'])->name('settings.platform.update');
-
+Route::get('/settings/connectors', [SettingController::class, 'connectors'])->name('settings.connectors.index');
 Route::get('/settings/audit-logs', [AuditLogController::class, 'index'])->name('settings.audit-logs.index');
 
 use App\Http\Controllers\ProfileController;
@@ -274,27 +279,46 @@ Route::get('/monitoring/apps', function () {
     return view('coming-soon');
 });
 
+Route::get('/security/compliance', [SecurityController::class, 'compliance'])->name('security.compliance');
+Route::get('/security/recommendations', [SecurityController::class, 'recommendations'])->name('security.recommendations');
 
-Route::get('/logs', function () {
-    return view('coming-soon');
-});
 
 Route::get('/security/vulnerabilities', function () {
     return view('coming-soon');
 });
+ 
+// Route pour afficher la liste des alertes (celle qui manque actuellement)
+Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
 
-Route::get('/security/compliance', function () {
-    return view('coming-soon');
-});
+// Route pour vérifier les alertes critiques (pour le son et le clignotement)
+Route::get('/alerts/check-critical', [AlertController::class, 'checkCritical'])->name('alerts.check-critical');
+Route::get('/alerts/{id}', [AlertController::class, 'show'])->name('alerts.show');
 
-Route::get('/security/audit-logs', function () {
-    return view('coming-soon');
-});
+// LES NOUVELLES ROUTES D'ACTION :
+Route::put('/alerts/{id}/acknowledge', [AlertController::class, 'acknowledge'])->name('alerts.acknowledge');
+Route::put('/alerts/{id}/assign', [AlertController::class, 'assign'])->name('alerts.assign');
+Route::put('/alerts/{id}/close', [AlertController::class, 'close'])->name('alerts.close');Route::get('/settings/alert-rules', [AlertSettingController::class, 'alertRules'])->name('settings.alert-rules.index');
+Route::get('/settings/notifications', [AlertSettingController::class, 'notifications'])->name('settings.notifications.index');
+Route::get('/settings/maintenance', [AlertSettingController::class, 'maintenance'])->name('settings.maintenance.index');
 
-Route::get('/alerts', function () {
-    return view('coming-soon');
-});
+// Affichage des pages
+Route::get('/settings/alert-rules', [SettingController::class, 'alertRules'])->name('settings.alert-rules.index');
+Route::get('/settings/notifications', [SettingController::class, 'notifications'])->name('settings.notifications.index');
+Route::get('/settings/maintenance', [MaintenanceWindowController::class, 'index'])->name('settings.maintenance.index');
+Route::post('/settings/maintenance', [MaintenanceWindowController::class, 'store'])->name('settings.maintenance.store');
+Route::delete('/settings/maintenance/{id}', [MaintenanceWindowController::class, 'destroy'])->name('settings.maintenance.destroy');
 
-Route::get('/reporting', function () {
-    return view('coming-soon');
-});
+// La route POST qui sauvegarde (pointe vers l'action du formulaire)
+Route::post('/settings/update', [SettingController::class, 'update'])->name('settings.update');
+
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
+Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
+Route::get('/reports/statistics', [ReportController::class, 'statistics'])->name('reports.statistics');
+Route::get('/reports/generate-pdf', [ReportController::class, 'generatePdf'])->name('reports.generate-pdf');
+Route::get('/reports/generate-excel', [ReportController::class, 'generateExcel'])->name('reports.generate-excel');
+Route::get('/reports/generate-word', [ReportController::class, 'generateWord'])->name('reports.generate-word');
+
+
+

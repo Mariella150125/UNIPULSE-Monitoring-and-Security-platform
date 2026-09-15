@@ -73,4 +73,55 @@ class WazuhService
             return [];
         }
     }
+
+    // Récupère le score CIS Controls depuis Wazuh (module SCA)
+    public function getCisScore(string $agentId): ?array
+    {
+        if (!$this->isConfigured() || empty($agentId)) {
+            return null;
+        }
+
+        $token = $this->authenticate();
+        if (!$token) {
+            return null;
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->withoutVerifying()
+                ->get($this->baseUrl . "/sca/{}/checks/{}", $agentId, $agentId);
+
+            $scaData = $response->json('data.affected_items.0');
+            
+            if ($scaData && isset($scaData['policies'][0])) {
+                $policy = $scaData['policies'][0];
+                $score = $policy['pass'] ?? 0;
+                $total = ($policy['pass'] ?? 0) + ($policy['fail'] ?? 0) + ($policy['not_app'] ?? 0);
+                $cisScore = $total > 0 ? round(($score / $total) * 100) : 0;
+                
+                return [
+                    'score' => $cisScore,
+                    'level' => $this->getEvaluationLevel($cisScore),
+                    'color' => $this->getScoreColor($cisScore)
+                ];
+            }
+            return null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    // Helpers d'évaluation (utilisés par getCisScore)
+    private function getEvaluationLevel($score) {
+        if ($score >= 90) return 'Excellent';
+        if ($score >= 70) return 'Moyen';
+        if ($score >= 50) return 'Faible';
+        return 'Nul';
+    }
+
+    private function getScoreColor($score) {
+        if ($score >= 90) return 'var(--sage-green)';
+        if ($score >= 70) return 'var(--orange)';
+        return 'var(--red)';
+    }
 }

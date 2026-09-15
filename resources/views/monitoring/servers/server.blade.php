@@ -4,9 +4,34 @@
 
 <div class="page-title">
     <h1>Monitoring des Serveurs</h1>
-    <p>Vue d'ensemble en temps réel </p>
+    <p>Vue d'ensemble en temps réel de l'infrastructure </p>
 </div>
 
+{{-- LIGNE 1 : Stat Panels (KPIs Globaux) --}}
+<div class="usr-kpi-row">
+    <div class="kpi-card">
+        <div class="kpi-icon c-teal"><i class="fa-solid fa-server"></i></div>
+        <p class="kpi-label">Total Serveurs</p>
+        <p class="kpi-value">{{ $totalServers }}</p>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon c-sage"><i class="fa-solid fa-circle-check"></i></div>
+        <p class="kpi-label">En ligne</p>
+        <p class="kpi-value">{{ $healthyServers }}</p>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon c-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <p class="kpi-label">Hors ligne / Critique</p>
+        <p class="kpi-value">{{ $criticalServers }}</p>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon c-orange"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+        <p class="kpi-label">En maintenance</p>
+        <p class="kpi-value">{{ $maintenanceServers }}</p>
+    </div>
+</div>
+
+{{-- LIGNE 2 : Cartes individuelles des serveurs --}}
 <div class="grafana-grid">
     @forelse($servers as $server)
         <div class="grafana-panel" data-server-id="{{ $server->id }}">
@@ -37,6 +62,17 @@
                     </div>
                     <div class="metric-bar-container">
                         <div class="metric-bar" id="ram-bar-{{ $server->id }}" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- DISK -->
+                <div class="grafana-metric">
+                    <div class="metric-header">
+                        <span>Disk Usage</span>
+                        <strong id="disk-val-{{ $server->id }}">-- %</strong>
+                    </div>
+                    <div class="metric-bar-container">
+                        <div class="metric-bar" id="disk-bar-{{ $server->id }}" style="width: 0%; background: var(--orange);"></div>
                     </div>
                 </div>
             </div>

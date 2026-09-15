@@ -92,15 +92,7 @@
 <!-- ========================================== -->
 <!-- ONGLET 2 : PERFORMANCE (Façon Grafana)     -->
 <!-- ========================================== -->
-<div class="tab-content" id="tab-performance">
-    
-    {{-- Indicateur de la source des données (Prometheus ou Health-Check) --}}
-    <div style="margin-bottom: 15px; padding: 10px 15px; background: var(--page-bg); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
-        <i class="fa-solid fa-database" style="color: var(--dark-teal);"></i>
-        <span style="font-size: 13px; font-weight: 600;">Source des données : {{ $metrics['source'] ?? 'N/A' }}</span>
-    </div>
-
-    <div class="grid-3">
+    <div class="grid-3" style="grid-template-columns: repeat(5, 1fr); gap: 15px;">
         <div class="kpi-card">
             <div class="kpi-icon c-sage"><i class="fa-solid fa-heart-pulse"></i></div>
             <p class="kpi-label">Disponibilité</p>
@@ -111,66 +103,24 @@
             <p class="kpi-label">Temps de réponse</p>
             <p class="kpi-value">{{ $metrics['response_time'] }}</p>
         </div>
+        {{-- NOUVEAU : Taux d'erreurs --}}
         <div class="kpi-card">
-            <div class="kpi-icon c-orange"><i class="fa-solid fa-globe"></i></div>
+            <div class="kpi-icon c-red"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <p class="kpi-label">Taux d'erreurs</p>
+            <p class="kpi-value">{{ $metrics['error_rate'] }}</p>
+        </div>
+        {{-- NOUVEAU : Trafic API --}}
+        <div class="kpi-card">
+            <div class="kpi-icon c-orange"><i class="fa-solid fa-arrow-trend-up"></i></div>
+            <p class="kpi-label">Trafic API</p>
+            <p class="kpi-value" style="font-size: 20px;">{{ $metrics['api_traffic'] }}</p>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon c-teal"><i class="fa-solid fa-globe"></i></div>
             <p class="kpi-label">DNS Lookup</p>
             <p class="kpi-value">{{ $metrics['dns_lookup'] }}</p>
         </div>
     </div>
-
-    {{-- LE VRAI GRAPHIQUE FAÇON GRAFANA AVEC FILTRE --}}
-    <div class="panel" style="margin-top: 24px;">
-        <div class="panel-header">
-            <p>Latence et Temps de réponse ({{ $range == '7d' ? '7 derniers jours' : ($range == '30d' ? '30 derniers jours' : '24 dernières heures') }})</p>
-            <select class="filter-btn" id="latency-range-select">
-                <option value="24h" {{ $range == '24h' ? 'selected' : '' }}>Dernières 24h</option>
-                <option value="7d" {{ $range == '7d' ? 'selected' : '' }}>7 derniers jours</option>
-                <option value="30d" {{ $range == '30d' ? 'selected' : '' }}>30 derniers jours</option>
-            </select>
-        </div>
-        <div class="alertChart" style="height: 300px; position: relative;">
-            <canvas id="appResponseTimeChart"></canvas>
-        </div>
-    </div>
-
-    <div class="panel" style="margin-top: 24px;">
-        <div class="panel-header"><p>Détails HTTP & Probes (Prometheus / Health-Check)</p></div>
-        <table class="server-table">
-            <thead>
-                <tr>
-                    <th>Métrique</th>
-                    <th>Valeur</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Statut HTTP</td>
-                    <td><span class="badge badge-critical" style="background: var(--sage-green); color: white;">{{ $metrics['http_status'] }}</span></td>
-                </tr>
-                <tr>
-                    <td>Version HTTP</td>
-                    <td>{{ $metrics['http_version'] }}</td>
-                </tr>
-                <tr>
-                    <td>Global Probe Duration (GPD)</td>
-                    <td>{{ $metrics['gpd'] }}</td>
-                </tr>
-                <tr>
-                    <td>Probe Duration (PD)</td>
-                    <td>{{ $metrics['pd'] }}</td>
-                </tr>
-                <tr>
-                    <td>Average Probe Duration (APD)</td>
-                    <td>{{ $metrics['apd'] }}</td>
-                </tr>
-                <tr>
-                    <td>État des services</td>
-                    <td><span class="status-dot online"></span> {{ $metrics['services_status'] }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 
 <!-- ========================================== -->
 <!-- ONGLET 3 : SÉCURITÉ                        -->
@@ -284,7 +234,7 @@
                     <th>Lien NVD</th>
                 </tr>
             </thead>
-            <tbody>
+                       <tbody>
                 @foreach($vulnerabilities as $vuln)
                 <tr data-cvss="{{ $vuln['cvss'] }}">
                     <td><strong>{{ $vuln['cve'] }}</strong></td>

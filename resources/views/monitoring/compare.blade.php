@@ -9,7 +9,7 @@
 
 <div class="panel">
     {{-- FORMULAIRE DE SÉLECTION --}}
-    <form method="GET" action="{{ route('monitoring.compare.index') }}" class="search-filter-form">
+        <form method="GET" action="{{ route('monitoring.compare.index') }}" class="search-filter-form">
         <div class="panel-header" style="flex-wrap: wrap; gap: 15px;">
             
             {{-- 1. Choisir le type --}}
@@ -45,8 +45,21 @@
                     @endforeach
                 @endif
             </select>
+            {{-- 4. NOUVEAU : Choisir la métrique --}}
+            <select name="metric" class="filter-btn" onchange="this.form.submit()">
+                @if($type == 'server')
+                    <option value="cpu" {{ $metric == 'cpu' ? 'selected' : '' }}>CPU</option>
+                    <option value="ram" {{ $metric == 'ram' ? 'selected' : '' }}>RAM</option>
+                    <option value="disk" {{ $metric == 'disk' ? 'selected' : '' }}>Disque</option>
+                    <option value="network" {{ $metric == 'network' ? 'selected' : '' }}>Réseau</option>
+                @else
+                    <option value="response_time" {{ $metric == 'response_time' ? 'selected' : '' }}>Temps de réponse</option>
+                    <option value="error_rate" {{ $metric == 'error_rate' ? 'selected' : '' }}>Taux d'erreurs</option>
+                    <option value="requests" {{ $metric == 'requests' ? 'selected' : '' }}>Trafic API</option>
+                @endif
+            </select>
 
-            {{-- 4. Choisir la période --}}
+            {{-- 5. Choisir la période --}}
             <select name="range" class="filter-btn" onchange="this.form.submit()">
                 <option value="24h" {{ $range == '24h' ? 'selected' : '' }}>24 heures</option>
                 <option value="7d" {{ $range == '7d' ? 'selected' : '' }}>7 jours</option>
