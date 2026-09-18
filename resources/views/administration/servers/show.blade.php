@@ -18,7 +18,6 @@
                 <i class="fa-solid fa-arrow-left"></i>
                 Retour
             </a>
-            
         </div>
     </div>
 
@@ -49,6 +48,24 @@
                 <span class="detail-label">Environnement</span>
                 <span class="detail-value">{{ $server->environment }}</span>
             </div>
+
+            {{-- BLOC CRITICITÉ --}}
+            <div class="detail-item">
+                <span class="detail-label">Criticité </span>
+                <span class="detail-value">
+                    @php
+                        $critStyles = [
+                            'low'      => ['color' => 'var(--text-muted)', 'label' => 'Basse'],
+                            'medium'   => ['color' => 'var(--sage-green)', 'label' => 'Moyenne'],
+                            'high'     => ['color' => 'var(--orange)', 'label' => 'Haute'],
+                            'critical' => ['color' => 'var(--red)', 'label' => 'Critique'],
+                        ];
+                        $crit = $critStyles[$server->criticality] ?? ['color' => 'var(--text-muted)', 'label' => 'Non définie'];
+                    @endphp
+                    <strong style="color: {{ $crit['color'] }};">{{ $crit['label'] }}</strong>
+                </span>
+            </div>
+            {{-- FIN BLOC CRITICITÉ --}}
 
             <div class="detail-item">
                 <span class="detail-label">Département</span>
@@ -88,6 +105,7 @@
                     'healthy'  => 'En bonne santé',
                     'critical' => 'Critique',
                     'warning'  => 'Warning',
+                    'maintenance' => 'En maintenance',
                     default    => 'Inconnu',
                 };
             @endphp

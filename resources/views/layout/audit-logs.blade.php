@@ -42,8 +42,10 @@
                     </td>
                     <td class="text-sm text-muted">
                         @if($log->resource_type)
-                            {{ $log->resource_type }} 
+                            <strong>{{ $log->resource_type }}</strong> 
                             @if($log->resource_id) #{{ $log->resource_id }} @endif
+                            <br>
+                            <small>{{ $log->details ?? '—' }}</small>
                         @else
                             -
                         @endif

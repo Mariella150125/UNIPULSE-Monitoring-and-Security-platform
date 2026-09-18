@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'wazuh' => [
+        'url'      => env('WAZUH_URL'),
+        'user'     => env('WAZUH_USER'),
+        'password' => env('WAZUH_PASSWORD'),
+    ],
 
 ];

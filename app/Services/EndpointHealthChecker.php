@@ -22,12 +22,14 @@ class EndpointHealthChecker
         $result = $this->performRequest($endpoint);
         $result['response_time_ms'] = (int) ((microtime(true) - $start) * 1000);
 
-        // Mise à jour de l'endpoint
-        $endpoint->update([
-            'last_status'           => $result['status'],
-            'last_response_time_ms' => $result['response_time_ms'],
-            'last_checked_at'       => now(),
-        ]);
+        // On ne met à jour la base de données que si ce n'est pas un blocage SSRF
+        if ($result['status'] !== 'ssrf_blocked') {
+            $endpoint->update([
+                'last_status'           => $result['status'],
+                'last_response_time_ms' => $result['response_time_ms'],
+                'last_checked_at'       => now(),
+            ]);
+        }
 
         Log::info('Endpoint health check', [
             'endpoint_id'      => $endpoint->id,
@@ -58,6 +60,17 @@ class EndpointHealthChecker
      */
     private function performRequest(ApplicationEndpoint $endpoint): array
     {
+        // RÈGLE 12 : PROTECTION SSRF
+        if ($this->isUnsafeUrl($endpoint->url)) {
+            return [
+                'success'     => false,
+                'status'      => 'ssrf_blocked',
+                'status_code' => 0,
+                'body'        => 'URL bloquée pour des raisons de sécurité (SSRF Protection).',
+                'error'       => 'SSRF Protection: Tentative d\'accès à une ressource interne interdite.',
+            ];
+        }
+
         try {
             $headers = $endpoint->auth_headers ?? [];
 
@@ -97,6 +110,28 @@ class EndpointHealthChecker
                 'error'       => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * RÈGLE 12 : Vérifie si l'URL est potentiellement dangereuse (SSRF).
+     */
+    private function isUnsafeUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? '';
+
+        // 1. Bloquer localhost et les IP locales explicites
+        $blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254', '::1'];
+        if (in_array($host, $blockedHosts)) {
+            return true;
+        }
+
+        // 2. Bloquer les plages d'IP privées (10.x, 192.168.x, 172.16-31.x)
+        if (preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $host)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

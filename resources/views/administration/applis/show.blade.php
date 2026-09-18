@@ -84,13 +84,20 @@
             <div class="detail-item">
                 <span class="detail-label">Criticité</span>
                 <span class="detail-value">
-                    @match($application->criticality)
-                        'low' => 'Basse',
-                        'medium' => 'Moyenne',
-                        'high' => 'Haute',
-                        'critical' => 'Critique',
-                        default => 'Non définie',
-                    @endmatch
+                    @php
+                        // On définit les couleurs et les traductions
+                        $critStyles = [
+                            'low'      => ['color' => 'var(--text-muted)', 'label' => 'Basse'],
+                            'medium'   => ['color' => 'var(--sage-green)', 'label' => 'Moyenne'],
+                            'high'     => ['color' => 'var(--orange)', 'label' => 'Haute'],
+                            'critical' => ['color' => 'var(--red)', 'label' => 'Critique'],
+                        ];
+                        // On récupère les infos pour l'application actuelle, ou "Non définie" par défaut
+                        $crit = $critStyles[$application->criticality] ?? ['color' => 'var(--text-muted)', 'label' => 'Non définie'];
+                    @endphp
+                    
+                    {{-- On affiche avec la couleur et le gras --}}
+                    <strong style="color: {{ $crit['color'] }};">{{ $crit['label'] }}</strong>
                 </span>
             </div>
 

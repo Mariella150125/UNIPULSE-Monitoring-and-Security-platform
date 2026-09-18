@@ -28,7 +28,8 @@
                 <select name="os" required>
                     <option value="">Sélectionner</option>
                     <option value="linux">Linux</option>
-                    <option value="windows">Windows</option>
+                     <option value="unix">Unix</option>
+                    <option value="windows">Windows Server</option>
                 </select>
             </div>
             <div class="input-group">
@@ -44,14 +45,7 @@
                     <option value="dev">Développement</option>
                 </select>
             </div>
-            <div class="input-group">
-                <label>Criticité *</label>
-                <select name="criticality" required>
-                    <option value="high">Élevée</option>
-                    <option value="medium">Moyenne</option>
-                    <option value="low">Faible</option>
-                </select>
-            </div>
+            
             <div class="input-group">
                 <label>Département</label>
                 <input type="text" name="department">

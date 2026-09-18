@@ -35,15 +35,21 @@ class ApplicationController extends Controller
         }
 
         $applications = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
-
+        $maintenance = Application::where('status', 'maintenance')->count();
         $applicationTypes = ApplicationType::where('status', true)->orderBy('name')->get();
         $servers = Server::orderBy('name')->get();
         $users = User::orderBy('name')->get();
         $activeApplications = Application::where('status', 'active')->count();
 
-        $environmentStats = Application::selectRaw('environment, COUNT(*) as total')
-            ->groupBy('environment')->get();
+        // --- NOUVEAU : CALCUL DE LA DISPONIBILITÉ PAR APPLICATION ---
+        $appIds = $applications->pluck('id');
+        // On calcule la moyenne de is_available (true=100%, false=0%) pour chaque application
+        $availabilities = ApplicationAvailability::whereIn('application_id', $appIds)
+            ->selectRaw('application_id, AVG(CASE WHEN is_available = true THEN 100 ELSE 0 END) as percent')
+            ->groupBy('application_id')
+            ->pluck('percent', 'application_id');
 
+        // --- NOUVEAU : DONNÉES POUR LE GRAPHIQUE GLOBAL ---
         $availabilityStats = ApplicationAvailability::query()
             ->where('checked_at', '>=', now()->subDays(7))
             ->selectRaw('DATE(checked_at) as date')
@@ -52,9 +58,21 @@ class ApplicationController extends Controller
             ->orderBy('date')
             ->get();
 
+        // On formate les données pour Chart.js
+        $availabilityLabels = $availabilityStats->pluck('date')->map(fn($date) => \Carbon\Carbon::parse($date)->format('d/m'))->values()->toArray();
+        $availabilityData = $availabilityStats->pluck('availability')->map(fn($val) => round($val, 2))->values()->toArray();
+
+        $environmentStats = Application::selectRaw('environment, COUNT(*) as total')
+            ->groupBy('environment')->get();
+        
+        $lastSync = Application::whereNotNull('last_sync_at')->max('last_sync_at');
+
+        $applicationGroups = \App\Models\ApplicationGroup::orderBy('name')->get();
+        // On envoie $availabilities, $availabilityLabels et $availabilityData à la vue
         return view('administration.applis.appli', compact(
             'applications', 'applicationTypes', 'servers', 'users',
-            'activeApplications', 'environmentStats', 'availabilityStats'
+            'activeApplications', 'environmentStats', 'availabilityStats', 'lastSync', 'maintenance', 'applicationGroups',
+            'availabilities', 'availabilityLabels', 'availabilityData'
         ));
     }
 
@@ -93,7 +111,18 @@ class ApplicationController extends Controller
             'scrape_interval' => 'nullable|string|max:50',
             'url_health_check' => 'nullable|url|max:500',
             'wazuh_enabled' => 'nullable|boolean',
-            'criticality' => ['nullable', 'in:low,medium,high,critical'],
+            'wazuh_agent_id' => 'nullable|string|max:255', // <-- AJOUTÉ
+            'wazuh_group' => 'nullable|string|max:255',    // <-- AJOUTÉ
+            // NOUVEAUX CHAMPS FRONTEND ET BDD
+            'frontend_language' => 'nullable|string|max:100',
+            'frontend_framework' => 'nullable|string|max:100',
+            'frontend_url' => 'nullable|url|max:255',
+            'frontend_version' => 'nullable|string|max:50',
+            'database_type' => 'nullable|string|max:50',
+            'database_name' => 'nullable|string|max:100',
+            'database_host' => 'nullable|string|max:255',
+            'database_port' => 'nullable|integer|min:1|max:65535',
+            'application_group_id' => 'nullable|exists:application_groups,id',
         ]);
 
         if ($validated['is_hosted'] && empty($validated['server_id'])) {
@@ -110,6 +139,16 @@ class ApplicationController extends Controller
         $validated['monitoring_enabled'] = $validated['monitoring_enabled'] ?? false;
         $validated['wazuh_enabled'] = $validated['wazuh_enabled'] ?? false;
         $validated['hosting_type'] = $validated['is_hosted'] ? 'hosted' : 'non_hosted';
+
+        // CALCUL AUTOMATIQUE DE LA CRITICITÉ
+        $env = $validated['environment'];
+        $validated['criticality'] = match($env) {
+            'production'  => 'critical',
+            'staging'     => 'high',
+            'test'        => 'medium',
+            'development' => 'low',
+            default       => 'low',
+        };
 
         $prefix = $validated['is_hosted'] ? 'APN-H-' : 'APN-NH-';
         $lastApplication = Application::where('identifiant_genere', 'like', $prefix . '%')->orderByDesc('id')->first();
@@ -137,12 +176,14 @@ class ApplicationController extends Controller
     public function edit(string $id)
     {
         $application = Application::findOrFail($id);
+        $applicationGroups = \App\Models\ApplicationGroup::orderBy('name')->get();
+        
         return view('administration.applis.edit', [
             'application' => $application,
             'applicationTypes' => ApplicationType::where('status', true)->orderBy('name')->get(),
             'servers' => Server::orderBy('name')->get(),
             'users' => User::orderBy('name')->get(),
-        ]);
+        ]);   
     }
 
     public function update(Request $request, string $id)
@@ -173,7 +214,18 @@ class ApplicationController extends Controller
             'scrape_interval' => 'nullable|string|max:50',
             'url_health_check' => 'nullable|url|max:500',
             'wazuh_enabled' => 'nullable|boolean',
-            'criticality' => ['nullable', 'in:low,medium,high,critical'],
+            'wazuh_agent_id' => 'nullable|string|max:255', // <-- AJOUTÉ
+            'wazuh_group' => 'nullable|string|max:255',    // <-- AJOUTÉ
+            // NOUVEAUX CHAMPS FRONTEND ET BDD
+            'frontend_language' => 'nullable|string|max:100',
+            'frontend_framework' => 'nullable|string|max:100',
+            'frontend_url' => 'nullable|url|max:255',
+            'frontend_version' => 'nullable|string|max:50',
+            'database_type' => 'nullable|string|max:50',
+            'database_name' => 'nullable|string|max:100',
+            'database_host' => 'nullable|string|max:255',
+            'database_port' => 'nullable|integer|min:1|max:65535',
+            'application_group_id' => 'nullable|exists:application_groups,id',
         ]);
 
         if ($validated['is_hosted'] && empty($validated['server_id'])) {
@@ -190,10 +242,21 @@ class ApplicationController extends Controller
         $validated['wazuh_enabled'] = $validated['wazuh_enabled'] ?? false;
         $validated['hosting_type'] = $validated['is_hosted'] ? 'hosted' : 'non_hosted';
 
+        // CALCUL AUTOMATIQUE DE LA CRITICITÉ
+        $env = $validated['environment'];
+        $validated['criticality'] = match($env) {
+            'production'  => 'critical',
+            'staging'     => 'high',
+            'test'        => 'medium',
+            'development' => 'low',
+            default       => 'low',
+        };
+
         $application->update($validated);
 
         return redirect()->route('appli.index')->with('success', 'Application modifiée avec succès.');
     }
+
     /**
      * Page de confirmation de suppression.
      */
@@ -202,13 +265,13 @@ class ApplicationController extends Controller
         $application = Application::findOrFail($id);
         return view('administration.applis.delete', compact('application'));
     }
+
     public function destroy(string $id)
     {
         $application = Application::findOrFail($id)->delete();
-       // if ($application->created_by !== Auth::id()) abort(403);
-        //$this->service->delete($application);
         return redirect()->route('appli.index')->with('success', 'Application supprimée avec succès.');
     }
+
     public function environmentChartData()
     {
         $data = Application::selectRaw('environment, COUNT(*) as total')
@@ -220,5 +283,14 @@ class ApplicationController extends Controller
             'labels' => $data->pluck('environment')->values()->toArray(),
             'data' => $data->pluck('total')->map(fn ($value) => (int) $value)->values()->toArray(),
         ]);
+    }
+
+    public function changeStatus(Request $request, $id)
+    {
+        $app = Application::findOrFail($id);
+        $app->status = $request->input('status', 'active');
+        $app->save();
+
+        return redirect()->back()->with('success', 'Statut de l\'application mis à jour avec succès.');
     }
 }

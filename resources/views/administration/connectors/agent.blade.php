@@ -1,20 +1,26 @@
 @extends('layout.app')
 
-@section('agent')
-
 @section('content')
 
     @if ($errors->any())
-        <div class="flash-message error">
+        <div class="alert alert-danger" style="background: rgba(192, 57, 43, 0.1); border: 1px solid var(--red); color: var(--red); padding: 12px 18px; border-radius: 8px; margin-bottom: 20px;">
             @foreach ($errors->all() as $error)
-                <p>{{ $error }}</p>
+                <p style="margin: 0;"><i class="fa-solid fa-triangle-exclamation"></i> {{ $error }}</p>
             @endforeach
         </div>
     @endif
 
-    @if (session('success'))
-        <div class="flash-message success">
-            <p>{{ session('success') }}</p>
+    @if(session('success'))
+        <div class="success-message" id="success-message">
+            <i class="fa-solid fa-circle-check"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger" style="background: rgba(192, 57, 43, 0.1); border: 1px solid var(--red); color: var(--red); padding: 12px 18px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            {{ session('error') }}
         </div>
     @endif
 
@@ -31,7 +37,6 @@
     </div>
 
     <div class="usr-kpi-row">
-
         <div class="kpi-card">
             <div class="kpi-icon c-teal"><i class="fa-solid fa-plug"></i></div>
             <p class="kpi-label">Connecteurs enregistrés</p>
@@ -55,41 +60,32 @@
             <p class="kpi-label">Jamais testés</p>
             <p class="kpi-value">{{ $kpis['never'] }}</p>
         </div>
-
     </div>
 
     <div class="panel">
-
         <div class="panel-header">
-
             <div class="search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="connector-search" placeholder="Rechercher un connecteur..." value="{{ request('search') }}">
             </div>
 
-            <div class="filter-btn">
-                <select id="filter-type"  class="filter-btn">>
+            <div class="filter-btn" style="display: flex; gap: 10px; align-items: center;">
+                <select id="filter-type" class="filter-btn">
                     <option value="">Tous les types</option>
                     <option value="prometheus" {{ request('type') === 'prometheus' ? 'selected' : '' }}>Prometheus</option>
                     <option value="wazuh" {{ request('type') === 'wazuh' ? 'selected' : '' }}>Wazuh</option>
                 </select>
-                <select id="filter-status"  class="filter-btn">>
+                <select id="filter-status" class="filter-btn">
                     <option value="">Tous les statuts</option>
                     <option value="connected" {{ request('status') === 'connected' ? 'selected' : '' }}>Connecté</option>
                     <option value="error" {{ request('status') === 'error' ? 'selected' : '' }}>Erreur</option>
                     <option value="never_tested" {{ request('status') === 'never_tested' ? 'selected' : '' }}>Jamais testé</option>
+                    <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Suspendu</option>
                 </select>
-
-                <button type="submit" class="filter-btn">
-                    <i class="fa-solid fa-filter"></i>
-                    Filtrer
-                </button>
             </div>
-                
         </div>
 
         <table class="server-table">
-
             <thead>
                 <tr>
                     <th>Type</th>
@@ -103,11 +99,8 @@
             </thead>
 
             <tbody>
-
                 @forelse ($connectors as $connector)
-
                     <tr>
-
                         <td>
                             <span class="connector-type">
                                 @if ($connector->type === 'prometheus')
@@ -118,7 +111,10 @@
                             </span>
                         </td>
 
-                        <td>{{ $connector->name }}</td>
+                        <td>
+                            <span class="webhook-color-dot" style="background-color: {{ $connector->type === 'prometheus' ? 'var(--sage-green)' : 'var(--dark-teal)' }};"></span>
+                            <strong>{{ $connector->name }}</strong>
+                        </td>
 
                         <td style="font-size:13px;">{{ $connector->full_url }}</td>
 
@@ -127,19 +123,21 @@
                                 $dotClass = match($connector->status) {
                                     'connected'    => 'online',
                                     'error'        => 'offline',
+                                    'suspended'    => 'warning',
                                     default        => '',
                                 };
                                 $dotStyle = $connector->status === 'never_tested' ? 'background:var(--text-muted);' : '';
                                 $statusLabel = match($connector->status) {
                                     'connected'    => 'Connecté',
                                     'error'        => 'Erreur',
+                                    'suspended'    => 'Suspendu',
                                     default        => 'Jamais testé',
                                 };
                             @endphp
                             <span class="status-dot {{ $dotClass }}" style="{{ $dotStyle }}"></span>
                             {{ $statusLabel }}
                             @if ($connector->is_prolonged_failure)
-                                <i class="fa-solid fa-triangle-exclamation" style="color:var(--c-red);font-size:11px;margin-left:4px;" title="Échec prolongé"></i>
+                                <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:11px;margin-left:4px;" title="Échec prolongé"></i>
                             @endif
                         </td>
 
@@ -147,21 +145,52 @@
 
                         <td>{{ $connector->createdBy->name ?? '—' }}</td>
 
+                        {{-- MENU D'ACTIONS (3 POINTS) --}}
                         <td>
-                            <a href="{{ route('connectors.show', $connector) }}" class="icon-btn" title="Voir">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
-                            <a href="{{ route('connectors.edit', $connector) }}" class="icon-btn" title="Modifier">
-                                <i class="fa-solid fa-pen"></i>
-                            </a>
-                            <a href="{{ route('connectors.plug', $connector) }}" class="icon-btn" title="Tester la connexion">
-                                <i class="fa-solid fa-plug"></i>
-                            </a>
-                            <a href="{{ route('connectors.delete', $connector) }}" class="icon-btn" title="Supprimer" style="color:var(--c-red);">
-                                <i class="fa-solid fa-trash"></i>
-                            </a>
-                        </td>
+                            <div class="action-dropdown">
+                                <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <a href="{{ route('connectors.show', $connector) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-eye"></i> Voir
+                                    </a>
+                                    <a href="{{ route('connectors.edit', $connector) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-pen"></i> Modifier
+                                    </a>
+                                    <a href="{{ route('connectors.plug', $connector) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-plug"></i> Tester
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {{-- ACTIVER / DÉSACTIVER --}}
+                                    @if($connector->status === 'suspended')
+                                        <form action="{{ route('connectors.status', $connector->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="never_tested">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-play"></i> Activer
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('connectors.status', $connector->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="suspended">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-pause"></i> Désactiver
+                                            </button>
+                                        </form>
+                                    @endif
 
+                                    <div class="dropdown-divider"></div>
+                                    <a href="{{ route('connectors.delete', $connector) }}" class="dropdown-item text-red">
+                                        <i class="fa-solid fa-trash"></i> Supprimer
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
 
                 @empty
@@ -173,17 +202,15 @@
                     </tr>
 
                 @endforelse
-
             </tbody>
-
         </table>
 
         {{ $connectors->withQueryString()->links() }}
-
     </div>
+    <p class="sync-time">
+        Dernière synchronisation : {{ $lastSync ? $lastSync->diffForHumans() : 'Jamais' }}
+    </p>
 
     @include('administration.connectors.connect-modal')
 
 @endsection
-
-

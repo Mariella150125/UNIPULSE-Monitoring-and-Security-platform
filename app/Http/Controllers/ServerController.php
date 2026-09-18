@@ -67,7 +67,7 @@ class ServerController extends Controller
             ->groupBy('os')
             ->orderByDesc('total')
             ->get();
-
+         $lastSync = \App\Models\Server::whereNotNull('global_status_updated_at')->max('global_status_updated_at');
         return view('administration.servers.server', compact(
             'servers',
             'groups',
@@ -77,6 +77,7 @@ class ServerController extends Controller
             'hostedApps',
             'envDistribution',
             'osDistribution',
+            'lastSync'
         ));
     }
 
@@ -123,7 +124,15 @@ class ServerController extends Controller
             'wazuh_agent_id'      => 'nullable|string|max:255', // <-- AJOUTÉ
             'wazuh_group'         => 'nullable|string|max:255', // <-- AJOUTÉ
         ]);
-
+       
+        $env = strtolower($validated['environment']);
+        $validated['criticality'] = match($env) {
+            'production'  => 'critical',
+            'staging'     => 'high',
+            'test'        => 'medium',
+            'development' => 'low',
+            default       => 'medium',
+        };
         $server->update($validated);
 
         return redirect()->route('server.index')->with('success', 'Serveur modifié.');
@@ -172,7 +181,17 @@ class ServerController extends Controller
             'wazuh_agent_id'      => 'nullable|string|max:255', 
             'wazuh_group'         => 'nullable|string|max:255', 
         ]);
+                
+        $env = strtolower($validated['environment']);
+        $validated['criticality'] = match($env) {
+            'production'  => 'critical',
+            'staging'     => 'high',
+            'test'        => 'medium',
+            'development' => 'low',
+            default       => 'medium',
+        };
 
+        
         Server::create($validated);
 
         return redirect()->route('server.index')->with('success', 'Serveur ajouté avec succès.');
@@ -214,5 +233,12 @@ class ServerController extends Controller
             'data' => $values,
         ]);
     }
-    
+        public function changeStatus(Request $request, $id)
+    {
+        $server = Server::findOrFail($id);
+        $server->global_status = $request->input('status', 'unknown');
+        $server->save();
+
+        return redirect()->back()->with('success', 'Statut du serveur mis à jour avec succès.');
+    }
 }

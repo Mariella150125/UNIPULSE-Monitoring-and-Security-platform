@@ -42,10 +42,14 @@
                     <i class="fa-solid fa-chevron-down nav-group-arrow"></i>
                 </button>
                 <div class="nav-group-items" style="{{ (request()->is('monitoring/*') || request()->is('logs')) ? 'max-height: 500px;' : '' }}">
-                    <a href="/monitoring/apps" class="nav-item {{ request()->is('monitoring/apps') ? 'active' : '' }}"><i class="fa-solid fa-window-restore"></i><span>Applications</span></a>
+                    <a href="/monitoring/dashboard" class="nav-item {{ request()->is('/monitoring/dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+                    <a href="/monitoring/applications" class="nav-item {{ request()->is('monitoring/applications') ? 'active' : '' }}"><i class="fa-solid fa-window-restore"></i><span>Applications</span></a>
                     <a href="/monitoring/servers" class="nav-item {{ request()->is('monitoring/servers') ? 'active' : '' }}"><i class="fa-solid fa-server"></i><span>Serveurs</span></a>
-                    <a href="/logs" class="nav-item {{ request()->is('logs') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Logs</span></a>
+                    <a href="/monitoring/logs" class="nav-item {{ request()->is('/monitoring/logs') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Logs</span></a>
+                    <a href="/monitoring/compare" class="nav-item {{ request()->is('monitoring/compare') ? 'active' : '' }}"><i class="fa-solid fa-code-compare"></i><span>Comparaison</span></a>
+                    
                 </div>
+    
             </div>
 
             {{-- Groupe repliable : Sécurité & Conformité --}}
@@ -56,9 +60,9 @@
                     <i class="fa-solid fa-chevron-down nav-group-arrow"></i>
                 </button>
                 <div class="nav-group-items" style="{{ request()->is('security/*') ? 'max-height: 500px;' : '' }}">
-                    <a href="/security/vulnerabilities" class="nav-item {{ request()->is('security/vulnerabilities') ? 'active' : '' }}"><i class="fa-solid fa-bug"></i><span>Vulnérabilités</span></a>
+                    {{--<a href="/security/vulnerabilities" class="nav-item {{ request()->is('security/vulnerabilities') ? 'active' : '' }}"><i class="fa-solid fa-bug"></i><span>Vulnérabilités</span></a>--}}
                     <a href="/security/compliance" class="nav-item {{ request()->is('security/compliance') ? 'active' : '' }}"><i class="fa-solid fa-circle-check"></i><span>Conformité</span></a>
-                    <a href="/security/audit-logs" class="nav-item {{ request()->is('security/audit-logs') ? 'active' : '' }}"><i class="fa-solid fa-file-lines"></i><span>Journaux d'audit</span></a>
+                    <a href="/security/recommendations" class="nav-item {{ request()->is('security/recommandations') ? 'active' : '' }}"><i class="fa-solid fa-circle-check"></i><span>Recommandations</span></a>
                 </div>
             </div>
 
@@ -66,9 +70,11 @@
 
             <a href="/alerts" class="nav-item {{ request()->is('alerts') ? 'active' : '' }}">
                 <i class="fa-solid fa-bell"></i><span>Alertes</span>
-                <span class="nav-badge">6</span>
+                @if(isset($alertant) && $alertant > 0)
+                    <span class="nav-badge">{{ $alertant }}</span>
+                @endif
             </a>
-            <a href="/reporting" class="nav-item {{ request()->is('reporting') ? 'active' : '' }}"><i class="fa-solid fa-chart-simple"></i><span>Reporting</span></a>
+            <a href="/reports" class="nav-item {{ request()->is('reports') ? 'active' : '' }}"><i class="fa-solid fa-chart-simple"></i><span>Reporting</span></a>
 
         </nav>
 

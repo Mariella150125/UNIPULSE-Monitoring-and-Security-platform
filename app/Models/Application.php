@@ -9,6 +9,7 @@ use App\Traits\AuditsActivity;
 class Application extends Model
 {
     use AuditsActivity; 
+
     protected $fillable = [
         'name',
         'description',
@@ -44,9 +45,23 @@ class Application extends Model
 
         // Sécurité Wazuh
         'wazuh_enabled',
+        'wazuh_agent_id',   // <-- AJOUTÉ
+        'wazuh_group',      // <-- AJOUTÉ
 
         // Criticité
         'criticality',
+
+        // Frontend
+        'frontend_language',
+        'frontend_framework',
+        'frontend_url',
+        'frontend_version',
+
+        // Base de données (SGBD)
+        'database_type',
+        'database_name',
+        'database_host',
+        'database_port',
     ];
 
     protected $casts = [
@@ -79,5 +94,10 @@ class Application extends Model
     public function applicationType(): BelongsTo
     {
         return $this->belongsTo(ApplicationType::class);
+    }
+
+    public function applicationGroup()
+    {
+        return $this->belongsTo(ApplicationGroup::class);
     }
 }

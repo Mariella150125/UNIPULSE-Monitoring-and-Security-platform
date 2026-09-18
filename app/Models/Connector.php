@@ -171,4 +171,12 @@ class Connector extends Model
             'last_error_message' => null,
         ]);
     }
+    public function changeStatus(Request $request, $id)
+    {
+        $connector = Connector::findOrFail($id);
+        $connector->status = $request->input('status', 'never_tested');
+        $connector->save();
+
+        return redirect()->back()->with('success', 'Statut du connecteur mis à jour avec succès.');
+    }
 }

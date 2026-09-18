@@ -22,7 +22,7 @@ class PrometheusService
         return !empty($this->baseUrl);
     }
 
-    // Exécute une requête PromQL
+    // Exécute une requête PromQL instantanée
     public function query(string $query): ?array
     {
         if (!$this->isConfigured()) return null;
@@ -32,6 +32,33 @@ class PrometheusService
         ]);
 
         return $response->successful() ? $response->json() : null;
+    }
+
+    // Exécute une requête PromQL sur une période (pour les graphiques)
+        public function queryRange(string $query, int $hours = 24, string $step = '1h'): array
+    {
+        if (!$this->isConfigured()) return [];
+
+        $end = time();
+        $start = $end - ($hours * 3600);
+
+        $response = Http::timeout(10)->get($this->baseUrl . '/api/v1/query_range', [
+            'query' => $query,
+            'start' => $start,
+            'end'   => $end,
+            'step'  => $step
+        ]);
+
+        if (!$response->successful()) return [];
+
+        $result = $response->json('data.result.0.values');
+        if (empty($result)) return [];
+
+        // RÈGLE 15 : On retourne la valeur brute, sans * 1000
+        return array_map(fn($item) => [
+            'x' => date('H:i', $item[0]),
+            'y' => (float) $item[1]
+        ], $result);
     }
 
     // 1. Statut (Online/Offline)
@@ -54,6 +81,15 @@ class PrometheusService
     public function getMemoryUsage(string $instance): ?float
     {
         $query = '(1 - node_memory_MemAvailable_bytes{instance="' . $instance . '"} / node_memory_MemTotal_bytes{instance="' . $instance . '"}) * 100';
+        $result = $this->query($query);
+        $value = data_get($result, 'data.result.0.value.1');
+        return $value !== null ? round((float) $value, 2) : null;
+    }
+
+    // 4. DISQUE (en %) - AJOUTÉ
+    public function getDiskUsage(string $instance): ?float
+    {
+        $query = '(1 - (node_filesystem_avail_bytes{instance="' . $instance . '", mountpoint="/"} / node_filesystem_size_bytes{instance="' . $instance . '", mountpoint="/"})) * 100';
         $result = $this->query($query);
         $value = data_get($result, 'data.result.0.value.1');
         return $value !== null ? round((float) $value, 2) : null;

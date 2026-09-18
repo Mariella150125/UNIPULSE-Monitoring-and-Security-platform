@@ -52,7 +52,7 @@
             <div class="kpi-icon c-orange"><i class="fa-solid fa-cloud"></i></div>
             <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 0.2%</span>
             <p class="kpi-label">App en maintenance</p>
-            <p class="kpi-value">--</p>
+            <p class="kpi-value">{{ $maintenance}}</p>
         </div>
     </div>
 
@@ -89,7 +89,7 @@
         </div>
     </div>
 
-    {{-- ─── Tableau ─── --}}
+   
     {{-- ─── Tableau ─── --}}
     <div class="panel">
         {{-- RECHERCHE + FILTRES --}}
@@ -123,10 +123,10 @@
                     </option>
 
                     <option
-                        value="Staging"
-                        @selected(request('environment') === 'staging')
+                        value="Préproduction"
+                        @selected(request('environment') === 'preproduction')
                     >
-                        Staging
+                        Préproduction
                     </option>
 
                     <option
@@ -137,10 +137,10 @@
                     </option>
 
                     <option
-                        value="QA"
+                        value="test"
                         @selected(request('environment') === 'test')
                     >
-                        QA
+                        Test
                     </option>
 
                 </select>
@@ -241,14 +241,14 @@
                     </td>
 
                     {{-- APPLICATION --}}
-                    <td class="app-name-cell">
+                    <td>
 
-                        <span class="app-icon-sm c-teal">
-                            <i class="fa-solid fa-globe"></i>
-                        </span>
-
-                        {{ $app->name }}
-
+                       <a href="{{ route('monitoring.application.show', $app->id) }}" class="app-name-cell">
+                            <span class="app-icon-sm c-teal">
+                                <i class="fa-solid fa-globe"></i>
+                            </span>
+                            {{ $app->name }}
+                        </a> 
                     </td>
 
 
@@ -264,28 +264,26 @@
                     </td>
 
 
-                    {{-- STATUT --}}
+                                    {{-- STATUT --}}
                     <td>
-
-                        @if($app->status === 'active')
-
-                            <span class="status-dot online"></span>
-                            Actif
-
-                        @elseif($app->status === 'maintenance')
-
-                            <span class="status-dot warning"></span>
-                            En maintenance
-
-                        @else
-
-                            <span class="status-dot offline"></span>
-                            {{ ucfirst($app->status) }}
-
-                        @endif
-
-                    </td>
-
+                        {{-- Le point coloré (CSS s'occupe de la couleur automatiquement) --}}
+                        <span class="status-dot status-{{ $app->status }}"></span>
+                        
+                        {{-- Le texte (on utilise un petit tableau pour traduire proprement) --}}
+                        @php
+                            $labels = [
+                                'active'      => 'Active',
+                                'maintenance' => 'En maintenance',
+                                'suspended'   => 'Suspendue',
+                                'retired'     => 'Retirée',
+                                'planned'     => 'Planifiée',
+                                'development' => 'En développement',
+                                'testing'     => 'En test',
+                                'staging'     => 'Préproduction',
+                            ];
+                        @endphp
+                        {{ $labels[$app->status] ?? ucfirst($app->status) }}
+                    </td>   
 
                     {{-- VERSION --}}
                     <td>
@@ -293,16 +291,18 @@
                     </td>
 
 
-                    {{-- DISPONIBILITÉ --}}
+                                    {{-- DISPONIBILITÉ --}}
                     <td>
-
-                        {{-- Pour l'instant, cette donnée viendra de Prometheus --}}
-                        <span class="avail-value">
-                            —
+                        @php
+                            // On récupère le pourcentage calculé par le contrôleur, 100% par défaut si pas d'historique
+                            $appAvail = isset($availabilities[$app->id]) ? round($availabilities[$app->id]) : 100;
+                            // Couleur dynamique (Vert > 95%, Orange > 80%, Rouge sinon)
+                            $availColor = $appAvail >= 95 ? 'var(--dark-teal)' : ($appAvail >= 80 ? 'var(--orange)' : 'var(--red)');
+                        @endphp
+                        <span class="avail-value" style="color: {{ $availColor }}; font-weight: 600;">
+                            {{ $appAvail }}%
                         </span>
-
                     </td>
-
 
                     {{-- DERNIÈRE VÉRIFICATION --}}
                     <td>
@@ -319,47 +319,76 @@
 
                     </td>
 
+                
+                    
+                                            {{-- MENU D'ACTIONS (3 POINTS) --}}
+                        <td>
+                            <div class="action-dropdown">
+                                <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <a href="{{ route('appli.show', $app->id) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-eye"></i> Voir
+                                    </a>
+                                    <a href="{{ route('appli.edit', $app->id) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-pen"></i> Modifier
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {{-- GESTION DES STATUTS --}}
+                                    
+                                    @if($app->status !== 'active')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="active">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-play"></i> Activer
+                                            </button>
+                                        </form>
+                                    @endif
 
-                    {{-- ACTIONS --}}
-                    <td>
+                                    @if($app->status !== 'maintenance')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="maintenance">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-screwdriver-wrench"></i> Mettre en maintenance
+                                            </button>
+                                        </form>
+                                    @endif
 
-                        {{-- SHOW --}}
-                        <a
-                            href="{{ route('appli.show', $app->id) }}"
-                            class="icon-btn"
-                            title="Voir"
-                        >
-                            <i class="fa-solid fa-eye"></i>
-                        </a>
+                                    @if($app->status !== 'suspended')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="suspended">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-pause"></i> Suspendre
+                                            </button>
+                                        </form>
+                                    @endif
 
+                                    @if($app->status !== 'retired')
+                                        <form action="{{ route('appli.status', $app->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="retired">
+                                            <button type="submit" class="dropdown-item text-red">
+                                                <i class="fa-solid fa-circle-xmark"></i> Retirer
+                                            </button>
+                                        </form>
+                                    @endif
 
-                        {{-- EDIT --}}
-                        <a
-                            href="{{ route('appli.edit', $app->id) }}"
-                            class="icon-btn"
-                            title="Modifier"
-                        >
-                            <i class="fa-solid fa-pen"></i>
-                        </a>
-
-
-                        {{-- DELETE --}}
-                        <form
-                            action="{{ route('appli.destroy', $app->id) }}"
-                            method="POST"
-                            style="display:inline;"
-                        >
-
-                            @csrf
-                            @method('DELETE')
-
-                            <a href="{{ route('appli.delete', $app->id) }}" class="icon-btn" title="Supprimer">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-
-                        </form>
-
-                    </td>
+                                    <div class="dropdown-divider"></div>
+                                    <a href="{{ route('appli.delete', $app->id) }}" class="dropdown-item text-red">
+                                        <i class="fa-solid fa-trash"></i> Supprimer définitivement
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
 
                 </tr>
 
@@ -460,185 +489,17 @@
 
     </div>
 
+
 </div>
-        
+    <p class="sync-time">
+        Dernière synchronisation : {{ $lastSync ? $lastSync->diffForHumans() : 'Jamais' }}
+    </p>    
     </div>
 
     @include('administration.applis.appli-modal')
-{{-- à enlever quand il y auara les vraies données--}}
-
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    const availabilityCanvas =
-        document.getElementById('availabilityChart');
-
-    if (availabilityCanvas && typeof Chart !== 'undefined') {
-
-        new Chart(availabilityCanvas, {
-
-            type: 'line',
-
-            data: {
-                labels: [
-                    '04 Août',
-                    '05 Août',
-                    '06 Août',
-                    '07 Août',
-                    '08 Août',
-                    '09 Août',
-                    '10 Août'
-                ],
-
-                datasets: [
-
-                    {
-                        label: 'CRM',
-
-                        data: [
-                            99.2,
-                            99.5,
-                            98.9,
-                            99.7,
-                            99.4,
-                            99.8,
-                            99.6
-                        ],
-
-                        borderColor: '#56825E',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    },
-
-                    {
-                        label: 'Application Mobile',
-
-                        data: [
-                            98.4,
-                            98.9,
-                            98.2,
-                            99.1,
-                            98.7,
-                            99.3,
-                            98.8
-                        ],
-
-                        borderColor: '#1d4a40',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    },
-
-                    {
-                        label: 'API Client',
-
-                        data: [
-                            99.7,
-                            99.6,
-                            99.8,
-                            99.9,
-                            99.5,
-                            99.8,
-                            99.9
-                        ],
-
-                        borderColor: '#8fae94',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    },
-
-                    {
-                        label: 'Portail Web',
-
-                        data: [
-                            97.8,
-                            98.1,
-                            97.5,
-                            98.6,
-                            98.2,
-                            98.9,
-                            98.5
-                        ],
-
-                        borderColor: '#e08e3e',
-                        backgroundColor: 'transparent',
-
-                        tension: 0.35,
-                        pointRadius: 3,
-                        fill: false
-                    }
-                ]
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-
-                plugins: {
-
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            pointStyle: 'line',
-                            padding: 20,
-                            font: {
-                                size: 13
-                            }
-                        }
-                    },
-
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-
-                                return context.dataset.label +
-                                    ' : ' +
-                                    context.parsed.y +
-                                    '%';
-                            }
-                        }
-                    }
-                },
-
-                scales: {
-
-                    y: {
-                        min: 95,
-                        max: 100,
-
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    },
-
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-});
+    // Pont de données : PHP génère le JSON et le donne au JavaScript
+    window.availabilityLabels = @json($availabilityLabels);
+    window.availabilityData = @json($availabilityData);
 </script>
 @endsection

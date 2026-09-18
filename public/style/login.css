@@ -677,8 +677,9 @@ h2 {
 /* KPI — indicateur de variation */
 .kpi-change {
     position: absolute;
-    top: 16px;
+    bottom: 16px;
     right: 18px;
+    top: 10px;
     font-size: 11px;
     font-weight: 600;
     display: flex;
@@ -704,6 +705,7 @@ h2 {
     grid-template-columns: auto 1fr;
     min-width: 0;
     gap: 0 20px;
+    position: relative;
 }
 .kpi-icon {
     width: 40px;
@@ -889,6 +891,13 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
 }
 .badge-critical { background: var(--red); color: black; }
 .badge-major { background: var(--orange); }
+.badge-success { background: var(--sage-green); color: white; }
+
+/* Petites animations pour le tri et les filtres */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 .server-table { 
     width: 100%; 
@@ -914,13 +923,13 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     border-top: 1px solid var(--border-color); 
     vertical-align: middle; 
     line-height: 1.5;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow:  visible !important;
+    text-overflow: clip;
     text-align: left;
 }
 .panel:has(.server-table) {
     padding: 0;
-    overflow: hidden;
+    overflow: visible !important;
 }
 
 .panel:has(.server-table) .panel-header {
@@ -955,6 +964,22 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
 .status-dot.offline { background: var(--red); }
 .status-dot.warning { background: var(--orange); }
 .status-dot.critical { background: var(--red); }
+
+/* Couleurs des points de statut pour les applications */
+.status-dot.status-active { background: var(--sage-green); }
+.status-dot.status-maintenance { background: var(--orange); }
+.status-dot.status-suspended { background: var(--red); }
+.status-dot.status-retired { background: var(--red); opacity: 0.5; }
+
+/* Pour les statuts en cours de création, on met en gris */
+.status-dot.status-planned, 
+.status-dot.status-development, 
+.status-dot.status-testing, 
+.status-dot.status-staging { background: var(--text-muted); }
+
+textarea{
+    border-radius: 3px;
+}
 
 .quick-actions { display: flex; flex-direction: column; gap: 8px; }
 .quick-actions button {
@@ -1231,6 +1256,8 @@ Réinitialisation de la valeur pour qu'elle pousse la carte vers le bas
     align-items: center;
     gap: 10px;
     font-weight: 500;
+    text-decoration: none; 
+    color: inherit;
 }
 .app-icon-sm {
     width: 30px;
@@ -2037,7 +2064,72 @@ form.entity-details .form-actions {
     table-layout: auto; /* Modifié de fixed à auto pour garder la largeur naturelle */
     min-width: 700px; /* Ajouté pour forcer le scroll horizontal au lieu d'écraser le tableau */
 }
+/* ==========================================================
+   CARTE DE DÉPENDANCES (MF-38)
+   ========================================================== */
+.dependency-panel {
+    margin-top: 24px;
+}
 
+.dependency-network-container {
+    height: 500px;
+    background: var(--page-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+/* Indicateur de source de données */
+.source-indicator {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: var(--page-bg);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Terminal Logs (Façon Grafana) */
+.terminal-log {
+    background: #1a1e2e;
+    color: #c8ccd4;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    border-radius: 0 0 24px 24px;
+    overflow: auto;
+    max-height: 400px;
+}
+.terminal-line {
+    padding: 10px 20px;
+    border-bottom: 1px solid #2a2e3e;
+    display: flex;
+    gap: 15px;
+}
+.term-time { 
+    color: #8a9490; 
+    white-space: nowrap; 
+}
+.term-level { 
+    font-weight: bold; 
+    width: 70px; 
+}
+.term-error { 
+    color: #ff4d4d; 
+}
+.term-warn { 
+    color: #ffa940; 
+}
+.term-info { 
+    color: #52c41a; 
+}
+.term-source { 
+    color: #82aaff; 
+    width: 80px; 
+}
+.term-message { 
+    flex: 1; 
+}
 /* Details grid : 1 colonne */
 .details-grid {
     grid-template-columns: 1fr;
@@ -2394,6 +2486,21 @@ form.entity-details .form-actions {
         max-width: 120px;
     }
 }
+/* Animation pour les alertes persistantes non traitées */
+    @keyframes pulse-row {
+        0% { background-color: rgba(192, 57, 43, 0.05); }
+        50% { background-color: rgba(192, 57, 43, 0.15); }
+        100% { background-color: rgba(192, 57, 43, 0.05); }
+    }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-menu {
+        display: none; position: absolute; right: 0; background: var(--panel-bg);
+        border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; min-width: 120px; z-index: 100;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .dropdown:hover .dropdown-menu { display: block; }
+    .dropdown-menu a { display: block; padding: 8px 12px; text-decoration: none; color: var(--text-main); border-radius: 4px; }
+    .dropdown-menu a:hover { background: var(--page-bg); }
 
 /* ==========================================================
    PAGE SETTINGS & TABS
@@ -2501,7 +2608,16 @@ form.entity-details .form-actions {
     color: var(--text-dark);
     margin: 0 0 20px;
 }
-
+/* Ajustement des KPI pour la fiche monitoring */
+#tab-overview .kpi-card,
+#tab-performance .kpi-card,
+#tab-security .kpi-card {
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    min-width: 0;
+    gap: 0 20px;
+}
 /* Grille du formulaire de paramètres */
 .settings-form-grid {
     display: grid;
@@ -2685,7 +2801,7 @@ form.entity-details .form-actions {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 /* ==========================================================
-   MONITORING SERVEUR (Style Grafana)
+   MONITORING SERVEUR
    ========================================================== */
 .grafana-grid {
     display: grid;
@@ -2828,6 +2944,131 @@ form.entity-details .form-actions {
     font-size: 14px;
     font-weight: 500;
 }
+/* ==========================================================
+   MENU D'ACTIONS (3 POINTS)
+   ========================================================== */
+.action-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.action-dropdown-toggle {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.action-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    min-width: 160px;
+    z-index: 9999;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.action-dropdown-menu.open {
+    display: flex;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-dark);
+    text-decoration: none;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+}
+
+.dropdown-item:hover {
+    background: var(--page-bg);
+}
+
+.dropdown-item.text-red {
+    color: var(--red);
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+/* ==========================================================
+   STYLE DE L'IMPRESSION / EXPORT PDF
+   ========================================================== */
+@media print {
+    /* Cacher tout ce qui n'est pas le rapport */
+    .sidebar, .topbar, .page-title, .btn, .btn-export-trigger, #exportDropdownMenu, .sidebar-overlay {
+        display: none !important;
+    }
+    
+    /* Mettre le contenu sur fond blanc et enlever les ombres */
+    .main-content {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    .dashboard-content {
+        padding: 0 !important;
+        background: #fff !important;
+    }
+    .panel {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        border-radius: 0 !important;
+        page-break-inside: avoid;
+    }
+
+    /* Forcer les couleurs de fond à s'imprimer */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
+/* Le conteneur qui ressemble à une feuille A4 */
+.report-document {
+    background: #fff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px;
+}
+.report-document h1, .report-document h2 {
+    color: var(--dark-teal);
+}
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+.report-table th {
+    background: var(--dark-teal);
+    color: #fff;
+    padding: 12px;
+    text-align: left;
+}
+.report-table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px;
+}
+.report-table tr:last-child td {
+    border-bottom: none;
+}
 
 /* ----------------------------------------------------------
    PETIT MOBILE (480px et +)
@@ -2946,7 +3187,7 @@ form.entity-details .form-actions {
 
     .panel:has(.server-table) {
         padding: 0;
-        overflow: hidden; /* Remis à hidden sur desktop */
+        overflow: visible !important;/* Remis à hidden sur desktop */
     }
 
     .panel:has(.server-table) .panel-header {

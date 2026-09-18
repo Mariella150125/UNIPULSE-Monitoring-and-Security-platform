@@ -1,4 +1,3 @@
-
 @extends('layout.app')
 
 @section('Webhook')
@@ -166,40 +165,26 @@
                         </td>
 
                         <td>
-
-                            <button
-                                class="icon-btn"
-                                title="Voir le cURL"
-                                data-load-curl="{{ $ep->id }}"
-                            >
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Tester"
-                                data-test-endpoint="{{ $ep->id }}"
-                            >
-                                <i class="fa-solid fa-bolt"></i>
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Modifier"
-                                data-edit-endpoint="{{ $ep->id }}"
-                            >
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Supprimer"
-                                data-delete-endpoint="{{ $ep->id }}"
-                                data-delete-name="{{ $ep->application?->name }}"
-                            >
-                                <i class="fa-solid fa-trash icon-danger"></i>
-                            </button>
-
+                            <div class="action-dropdown">
+                                <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <button type="button" class="dropdown-item" title="Voir le cURL" data-load-curl="{{ $ep->id }}">
+                                        <i class="fa-solid fa-eye"></i> Voir cURL
+                                    </button>
+                                    <button type="button" class="dropdown-item" title="Tester" data-test-endpoint="{{ $ep->id }}">
+                                        <i class="fa-solid fa-bolt"></i> Tester
+                                    </button>
+                                    <button type="button" class="dropdown-item" title="Modifier" data-edit-endpoint="{{ $ep->id }}">
+                                        <i class="fa-solid fa-pen"></i> Modifier
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    <button type="button" class="dropdown-item text-red" title="Supprimer" data-delete-endpoint="{{ $ep->id }}" data-delete-name="{{ $ep->application?->name }}">
+                                        <i class="fa-solid fa-trash icon-danger"></i> Supprimer
+                                    </button>
+                                </div>
+                            </div>
                         </td>
 
                     </tr>
@@ -327,24 +312,44 @@
                         </td>
 
                         <td>
+                            <div class="action-dropdown">
+                                <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <a href="{{ route('webhooks.show', $wh->id) }}" class="dropdown-item">
+                                        <i class="fa-solid fa-eye"></i> Voir
+                                    </a>
+                                    <button type="button" class="dropdown-item" title="Modifier" data-edit-webhook="{{ $wh->id }}">
+                                        <i class="fa-solid fa-pen"></i> Modifier
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {{-- ACTIVER / DÉSACTIVER LE WEBHOOK --}}
+                                    @if($wh->status === 'active')
+                                        <form action="{{ route('webhooks.status', $wh->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-pause"></i> Désactiver
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('webhooks.status', $wh->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fa-solid fa-circle-play"></i> Activer
+                                            </button>
+                                        </form>
+                                    @endif
 
-                            <button
-                                class="icon-btn"
-                                title="Modifier"
-                                data-edit-webhook="{{ $wh->id }}"
-                            >
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Supprimer"
-                                data-delete-webhook="{{ $wh->id }}"
-                                data-delete-name="{{ $wh->name }}"
-                            >
-                                <i class="fa-solid fa-trash icon-danger"></i>
-                            </button>
-
+                                    <div class="dropdown-divider"></div>
+                                    <button type="button" class="dropdown-item text-red" title="Supprimer" data-delete-webhook="{{ $wh->id }}" data-delete-name="{{ $wh->name }}">
+                                        <i class="fa-solid fa-trash icon-danger"></i> Supprimer
+                                    </button>
+                                </div>
+                            </div>
                         </td>
 
                     </tr>
@@ -622,37 +627,25 @@
                         </td>
 
                         <td>
-
-                            @if($key->status !== 'revoked')
-
-                                <button
-                                    class="icon-btn"
-                                    title="{{ $key->status === 'suspended' ? 'Réactiver' : 'Suspendre' }}"
-                                    data-toggle-key="{{ $key->id }}"
-                                >
-                                    <i class="fa-solid fa-{{ $key->status === 'suspended' ? 'play' : 'pause' }}"></i>
+                            <div class="action-dropdown">
+                                <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
                                 </button>
-
-                            @endif
-
-                            <button
-                                class="icon-btn"
-                                title="Régénérer"
-                                data-regen-key="{{ $key->id }}"
-                                data-regen-name="{{ $key->name }}"
-                            >
-                                <i class="fa-solid fa-rotate"></i>
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Révoquer définitivement"
-                                data-revoke-key="{{ $key->id }}"
-                                data-revoke-name="{{ $key->name }}"
-                            >
-                                <i class="fa-solid fa-ban icon-danger"></i>
-                            </button>
-
+                                <div class="action-dropdown-menu">
+                                    @if($key->status !== 'revoked')
+                                        <button type="button" class="dropdown-item" title="{{ $key->status === 'suspended' ? 'Réactiver' : 'Suspendre' }}" data-toggle-key="{{ $key->id }}">
+                                            <i class="fa-solid fa-{{ $key->status === 'suspended' ? 'play' : 'pause' }}"></i> {{ $key->status === 'suspended' ? 'Réactiver' : 'Suspendre' }}
+                                        </button>
+                                    @endif
+                                    <button type="button" class="dropdown-item" title="Régénérer" data-regen-key="{{ $key->id }}" data-regen-name="{{ $key->name }}">
+                                        <i class="fa-solid fa-rotate"></i> Régénérer
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    <button type="button" class="dropdown-item text-red" title="Révoquer définitivement" data-revoke-key="{{ $key->id }}" data-revoke-name="{{ $key->name }}">
+                                        <i class="fa-solid fa-ban icon-danger"></i> Révoquer
+                                    </button>
+                                </div>
+                            </div>
                         </td>
 
                     </tr>
@@ -676,7 +669,7 @@
 </div>
 
 <p class="sync-time">
-    Dernière synchronisation : il y a 2 min
+    Dernière synchronisation : {{ $lastSync ? $lastSync->diffForHumans() : 'Jamais' }}
 </p>
 
 @include('administration.webhook.web-modal')

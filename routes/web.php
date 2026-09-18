@@ -15,8 +15,18 @@ use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\PlatformSettingController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ServerMonitoringController;
-
-
+use App\Http\Controllers\ApplicationMonitoringController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\MonitoringDashboardController;
+use App\Http\Controllers\ApplicationGroupController;
+use App\Http\Controllers\MonitoringComparisonController;
+use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AlertSettingController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\MaintenanceWindowController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DashboardController;
 
 // 1. Afficher la page (GET)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -28,9 +38,8 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // 4. Le dashboard (protégé)
-Route::get('/content', function () {
-    return view('layout/dashboard');
-})->middleware('auth')->name('dashboard');
+Route::get('/content', [DashboardController::class, 'index'])
+    ->middleware('auth')->name('dashboard');
 
 Route::get('/forget', [AuthController::class, 'showForgetPassword'])
     ->name('password.request');
@@ -44,7 +53,7 @@ Route::post('/resend-welcome', [AuthController::class, 'resendWelcomeLink'])->na
 // créer un user
 Route::get('/sign', [AuthController::class, 'register'])->name('sign');
 Route::post('/sign', [AuthController::class, 'store'])->name('sign.store');
-
+Route::patch('/users/{id}/status', [UserController::class, 'changeStatus'])->name('users.status');
 
 Route::get('/look', function () {
     return view('auth.look');
@@ -87,10 +96,12 @@ Route::get('/server/{server}/delete', [ServerController::class, 'delete'])->name
 Route::get('/servers/{id}/metrics', [ServerController::class, 'metrics'])->name('servers.metrics');
 Route::get('/dashboard/environment-chart', [ServerController::class, 'envChartData'])
     ->name('dashboard.environment.chart');
+Route::patch('/server/{id}/status', [ServerController::class, 'changeStatus'])->name('server.status');
 // applications 
 Route::resource('appli', ApplicationController::class)
     ->except(['create'])
     ->middleware('auth');
+Route::patch('/appli/{app}/status', [ApplicationController::class, 'changeStatus'])->name('appli.status');
 Route::get('/appli/{applications}/delete', [ApplicationController::class, 'delete'])->name('appli.delete');
 Route::resource(
     'application-types',
@@ -162,6 +173,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('throttle.connector.test');
     Route::get('/connecteurs/{connector}/edit-data', [ConnectorController::class, 'editData'])->name('connectors.edit-data');
     Route::post('/connecteurs/test-preview', [ConnectorController::class, 'testPreview'])->name('connectors.test-preview');
+    Route::patch('/connecteurs/{id}/status', [ConnectorController::class, 'changeStatus'])->name('connectors.status');
 });
 
 
@@ -200,6 +212,7 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
     Route::delete('{webhook}',         [WebhookController::class, 'destroy'])           ->name('destroy');
 
     // Actions spécifiques
+    Route::patch('{webhook}/status',   [WebhookController::class, 'toggleStatus'])     ->name('status');
     Route::post('{webhook}/toggle',    [WebhookController::class, 'toggleStatus'])      ->name('toggle');
     Route::post('{webhook}/error',     [WebhookController::class, 'markError'])         ->name('mark-error');
     Route::post('{webhook}/rotate-secret', [WebhookController::class, 'rotateSecret'])  ->name('rotate-secret');
@@ -211,15 +224,17 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
     // La route de réception
 
 });
+Route::post('/webhooks/receive/{webhookId}', [WebhookController::class, 'receive'])->name('webhooks.receive');
 use App\Http\Controllers\WebhookPageController;
 
 Route::get('/web', [WebhookPageController::class, 'index'])
 ->middleware('auth')
 ->name('webhooks.page');
+Route::get('/webhooks/{webhook}/edit-data', [WebhookController::class, 'editData'])->name('webhooks.edit-data');
 
 Route::get('/settings/platform', [PlatformSettingController::class, 'index'])->name('settings.platform.index');
 Route::put('/settings/platform', [PlatformSettingController::class, 'update'])->name('settings.platform.update');
-
+Route::get('/settings/connectors', [SettingController::class, 'connectors'])->name('settings.connectors.index');
 Route::get('/settings/audit-logs', [AuditLogController::class, 'index'])->name('settings.audit-logs.index');
 
 use App\Http\Controllers\ProfileController;
@@ -248,34 +263,60 @@ Route::prefix('monitoring')->name('monitoring.')->middleware('auth')->group(func
     Route::get('/servers/{id}', [ServerMonitoringController::class, 'show'])->name('servers.show');
     Route::get('/servers/{id}/metrics', [ServerMonitoringController::class, 'metrics'])->name('servers.metrics');
     
+    // sous-module application
+    Route::get('/applications/{id}', [ApplicationMonitoringController::class, 'show'])->name('application.show');
+    Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('application.index');
+    // sous-module log
+    Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+    // dashboard
+    Route::get('/dashboard', [MonitoringDashboardController::class, 'index'])->name('dashboard');
+    // Comparaison
+     Route::get('/compare', [MonitoringComparisonController::class, 'index'])->name('compare.index');
 });
 
-
+Route::resource('application-groups', ApplicationGroupController::class)->except(['create', 'show', 'edit']);
 Route::get('/monitoring/apps', function () {
     return view('coming-soon');
 });
 
+Route::get('/security/compliance', [SecurityController::class, 'compliance'])->name('security.compliance');
+Route::get('/security/recommendations', [SecurityController::class, 'recommendations'])->name('security.recommendations');
 
-Route::get('/logs', function () {
-    return view('coming-soon');
-});
 
 Route::get('/security/vulnerabilities', function () {
     return view('coming-soon');
 });
+ 
+// Route pour afficher la liste des alertes (celle qui manque actuellement)
+Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
 
-Route::get('/security/compliance', function () {
-    return view('coming-soon');
-});
+// Route pour vérifier les alertes critiques (pour le son et le clignotement)
+Route::get('/alerts/check-critical', [AlertController::class, 'checkCritical'])->name('alerts.check-critical');
+Route::get('/alerts/{id}', [AlertController::class, 'show'])->name('alerts.show');
 
-Route::get('/security/audit-logs', function () {
-    return view('coming-soon');
-});
+// LES NOUVELLES ROUTES D'ACTION :
+Route::put('/alerts/{id}/acknowledge', [AlertController::class, 'acknowledge'])->name('alerts.acknowledge');
+Route::put('/alerts/{id}/assign', [AlertController::class, 'assign'])->name('alerts.assign');
+Route::put('/alerts/{id}/close', [AlertController::class, 'close'])->name('alerts.close');Route::get('/settings/alert-rules', [AlertSettingController::class, 'alertRules'])->name('settings.alert-rules.index');
+Route::get('/settings/notifications', [AlertSettingController::class, 'notifications'])->name('settings.notifications.index');
+Route::get('/settings/maintenance', [AlertSettingController::class, 'maintenance'])->name('settings.maintenance.index');
 
-Route::get('/alerts', function () {
-    return view('coming-soon');
-});
+// Affichage des pages
+Route::get('/settings/alert-rules', [SettingController::class, 'alertRules'])->name('settings.alert-rules.index');
+Route::get('/settings/notifications', [SettingController::class, 'notifications'])->name('settings.notifications.index');
+Route::get('/settings/maintenance', [MaintenanceWindowController::class, 'index'])->name('settings.maintenance.index');
+Route::post('/settings/maintenance', [MaintenanceWindowController::class, 'store'])->name('settings.maintenance.store');
+Route::delete('/settings/maintenance/{id}', [MaintenanceWindowController::class, 'destroy'])->name('settings.maintenance.destroy');
 
-Route::get('/reporting', function () {
-    return view('coming-soon');
-});
+// La route POST qui sauvegarde (pointe vers l'action du formulaire)
+Route::post('/settings/update', [SettingController::class, 'update'])->name('settings.update');
+
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
+Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
+Route::get('/reports/statistics', [ReportController::class, 'statistics'])->name('reports.statistics');
+Route::get('/reports/generate-pdf', [ReportController::class, 'generatePdf'])->name('reports.generate-pdf');
+Route::get('/reports/generate-excel', [ReportController::class, 'generateExcel'])->name('reports.generate-excel');
+Route::get('/reports/generate-word', [ReportController::class, 'generateWord'])->name('reports.generate-word');
+
