@@ -32,8 +32,14 @@
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-red"><i class="fa-solid fa-shield-halved"></i></div>
-            <p class="kpi-label">Score CIS (MF-9)</p>
-            <p class="kpi-value">{{ $security['cis_score'] ?? 0 }}%</p>
+            <p class="kpi-label">Score SCA (Wazuh)</p>
+            <p class="kpi-value">
+                @if(isset($security['sca_score']) && $security['sca_score'] > 0)
+                    {{ $security['sca_score'] }}/100
+                @else
+                    <span style="font-size: 16px; color: var(--text-muted);">Non évalué</span>
+                @endif
+            </p>
         </div>
     </div>
 
@@ -221,8 +227,14 @@
             <div class="panel-header"><p>Analyse de Sécurité (Wazuh SCA)</p></div>
             <div class="details-grid">
                 <div class="detail-item">
-                    <span class="detail-label">Score Global CIS (MF-9)</span>
-                    <span class="detail-value" style="color: var(--sage-green); font-weight: bold;">{{ $security['cis_score'] ?? 0 }}%</span>
+                    <span class="detail-label">Score Global SCA </span>
+                    <span class="detail-value" style="font-weight: bold;">
+                        @if(isset($security['sca_score']) && $security['sca_score'] > 0)
+                            <span style="color: var(--sage-green);">{{ $security['sca_score'] }}%</span>
+                        @else
+                            <span style="color: var(--text-muted);">Non évalué</span>
+                        @endif
+                    </span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Intégrité Fichiers (FIM - MF-10)</span>

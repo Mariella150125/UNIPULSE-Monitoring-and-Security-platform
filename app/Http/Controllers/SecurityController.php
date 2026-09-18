@@ -10,7 +10,7 @@ use App\Models\OwaspCategory;
 
 class SecurityController extends Controller
 {
-     public function compliance(ScoringService $scoringService): View
+    public function compliance(ScoringService $scoringService): View
     {
         set_time_limit(120);
         $applications = Application::all();
@@ -43,10 +43,17 @@ class SecurityController extends Controller
         $topVulnerableApps = collect($appScores)->sortBy('score')->take(10)->values()->toArray();
         $topCriticalServers = collect($serverScores)->sortBy('score')->take(10)->values()->toArray();
 
-        $globalAppScore = count($appScores) > 0 ? round(collect($appScores)->avg('score')) : 100;
-        $globalServerScore = count($serverScores) > 0 ? round(collect($serverScores)->avg('score')) : 100;
-        $globalSecurityScore = round(($globalAppScore + $globalServerScore) / 2);
+                // RÈGLE 17 : Gestion des scores partiels
+        // Si on a des apps, on calcule le score global basé sur les apps
+        $globalAppScore = count($appScores) > 0 ? round(collect($appScores)->avg('score')) : 0;
+        
+        // Si Wazuh n'est pas configuré, on n'affiche pas un faux score de 100, mais on indique que c'est partiel
+        $wazuhService = app(\App\Services\WazuhService::class);
+        $wazuhConfigured = $wazuhService->isConfigured(); 
+        $globalServerScore = $wazuhConfigured ? round(collect($serverScores)->avg('score')) : null;
 
+        // Le score global n'est calculé que si on a les deux, sinon c'est le score partiel App
+        $globalSecurityScore = $globalServerScore !== null ? round(($globalAppScore + $globalServerScore) / 2) : $globalAppScore;
         $chartLabels = [];
         $chartData = [];
         $chartColors = [];
@@ -62,10 +69,6 @@ class SecurityController extends Controller
             $chartColors[] = $server['color'];
         }
 
-        // --- LA MAGIE EST ICI ---
-        // On récupère les catégories OWASP actives depuis la base de données.
-        // Le jour où la version 2025 sort, tu désactives la 2021 en BDD et tu actives la 2025.
-        // Aucune ligne de code à changer !
         $owaspCategories = OwaspCategory::where('is_active', true)->get()->toArray();
 
         return view('security.compliance', compact(

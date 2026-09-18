@@ -21,7 +21,13 @@
     <div class="kpi-card">
         <div class="kpi-icon c-orange"><i class="fa-solid fa-server"></i></div>
         <p class="kpi-label">Score Global Serveurs</p>
-        <p class="kpi-value">{{ $globalServerScore }}/100</p>
+        <p class="kpi-value">
+            @if($globalServerScore !== null)
+                {{ $globalServerScore }}/100
+            @else
+                <span style="font-size: 16px; color: var(--text-muted);">Non évalué</span>
+            @endif
+        </p>
     </div>
 </div>
 
@@ -67,7 +73,6 @@
     <table class="server-table">
         <thead><tr><th>Catégorie</th><th>Description</th><th>Statut</th><th>Guideline</th></tr></thead>
          <tbody>
-            {{-- Passage de @foreach à @forelse pour gérer le cas vide --}}
             @forelse($owaspCategories as $cat)
             <tr>
                 <td><strong>{{ $cat['code'] }}</strong></td>

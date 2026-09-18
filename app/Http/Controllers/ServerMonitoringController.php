@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Server;
 use App\Services\PrometheusService;
 use App\Services\ScoringService;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
@@ -36,44 +35,31 @@ class ServerMonitoringController extends Controller
     {
         $server = Server::with('applications')->findOrFail($id);
         
-        // 1. Sécurité (Wazuh SCA) - On utilise le ScoringService pour récupérer le score CIS
-        // (Injektion de dépendance via le paramètre de la méthode, plus propre que app())
+        // 1. Sécurité (Wazuh SCA)
         $scoreData = $scoringService->getServerScore($server);
 
         $security = [
-            'cis_score' => $scoreData['score'],
-            'fim_alerts' => mt_rand(0, 3),
-            'open_ports' => [22 => 'SSH', 80 => 'HTTP', 443 => 'HTTPS'],
-            'stopped_services' => ['nginx'],
-            'agent_status' => 'active'
+            'sca_score' => $scoreData['score'], // RÈGLE 16 : Renommé en sca_score
+            'fim_alerts' => 'Non disponible', // Suppression du mt_rand()
+            'open_ports' => [],                // Vide au lieu de faux ports
+            'stopped_services' => [],          // Vide au lieu de faux services
+            'agent_status' => $server->wazuh_agent_id ? 'active' : 'not_configured'
         ];
 
-        // 2. Uptime (MF-8)
-        $uptime = '14 jours, 6 heures';
+        // 2. Uptime
+        $uptime = 'Non disponible'; // Suppression de la fausse valeur
 
-        // 3. Historique pour les graphiques (MF-12)
+        // 3. Historique pour les graphiques
         $timeLabels = [];
         $cpuHistory = [];
         $ramHistory = [];
         $diskHistory = [];
         $networkHistory = [];
         
-        for ($i = 24; $i > 0; $i--) {
-            $timeLabels[] = Carbon::now()->subHours($i)->format('H:i');
-            $cpuHistory[] = mt_rand(20, 65);
-            $ramHistory[] = mt_rand(40, 80);
-            $diskHistory[] = mt_rand(50, 85); 
-            $networkHistory[] = mt_rand(1, 50); // en MB/s
-        }
+        // On ne génère plus de fausses données avec mt_rand()
+        // Les tableaux restent vides, Chart.js gérera l'affichage "Aucune donnée"
 
-        $logs = [
-            [
-                'level' => 'ERROR', 
-                'source' => 'Système', 
-                'message' => 'Espace disque faible', 
-                'date' => now()
-            ],
-        ];
+        $logs = []; // Suppression des faux logs
 
         return view('monitoring.servers.show', compact(
             'server', 
@@ -93,30 +79,39 @@ class ServerMonitoringController extends Controller
     {
         $server = Server::findOrFail($id);
 
-        // MODE DÉMONSTRATION : Si Prometheus n'est pas configuré, on simule des données
+        // Si Prometheus n'est pas configuré, on refuse de renvoyer de fausses données
         if (!$prometheus->isConfigured() || !$server->prometheus_instance) {
+            return response()->json([
+                'success' => false,
+                'is_demo' => false,
+                'source' => 'prometheus',
+                'error' => 'Prometheus non configuré ou instance manquante pour ce serveur.'
+            ], 503); // 503 Service Unavailable
+        }
+
+        // VRAIES DONNÉES (Quand Prometheus est configuré)
+        $instance = $server->prometheus_instance;
+
+        try {
+            $status = ((float) $prometheus->getServerStatus($instance) === 1.0) ? 'online' : 'offline';
+            $cpu = $prometheus->getCpuUsage($instance);
+            $memory = $prometheus->getMemoryUsage($instance);
+            $disk = $prometheus->getDiskUsage($instance);
+
             return response()->json([
                 'success' => true,
                 'server'  => $server->name,
-                'status'  => 'online',
-                'cpu'     => mt_rand(15, 85) + (mt_rand(0, 99) / 100),
-                'memory'  => mt_rand(30, 75) + (mt_rand(0, 99) / 100),
-                'disk'    => mt_rand(40, 85) + (mt_rand(0, 99) / 100),
-                'is_demo' => true
+                'status'  => $status,
+                'cpu'     => $cpu !== null ? (float) $cpu : null,
+                'memory'  => $memory !== null ? (float) $memory : null,
+                'disk'    => $disk !== null ? (float) $disk : null,
+                'is_demo' => false
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur de connexion à l\'API Prometheus.'
+            ], 500);
         }
-
-        // VRAIES DONNÉES (Quand Prometheus sera configuré plus tard)
-        $instance = $server->prometheus_instance;
-
-        return response()->json([
-            'success' => true,
-            'server'  => $server->name,
-            'status'  => ((float) $prometheus->getServerStatus($instance) === 1.0) ? 'online' : 'offline',
-            'cpu'     => $prometheus->getCpuUsage($instance),
-            'memory'  => $prometheus->getMemoryUsage($instance),
-            'disk'    => $prometheus->getDiskUsage($instance),
-            'is_demo' => false
-        ]);
-    }
+    } 
 }

@@ -24,6 +24,31 @@
 <!-- ========================================== -->
 <div class="tab-content active" id="tab-overview">
     
+    {{-- RÈGLE 18 : PANNEAU DES SOURCES DE SURVEILLANCE ACTIVES --}}
+    <div class="panel" style="margin-bottom: 24px; border-left: 4px solid var(--dark-teal);">
+        <div class="panel-header">
+            <p>Sources de Surveillance Actives</p>
+        </div>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; padding: 15px 20px; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot {{ $sources['health_check'] ?? false ? 'online' : 'offline' }}"></span>
+                <strong>Health Check (Laravel)</strong>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot {{ $sources['prometheus'] ?? false ? 'online' : 'offline' }}"></span>
+                <strong>Prometheus (Métriques)</strong>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot {{ $sources['wazuh'] ?? false ? 'online' : 'offline' }}"></span>
+                <strong>Wazuh (OS & SCA)</strong>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot {{ $sources['sca'] ?? false ? 'online' : 'offline' }}"></span>
+                <strong>SCA Dépendances</strong>
+            </div>
+        </div>
+    </div>
+
     {{-- Les 3 KPI en pleine largeur (Façon Grafana) --}}
     <div class="grid-3" style="gap: 15px; margin-bottom: 24px;">
         <div class="kpi-card">
@@ -307,6 +332,9 @@
 {{-- Passer les données de PHP à JavaScript proprement pour le graphique --}}
 <script>
     window.latencyHistory = @json($latencyHistory ?? []);
+    window.availabilityLabels = @json($availabilityLabels ?? []);
+    window.availabilityData = @json($availabilityData ?? []);
 </script>
+
 
 @endsection

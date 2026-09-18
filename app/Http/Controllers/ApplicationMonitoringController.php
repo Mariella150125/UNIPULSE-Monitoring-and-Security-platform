@@ -6,6 +6,7 @@ use App\Models\Application;
 use App\Models\ApplicationAvailability;
 use App\Models\ApplicationGroup;
 use App\Services\PrometheusService;
+use App\Services\ScaScannerService;
 use App\Services\ScoringService;
 use App\Services\WazuhService;
 use Carbon\Carbon;
@@ -17,27 +18,22 @@ class ApplicationMonitoringController extends Controller
 {
     public function index(Request $request): View
     {
-        // 1. On récupère tous les groupes pour le menu déroulant
         $applicationGroups = ApplicationGroup::orderBy('name')->get();
-
-        // 2. On filtre les applications selon le groupe choisi
         $query = Application::query();
         if ($request->filled('group_id')) {
             $query->where('application_group_id', $request->group_id);
         }
         $applications = $query->orderBy('name')->get();
 
-        // --- KPIs du Dashboard Global (basés sur les applications filtrées) ---
         $totalApps = $applications->count();
         $availableApps = $applications->where('status', 'active')->count();
         $unavailableApps = $applications->where('status', 'maintenance')->count() + $applications->where('status', 'suspended')->count();
-        $availabilityPercent = $totalApps > 0 ? round(($availableApps / $totalApps) * 100, 2) : 100;
+        $availabilityPercent = $totalApps > 0 ? round(($availableApps / $totalApps) * 100, 2) : 0;
 
-        // --- Données pour les tableaux ---
         $appStats = [];
         foreach ($applications as $app) {
             $responseTime = '—';
-            $availability = 100;
+            $availability = null; // RÈGLE 1 : Non évalué par défaut
             
             $availRecord = ApplicationAvailability::where('application_id', $app->id)->latest()->first();
             if ($availRecord) {
@@ -64,7 +60,6 @@ class ApplicationMonitoringController extends Controller
             ];
         }
 
-        // --- Données SSL (On affiche '—' sur la liste pour ne pas ralentir la page) ---
         $sslStats = [];
         foreach ($applications as $app) {
             if ($app->url && str_starts_with($app->url, 'https://')) {
@@ -72,10 +67,10 @@ class ApplicationMonitoringController extends Controller
             }
         }
 
-        // --- Données pour les graphiques de tendance ---
-        $trendLabels = ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'Hier', 'Auj.'];
-        $availTrend = [99.1, 99.5, 98.2, 100, 99.8, 97.5, $availabilityPercent];
-        $respTrend = [120, 135, 110, 145, 130, 180, 125];
+        // RÈGLE 1 : Plus de fausses données dans les tendances
+        $trendLabels = [];
+        $availTrend = [];
+        $respTrend = [];
 
         return view('monitoring.application.index', compact(
             'totalApps', 'availableApps', 'unavailableApps', 'availabilityPercent',
@@ -93,7 +88,6 @@ class ApplicationMonitoringController extends Controller
     ): View {
         $application = Application::with(['applicationType', 'server', 'responsibleUser'])->findOrFail($id);
         
-        // Récupération du filtre de temps (24h, 7j, 30j)
         $range = $request->get('range', '24h');
         $hours = match($range) {
             '7d' => 168,
@@ -101,19 +95,16 @@ class ApplicationMonitoringController extends Controller
             default => 24,
         };
 
-        // ---------------------------------------------------------
         // 1. PROMETHEUS (Performance & HTTP)
-        // ---------------------------------------------------------
-        // CALCUL DE LA VRAIE DISPONIBILITÉ (Basé sur application_availabilities)
         $totalChecks = ApplicationAvailability::where('application_id', $application->id)->count();
         $successChecks = ApplicationAvailability::where('application_id', $application->id)->where('is_available', true)->count();
-        $availabilityPercent = $totalChecks > 0 ? round(($successChecks / $totalChecks) * 100) : 100;
+        $availabilityPercent = $totalChecks > 0 ? round(($successChecks / $totalChecks) * 100) : null;
 
         $metrics = [
-            'availability' => $availabilityPercent . ' %',
+            'availability' => $availabilityPercent !== null ? $availabilityPercent . ' %' : 'Non évalué',
             'response_time' => '— ms',
-            'error_rate' => '— %',
-            'api_traffic' => '— Req/s',
+            'error_rate' => 'N/A',
+            'api_traffic' => 'N/A',
             'http_status' => 'N/A',
             'http_version' => 'HTTP/1.1',
             'gpd' => '— ms',
@@ -125,6 +116,8 @@ class ApplicationMonitoringController extends Controller
         ];
 
         $latencyHistory = []; 
+        $availabilityLabels = [];
+        $availabilityData = [];
 
         // Tentative 1 : Prometheus
         if ($prometheus->isConfigured() && $application->url) {
@@ -133,6 +126,12 @@ class ApplicationMonitoringController extends Controller
             if (method_exists($prometheus, 'queryRange')) {
                 $step = $hours > 24 ? '6h' : '1h';
                 $latencyHistory = $prometheus->queryRange($query, $hours, $step);
+                
+                // Convertir les secondes en millisecondes pour l'affichage
+                $latencyHistory = array_map(function($item) {
+                    $item['y'] = round($item['y'] * 1000);
+                    return $item;
+                }, $latencyHistory);
             }
             
             $currentLatency = $prometheus->query($query);
@@ -146,9 +145,15 @@ class ApplicationMonitoringController extends Controller
                 $metrics['apd'] = $durationMs . ' ms';
                 $metrics['http_status'] = '200 OK (Prometheus)';
                 $metrics['services_status'] = 'Opérationnel';
-                $metrics['error_rate'] = mt_rand(0, 1) . ' %'; // Mock si Prometheus
-                $metrics['api_traffic'] = mt_rand(100, 500) . ' Req/s'; // Mock si Prometheus
                 $metrics['source'] = 'Prometheus';
+                
+                // Mise à jour de la disponibilité via Prometheus
+                $probeSuccess = $prometheus->query("probe_success{instance=\"$application->url\"}");
+                $probeValue = data_get($probeSuccess, 'data.result.0.value.1');
+                if ($probeValue !== null) {
+                    $isUp = (float) $probeValue === 1.0;
+                    $metrics['availability'] = $isUp ? '100 %' : '0 %';
+                }
             }
         }
 
@@ -167,27 +172,25 @@ class ApplicationMonitoringController extends Controller
                 $metrics['services_status'] = $response->successful() ? 'Opérationnel' : 'En erreur';
                 $metrics['source'] = 'Health-Check (Laravel)';
 
-                // Calcul simulé du taux d'erreur et du trafic API pour le Health-Check
-                $metrics['error_rate'] = mt_rand(0, 2) . ' %';
-                $metrics['api_traffic'] = mt_rand(50, 500) . ' Req/s';
+                // Mise à jour de la disponibilité actuelle
+                $metrics['availability'] = $response->successful() ? '100 %' : '0 %';
 
                 if (empty($latencyHistory)) {
                     for ($i = $hours; $i > 0; $i--) {
                         $time = Carbon::now()->subHours($i);
                         $label = $hours > 24 ? $time->format('d/m H:i') : $time->format('H:i');
-                        $latencyHistory[] = ['x' => $label, 'y' => $duration + mt_rand(-15, 15)];
+                        $latencyHistory[] = ['x' => $label, 'y' => $duration];
                     }
                 }
             } catch (\Exception $e) {
                 $metrics['http_status'] = 'Injoignable';
                 $metrics['services_status'] = 'Hors ligne';
                 $metrics['source'] = 'Health-Check (Échec)';
+                $metrics['availability'] = '0 %';
             }
         }
 
-        // ---------------------------------------------------------
-        // 2. SÉCURITÉ (ASVS Score + SSL) - SRS MF-17 à 20
-        // ---------------------------------------------------------
+        // 2. SÉCURITÉ (ASVS Score + SSL)
         $scoreData = $scoringService->getAppScore($application);
 
         $security = [
@@ -199,7 +202,6 @@ class ApplicationMonitoringController extends Controller
             'ssl_days_left' => null
         ];
 
-        // On récupère les détails SSL pour l'affichage
         if ($application->url && str_starts_with($application->url, 'https://')) {
             $parsedUrl = parse_url($application->url);
             $host = $parsedUrl['host'] ?? null;
@@ -240,28 +242,41 @@ class ApplicationMonitoringController extends Controller
             }
         }
 
-        // ---------------------------------------------------------
-        // 3. WAZUH (Sécurité & Logs)
-        // ---------------------------------------------------------
-        $vulnerabilities = $wazuhService->getVulnerabilities($application->server->wazuh_agent_id ?? '');
-
-        if (empty($vulnerabilities)) {
-            $vulnerabilities = [
-                ['cve' => 'CVE-2023-1234', 'cvss' => 9.8, 'severity' => 'HIGH', 'dependency' => 'lodash 4.17.20', 'description' => 'Prototype pollution', 'published_at' => '2023-01-10', 'link' => 'https://nvd.nist.gov/vuln/detail/CVE-2023-1234'],
-                ['cve' => 'CVE-2022-9876', 'cvss' => 6.5, 'severity' => 'MEDIUM', 'dependency' => 'axios 0.21.0', 'description' => 'SSRF vulnerability', 'published_at' => '2022-11-05', 'link' => 'https://nvd.nist.gov/vuln/detail/CVE-2022-9876'],
-            ];
-            $logs = [
-                ['level' => 'ERROR', 'source' => 'API', 'message' => 'Connection timed out to database', 'date' => now()],
-                ['level' => 'WARNING', 'source' => 'Nginx', 'message' => 'Worker process exited with code 1', 'date' => now()->subMinutes(5)],
-                ['level' => 'INFO', 'source' => 'System', 'message' => 'Deployment successful', 'date' => now()->subMinutes(15)],
-            ];
-        } else {
-            $logs = [];
+        // 3. SÉCURITÉ (WAZUH OS + SCA APPLICATIF)
+        $wazuhVulns = $wazuhService->getVulnerabilities($application->server->wazuh_agent_id ?? '');
+        
+        $scaService = app(ScaScannerService::class);
+        $scaVulns = [];
+        if ($application->url) {
+            $scaVulns = $scaService->scanDependencies($application->url, $application->language ?? 'php');
         }
+
+        $vulnerabilities = array_merge($wazuhVulns, $scaVulns);
+        $logs = []; 
+
+        // 4. Données pour le graphique de disponibilité 24h
+        $availRecords = ApplicationAvailability::where('application_id', $application->id)
+            ->where('created_at', '>=', now()->subDay())
+            ->orderBy('created_at')
+            ->get();
+        
+        if ($availRecords->isNotEmpty()) {
+            foreach ($availRecords as $record) {
+                $availabilityLabels[] = $record->created_at->format('H:i');
+                $availabilityData[] = $record->is_available ? 100 : 0;
+            }
+        }
+
+        $sources = [
+            'health_check' => $metrics['source'] !== 'N/A',
+            'prometheus'   => $prometheus->isConfigured() && !empty($application->url),
+            'wazuh'        => !empty($application->server->wazuh_agent_id),
+            'sca'          => !empty($scaVulns),
+        ];
 
         return view('monitoring.application.show', compact(
             'application', 'metrics', 'security', 'vulnerabilities', 'logs',
-            'latencyHistory', 'range'
+            'latencyHistory', 'range', 'sources', 'availabilityLabels', 'availabilityData'
         ));
     }
 }

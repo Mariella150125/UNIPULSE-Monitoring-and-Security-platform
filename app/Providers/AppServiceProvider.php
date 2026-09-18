@@ -2,16 +2,16 @@
 
 namespace App\Providers;
 
-use App\Models\Connector;
-use App\Observers\ConnectorObserver;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Alert;
 use App\Models\AuditLog;
+use App\Models\Connector;
+use App\Observers\ConnectorObserver;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,17 +19,15 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // 1. Compteur d'alertes pour la sidebar
         View::composer('layout.sidebar', function ($view) {
             $alertant = Alert::whereNotIn('status', ['resolved', 'closed'])->count();
             $view->with('alertant', $alertant);
         });
 
-        // 2. Observers et Policies pour les Connecteurs
         Connector::observe(ConnectorObserver::class);
         Gate::policy(Connector::class, \App\Policies\ConnectorPolicy::class);
 
-        // 3. SYSTÈME D'AUDIT GLOBAL (Capture toutes les actions CRUD)
+        // SYSTÈME D'AUDIT GLOBAL (Capture TOUT : Serveurs, Apps, Alertes, Settings...)
         Model::created(function ($model) {
             $this->logAction('CREATE', $model, "A créé : " . $this->getModelName($model));
         });
@@ -43,7 +41,6 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    // Fonction pour insérer la ligne dans la base de données
     protected function logAction(string $action, $model, string $details = null)
     {
         // On ignore l'enregistrement des logs dans les logs pour éviter une boucle infinie
@@ -54,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
         AuditLog::create([
             'user_id'       => Auth::id(),
             'action'        => $action,
-            'resource_type' => class_basename($model), // Ex: "Server", "Application"
+            'resource_type' => class_basename($model), // Ex: "Server", "Alert"
             'resource_id'   => $model->id ?? null,
             'ip_address'    => Request::ip(),
             'is_success'    => true,
@@ -62,15 +59,16 @@ class AppServiceProvider extends ServiceProvider
         ]);
     }
 
-    // Petite fonction pour trouver le nom de la ressource
     protected function getModelName($model)
     {
+        // Si le modèle a un champ "name" ou "title", on l'utilise
         if (isset($model->name)) {
             return $model->name;
         }
         if (isset($model->title)) {
             return $model->title;
         }
+        // Sinon on retourne l'ID
         return 'ID: ' . $model->id;
     }
 }

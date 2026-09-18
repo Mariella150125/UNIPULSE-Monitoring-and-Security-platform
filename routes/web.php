@@ -26,6 +26,7 @@ use App\Http\Controllers\AlertSettingController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\MaintenanceWindowController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DashboardController;
 
 // 1. Afficher la page (GET)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -37,9 +38,8 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // 4. Le dashboard (protégé)
-Route::get('/content', function () {
-    return view('layout/dashboard');
-})->middleware('auth')->name('dashboard');
+Route::get('/content', [DashboardController::class, 'index'])
+    ->middleware('auth')->name('dashboard');
 
 Route::get('/forget', [AuthController::class, 'showForgetPassword'])
     ->name('password.request');
@@ -319,6 +319,4 @@ Route::get('/reports/statistics', [ReportController::class, 'statistics'])->name
 Route::get('/reports/generate-pdf', [ReportController::class, 'generatePdf'])->name('reports.generate-pdf');
 Route::get('/reports/generate-excel', [ReportController::class, 'generateExcel'])->name('reports.generate-excel');
 Route::get('/reports/generate-word', [ReportController::class, 'generateWord'])->name('reports.generate-word');
-
-
 

@@ -11,8 +11,8 @@ use App\Models\WebhookEventType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class WebhookController extends Controller
 {
@@ -108,16 +108,12 @@ class WebhookController extends Controller
     {
         return DB::transaction(function () use ($request) {
             $plainSecret = null;
-            $secretHash  = null;
+            $secretStored = null;
 
+            // RÈGLE 9 : Génération et chiffrement du secret HMAC
             if ($request->auth_method === 'hmac_signature') {
-                $preHash      = \Illuminate\Support\Str::random(48);
-                $sharedSecret = hash('sha256', $preHash);
-                $secretHash   = $sharedSecret;
-            }
-
-            if ($sharedSecret ?? null) {
-                $response['secret'] = $sharedSecret;
+                $plainSecret = Str::random(48);
+                $secretStored = encrypt($plainSecret); // Chiffré pour pouvoir le déchiffrer lors de la réception
             }
 
             $webhook = Webhook::create([
@@ -128,7 +124,7 @@ class WebhookController extends Controller
                 'application_id'     => $request->application_id,
                 'target_url'         => $request->target_url,
                 'auth_method'        => $request->auth_method,
-                'secret_hash'        => $secretHash,
+                'secret_hash'        => $secretStored, // On stocke le secret chiffré
                 'api_key_id'         => $request->api_key_id,
                 'min_severity_level' => $request->min_severity_level ?? 0,
                 'created_by'         => auth()->id(),
@@ -138,9 +134,10 @@ class WebhookController extends Controller
 
             $response = [
                 'message' => 'Webhook créé.',
-                'webhook' => $this->formatWebhook($webhook->fresh()->load('eventTypes')),
+                'webhook' => $this->formatWebhook($webhook->fresh()->load(['eventTypes', 'lastDelivery'])),
             ];
 
+            // RÈGLE 9 : Le secret en clair n'est retourné qu'UNE SEULE FOIS
             if ($plainSecret) {
                 $response['secret'] = $plainSecret;
             }
@@ -164,9 +161,6 @@ class WebhookController extends Controller
         ]);
     }
 
-    /**
-     * Affiche la page de détail du Webhook (Vue HTML)
-     */
     public function show(Webhook $webhook)
     {
         $webhook->load(['eventTypes', 'application', 'connector', 'creator']);
@@ -238,7 +232,7 @@ class WebhookController extends Controller
 
             return response()->json([
                 'message' => 'Webhook mis à jour.',
-                'webhook' => $this->formatWebhook($webhook->fresh()->load('eventTypes')),
+                'webhook' => $this->formatWebhook($webhook->fresh()->load(['eventTypes', 'lastDelivery'])),
             ]);
         });
     }
@@ -337,6 +331,7 @@ class WebhookController extends Controller
         ]);
     }
 
+    // RÈGLE 11 : Vrai Retry (Effectue l'envoi HTTP)
     public function retryDelivery(Webhook $webhook, WebhookDelivery $delivery): JsonResponse
     {
         if ($delivery->webhook_id !== $webhook->id) {
@@ -347,17 +342,46 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Cette livraison a réussi, pas besoin de relancer.'], 400);
         }
 
+        if ($delivery->direction === 'inbound') {
+            return response()->json(['message' => 'Impossible de relancer une réception (inbound).'], 400);
+        }
+
+        $startTime = microtime(true);
+        $success = false;
+        $httpStatus = null;
+        $errorMessage = null;
+
+        try {
+            // On effectue le vrai envoi HTTP
+            $response = Http::timeout(15)->post($webhook->target_url, json_decode($delivery->payload, true));
+            $success = $response->successful();
+            $httpStatus = $response->status();
+            if (!$success) {
+                $errorMessage = 'HTTP Error ' . $httpStatus;
+            }
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
+        }
+
+        $duration = round((microtime(true) - $startTime) * 1000);
+
         $retry = $webhook->deliveries()->create([
             'event_type_id'    => $delivery->event_type_id,
-            'direction'        => $delivery->direction,
+            'direction'         => 'outbound',
             'attempt_number'   => $delivery->attempt_number + 1,
             'payload'          => $delivery->payload,
-            'success'          => false,
+            'signature_valid'  => true, // Généré par nous
+            'http_status'      => $httpStatus,
+            'success'          => $success,
+            'error_message'    => $errorMessage,
+            'duration_ms'      => $duration,
+            'delivered_at'     => now(),
         ]);
 
         return response()->json([
-            'message'         => 'Relance programmée.',
+            'message'           => $success ? 'Relance réussie.' : 'Relance échouée.',
             'retry_delivery_id' => $retry->id,
+            'success'           => $success,
         ], 201);
     }
 
@@ -365,6 +389,7 @@ class WebhookController extends Controller
     // HELPERS
     // =========================================================================
 
+    // RÈGLE 10 : Correction de formatWebhook (Utilisation de lastDelivery)
     private function formatWebhook(Webhook $w): array
     {
         return [
@@ -379,8 +404,8 @@ class WebhookController extends Controller
             'auth_method'        => $w->auth_method,
             'min_severity_level' => $w->min_severity_level,
             'status'             => $w->status,
-            'last_status'        => $w->last_status,
-            'last_delivery_at'   => $w->last_delivery_at?->diffForHumans(),
+            'last_delivery_status' => $w->lastDelivery?->success === true ? 'success' : ($w->lastDelivery?->success === false ? 'failed' : null),
+            'last_delivery_at'     => $w->lastDelivery?->delivered_at?->diffForHumans(),
             'event_types'        => $w->eventTypes->map(fn ($et) => [
                 'id'    => $et->id,
                 'code'  => $et->code,
@@ -427,6 +452,7 @@ class WebhookController extends Controller
         return $host . '/…';
     }
     
+    // RÈGLE 8 : Réception sécurisée avec HMAC et Event Type
     public function receive(Request $request, $webhookId)
     {
         $webhook = Webhook::findOrFail($webhookId);
@@ -436,15 +462,46 @@ class WebhookController extends Controller
         }
 
         $payload = $request->all();
+        $signatureValid = true;
 
-        WebhookDelivery::create([
-            'webhook_id'   => $webhook->id,
-            'event_type_id' => $request->input('event_type_id', 1),
-            'direction'     => 'inbound',
-            'payload'       => json_encode($payload),
-            'success'       => true,
-            'delivered_at'  => now(),
+        // A. Vérification de la signature HMAC
+        if ($webhook->auth_method === 'hmac_signature') {
+            $signature = $request->header('X-Webhook-Signature') ?? $request->header('X-Signature');
+            if (!$signature || !$webhook->secret_hash) {
+                $signatureValid = false;
+            } else {
+                try {
+                    // On déchiffre le secret stocké en BDD
+                    $decryptedSecret = decrypt($webhook->secret_hash);
+                    $calculated = hash_hmac('sha256', $request->getContent(), $decryptedSecret);
+                    $signatureValid = hash_equals($calculated, $signature);
+                } catch (\Exception $e) {
+                    $signatureValid = false;
+                }
+            }
+        }
+
+        // B. Détermination du type d'événement
+        $eventCode = $payload['event_type'] ?? $payload['event'] ?? null;
+        $eventType = null;
+        if ($eventCode) {
+            $eventType = WebhookEventType::where('code', $eventCode)->first();
+        }
+        $eventTypeId = $eventType->id ?? null; // Ne met plus 1 par défaut
+
+        $delivery = WebhookDelivery::create([
+            'webhook_id'      => $webhook->id,
+            'event_type_id'   => $eventTypeId,
+            'direction'       => 'inbound',
+            'payload'         => json_encode($payload),
+            'signature_valid' => $signatureValid,
+            'success'         => $signatureValid, // Succès = true seulement si signature valide
+            'delivered_at'    => now(),
         ]);
+
+        if (!$signatureValid) {
+            return response()->json(['error' => 'Invalid signature'], 403);
+        }
 
         return response()->json(['message' => 'Webhook received successfully'], 200);
     }

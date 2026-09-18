@@ -9,22 +9,29 @@ class PrometheusTester extends BaseConnectorTester
         $start = microtime(true);
 
         try {
+            // RÈGLE 13 : On interroge une vraie métrique au lieu du statut
             $response = $this->makeClient()
-                ->get($this->buildUrl('/api/v1/status/config'));
+                ->get($this->buildUrl('/api/v1/query'), [
+                    'query' => 'up'
+                ]);
 
             $duration = (microtime(true) - $start) * 1000;
 
             if ($response->successful()) {
                 $data = $response->json();
+                $status = $data['status'] ?? 'error';
 
-                return ConnectorTestResult::ok(
-                    message: 'Connexion Prometheus réussie.',
-                    ms: round($duration, 2),
-                    meta: [
-                        'version'   => $data['data']['status'] ?? 'unknown',
-                        'prometheus' => $data['data']['config'] ?? null,
-                    ],
-                );
+                if ($status === 'success') {
+                    // RÈGLE 14 : On ne remonte plus de fausse version
+                    return ConnectorTestResult::ok(
+                        message: 'Connexion réussie. Requête de métrique fonctionnelle.',
+                        ms: round($duration, 2),
+                        meta: [
+                            'metric_tested' => 'up',
+                            'result_count'  => count($data['data']['result'] ?? []),
+                        ],
+                    );
+                }
             }
 
             return ConnectorTestResult::fail(

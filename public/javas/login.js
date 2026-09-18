@@ -244,10 +244,10 @@ document.addEventListener('DOMContentLoaded', function () {
         new Chart(ctxAlerts, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: window.dashboardAlertLabels || [], // <-- VARIABLE LARAVEL
                 datasets: [{
                     label: 'Alertes critiques',
-                    data: [3, 5, 2, 6, 4, 7, 4],
+                    data: window.dashboardAlertData || [], // <-- VARIABLE LARAVEL
                     borderColor: '#c0392b',
                     backgroundColor: 'rgba(192, 57, 43, 0.08)',
                     fill: true,
@@ -272,15 +272,15 @@ document.addEventListener('DOMContentLoaded', function () {
         new Chart(ctxSecurityScore, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: window.dashboardSecurityLabels || [], // <-- VARIABLE LARAVEL
                 datasets: [{
                     label: 'Score de sécurité (%)',
-                    data: [78, 80, 82, 81, 85, 88, 92],
+                    data: window.dashboardSecurityData || [], // <-- VARIABLE LARAVEL
                     borderColor: '#56825E',
                     backgroundColor: 'rgba(86, 130, 94, 0.08)',
                     fill: true,
                     tension: 0.35,
-                    pointRadius: 0
+                    pointRadius: 3
                 }]
             },
             options: {
