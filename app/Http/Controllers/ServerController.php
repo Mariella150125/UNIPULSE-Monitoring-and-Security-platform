@@ -8,10 +8,14 @@ use App\Models\ServerGroup;
 use App\Models\Application;
 use Illuminate\Support\Facades\Auth;
 use App\Services\PrometheusService;
+use App\Models\Alert;
 
 class ServerController extends Controller
 {
     /**
+     * Liste avec filtres + KPIs + données graphiques.
+     */
+        /**
      * Liste avec filtres + KPIs + données graphiques.
      */
     public function index(Request $request)
@@ -67,7 +71,22 @@ class ServerController extends Controller
             ->groupBy('os')
             ->orderByDesc('total')
             ->get();
-         $lastSync = \App\Models\Server::whereNotNull('global_status_updated_at')->max('global_status_updated_at');
+        
+        $lastSync = \App\Models\Server::whereNotNull('global_status_updated_at')->max('global_status_updated_at');
+
+        // --- NOUVEAU : DONNÉES POUR LE GRAPHIQUE DES ALERTES ---
+        $alertLabels = [];
+        $alertData = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = \Carbon\Carbon::now()->subDays($i);
+            $alertLabels[] = $date->format('d/m');
+            
+            // On compte toutes les alertes créées ce jour-là
+            $alertData[] = Alert::whereDate('created_at', $date->format('Y-m-d'))->count();
+        }
+        // -----------------------------------------------------
+
         return view('administration.servers.server', compact(
             'servers',
             'groups',
@@ -77,7 +96,8 @@ class ServerController extends Controller
             'hostedApps',
             'envDistribution',
             'osDistribution',
-            'lastSync'
+            'lastSync',
+            'alertLabels', 'alertData' // <-- AJOUTÉ ICI
         ));
     }
 
@@ -200,13 +220,25 @@ class ServerController extends Controller
     /**
      * Données graphique — Évolution des alertes.
      */
+      /**
+     * Données graphique — Évolution des alertes.
+     */
     public function alertChartData()
     {
+        $alertLabels = [];
+        $alertData = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = \Carbon\Carbon::now()->subDays($i);
+            $alertLabels[] = $date->format('d/m');
+            $alertData[] = Alert::whereDate('created_at', $date->format('Y-m-d'))->count();
+        }
+
         return response()->json([
-            'labels' => [],
-            'data'   => [],
+            'labels' => $alertLabels,
+            'data'   => $alertData,
         ]);
-    }
+    }  
 
     /**
      * Données graphique — Répartition par environnement.

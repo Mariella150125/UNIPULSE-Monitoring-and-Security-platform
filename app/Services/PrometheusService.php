@@ -11,64 +11,79 @@ class PrometheusService
 
     public function __construct()
     {
-        // On va chercher l'URL de Prometheus dans ta table "connectors"
         $connector = Connector::where('type', 'prometheus')->first();
-        $this->baseUrl = $connector?->base_url;
+        if ($connector) {
+            // --- CORRECTION : On construit l'URL AVEC LE PORT ---
+            $base = rtrim($connector->base_url, '/');
+            $port = $connector->api_port ? ':' . $connector->api_port : '';
+            $this->baseUrl = $base . $port;
+        } else {
+            $this->baseUrl = null;
+        }
     }
 
-    // Vérifie si Prometheus est configuré
     public function isConfigured(): bool
     {
-        return !empty($this->baseUrl);
+        $active = \App\Models\Setting::get('prom_active', '1') == '1';
+        return $active && !empty($this->baseUrl);
     }
 
-    // Exécute une requête PromQL instantanée
     public function query(string $query): ?array
     {
         if (!$this->isConfigured()) return null;
 
-        $response = Http::timeout(10)->get($this->baseUrl . '/api/v1/query', [
-            'query' => $query,
-        ]);
+        $timeout = (int) \App\Models\Setting::get('prom_timeout', 10);
 
-        return $response->successful() ? $response->json() : null;
+        try {
+            // On ajoute withoutVerifying() pour éviter les bugs SSL
+            $response = Http::timeout($timeout)->withoutVerifying()->get($this->baseUrl . '/api/v1/query', [
+                'query' => $query,
+            ]);
+
+            return $response->successful() ? $response->json() : null;
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return null;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
-    // Exécute une requête PromQL sur une période (pour les graphiques)
-        public function queryRange(string $query, int $hours = 24, string $step = '1h'): array
+    public function queryRange(string $query, int $hours = 24, string $step = '1h'): array
     {
         if (!$this->isConfigured()) return [];
 
         $end = time();
         $start = $end - ($hours * 3600);
 
-        $response = Http::timeout(10)->get($this->baseUrl . '/api/v1/query_range', [
-            'query' => $query,
-            'start' => $start,
-            'end'   => $end,
-            'step'  => $step
-        ]);
+        try {
+            $response = Http::timeout(30)->withoutVerifying()->get($this->baseUrl . '/api/v1/query_range', [
+                'query' => $query,
+                'start' => $start,
+                'end'   => $end,
+                'step'  => $step
+            ]);
 
-        if (!$response->successful()) return [];
+            if (!$response->successful()) return [];
 
-        $result = $response->json('data.result.0.values');
-        if (empty($result)) return [];
+            $result = $response->json('data.result.0.values');
+            if (empty($result)) return [];
 
-        // RÈGLE 15 : On retourne la valeur brute, sans * 1000
-        return array_map(fn($item) => [
-            'x' => date('H:i', $item[0]),
-            'y' => (float) $item[1]
-        ], $result);
+            return array_map(fn($item) => [
+                'x' => date('H:i', $item[0]),
+                'y' => (float) $item[1]
+            ], $result);
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
-    // 1. Statut (Online/Offline)
     public function getServerStatus(string $instance): ?float
     {
         $result = $this->query('up{instance="' . $instance . '"}');
-        return data_get($result, 'data.result.0.value.1');
+        $value = data_get($result, 'data.result.0.value.1');
+        return $value !== null ? (float) $value : null;
     }
 
-    // 2. CPU (en %)
     public function getCpuUsage(string $instance): ?float
     {
         $query = '100 - (avg by (instance) (rate(node_cpu_seconds_total{instance="' . $instance . '",mode="idle"}[5m])) * 100)';
@@ -77,7 +92,6 @@ class PrometheusService
         return $value !== null ? round((float) $value, 2) : null;
     }
 
-    // 3. RAM (en %)
     public function getMemoryUsage(string $instance): ?float
     {
         $query = '(1 - node_memory_MemAvailable_bytes{instance="' . $instance . '"} / node_memory_MemTotal_bytes{instance="' . $instance . '"}) * 100';
@@ -86,12 +100,35 @@ class PrometheusService
         return $value !== null ? round((float) $value, 2) : null;
     }
 
-    // 4. DISQUE (en %) - AJOUTÉ
     public function getDiskUsage(string $instance): ?float
     {
         $query = '(1 - (node_filesystem_avail_bytes{instance="' . $instance . '", mountpoint="/"} / node_filesystem_size_bytes{instance="' . $instance . '", mountpoint="/"})) * 100';
         $result = $this->query($query);
         $value = data_get($result, 'data.result.0.value.1');
         return $value !== null ? round((float) $value, 2) : null;
+    }
+
+    public function getUptime(string $instance): ?int
+    {
+        $query = 'time() - node_boot_time_seconds{instance="' . $instance . '"}';
+        $result = $this->query($query);
+        $value = data_get($result, 'data.result.0.value.1');
+        return $value !== null ? (int) $value : null;
+    }
+
+    public function getNetworkTraffic(string $instance): ?float
+    {
+        $query = '(sum(rate(node_network_receive_bytes_total{instance="' . $instance . '", device!="lo"}[5m])) + sum(rate(node_network_transmit_bytes_total{instance="' . $instance . '", device!="lo"}[5m]))) / 1048576';
+        $result = $this->query($query);
+        $value = data_get($result, 'data.result.0.value.1');
+        return $value !== null ? round((float) $value, 2) : null;
+    }
+
+    public function getDnsLookup(string $instance): ?float
+    {
+        $query = 'probe_dns_lookup_time_seconds{instance="' . $instance . '"}';
+        $result = $this->query($query);
+        $value = data_get($result, 'data.result.0.value.1');
+        return $value !== null ? round((float) $value * 1000, 2) : null;
     }
 }

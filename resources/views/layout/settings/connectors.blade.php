@@ -1,6 +1,7 @@
 @extends('layout.app')
 
 @section('content')
+
 @if(session('success'))
     <div class="success-message">
         <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
@@ -12,6 +13,7 @@
         <i class="fa-solid fa-triangle-exclamation"></i> {{ session('error') }}
     </div>
 @endif
+
 <div class="page-title">
     <a href="{{ route('settings') }}" class="btn btn-cancel">
         <i class="fa-solid fa-arrow-left"></i> Retour aux paramètres
@@ -20,10 +22,10 @@
     <p>Configurer le comportement global de l'intégration Wazuh et Prometheus.</p>
 </div>
 
-
 <div class="panel">
     <form id="settingsForm" method="POST" action="{{ route('settings.update') }}">
         @csrf
+        @method('PUT') {{-- TRÈS IMPORTANT : Permet à Laravel de reconnaître la route d'édition --}}
         
         <h2 style="margin-bottom: 20px;">Configuration de la synchronisation</h2>
         
@@ -85,15 +87,24 @@
 </div>
 
 <script>
-    // Script pour activer le bouton Enregistrer
     const form = document.getElementById('settingsForm');
     const saveBtn = document.getElementById('saveSettingsBtn');
+    
     if (form && saveBtn) {
+        // Activer le bouton si on change une case ou un champ
         form.addEventListener('input', function() {
             saveBtn.disabled = false;
+            saveBtn.classList.add('btn-active-state');
         });
         form.addEventListener('change', function() {
             saveBtn.disabled = false;
+            saveBtn.classList.add('btn-active-state');
+        });
+
+        // Gérer la soumission pour l'animation du bouton
+        form.addEventListener('submit', function() {
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+            saveBtn.disabled = true;
         });
     }
 </script>

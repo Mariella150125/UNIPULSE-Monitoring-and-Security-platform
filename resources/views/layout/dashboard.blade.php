@@ -81,7 +81,7 @@
                 </form>
             </div>
             <div class="securityChart">
-                <canvas id="securityChart"></canvas>
+                <canvas id="dashboardSecurityChart"></canvas>
             </div>
         </div>
 
@@ -121,6 +121,7 @@
                         <td><strong>{{ $server->hostname }}</strong></td>
                         <td>
                             @if($server->global_status == 'healthy') <span class="status-dot online"></span> En ligne
+
                             @elseif($server->global_status == 'critical') <span class="status-dot offline"></span> Critique
                             @else <span class="status-dot warning"></span> Avertissement @endif
                         </td>

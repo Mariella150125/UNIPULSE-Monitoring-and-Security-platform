@@ -68,9 +68,59 @@
         </tbody>
     </table>
 
-    <div>
+    <div class="custom-pagination">
         {{ $logs->links() }}
     </div>
+    
+    <style>
+        /* --- CSS POUR LA PAGINATION --- */
+        .custom-pagination nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .custom-pagination nav a,
+        .custom-pagination nav span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid var(--border-color, #ccc);
+            color: var(--text-dark, #333);
+            background-color: var(--panel-bg, #fff);
+            transition: all 0.2s ease;
+        }
+        .custom-pagination nav a:hover {
+            background-color: var(--page-bg, #f8f8f6);
+            border-color: var(--dark-teal, #1d4a40);
+        }
+        /* Page active */
+        .custom-pagination nav span[aria-current="page"] {
+            background-color: var(--dark-teal, #1d4a40);
+            color: white;
+            border-color: var(--dark-teal, #1d4a40);
+        }
+        /* Boutons désactivés (précédent/suivant quand on est au bout) */
+        .custom-pagination nav span[aria-disabled="true"] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            color: var(--text-muted, #999);
+        }
+        /* Fix pour les flèches SVG de Tailwind */
+        .custom-pagination svg {
+            width: 14px;
+            height: 14px;
+            display: inline-block;
+        }
+    </style>
     
     <a href="{{ route('settings') }}" class="btn btn-cancel">
         <i class="fa-solid fa-arrow-left"></i> Retour aux paramètres

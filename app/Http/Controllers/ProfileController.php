@@ -46,4 +46,10 @@ class ProfileController extends Controller
 
         return redirect()->route('profile')->with('success', 'Mot de passe modifié avec succès.');
     }
+        public function show()
+    {
+        return view('layout.profile', [
+            'user' => auth()->user()
+        ]);
+    }
 }

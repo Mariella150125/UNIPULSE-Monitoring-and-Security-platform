@@ -6,19 +6,35 @@
     <h1>Monitoring Applicatif</h1>
     <p>Vue d'ensemble des performances et de la disponibilité .</p>
 </div>
-<div style="margin-bottom: 24px; display: flex; justify-content: flex-end;">
-    <form method="GET" action="{{ route('monitoring.application.index') }}">
-        <select name="group_id" class="filter-btn" style="padding: 10px 15px; width: 250px;" onchange="this.form.submit()">
-            <option value="">Tous les groupes</option>
-            @foreach($applicationGroups as $group)
-                <option value="{{ $group->id }}" {{ request('group_id') == $group->id ? 'selected' : '' }}>
-                    {{ $group->name }}
-                </option>
-            @endforeach
-        </select>
+
+<div style="display: flex; gap: 20px; margin-bottom: 24px;">
+    <form method="GET" action="{{ route('monitoring.application.index') }}" style="display: flex; gap: 20px; align-items: flex-end;">
+        
+        {{-- Filtre Groupe --}}
+        <div class="filter-group-wrapper">
+            <label for="group_id">Groupe</label>
+            <select name="group_id" id="group_id" class="filter-btn" onchange="this.form.submit()">
+                <option value="">Tous les groupes</option>
+                @foreach($applicationGroups as $group)
+                    <option value="{{ $group->id }}" {{ request('group_id') == $group->id ? 'selected' : '' }}>
+                        {{ $group->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- Filtre Période --}}
+        <div class="filter-group-wrapper">
+            <label for="range">Période</label>
+            <select name="range" id="range" class="filter-btn" onchange="this.form.submit()">
+                <option value="24h" {{ request('range') == '24h' ? 'selected' : '' }}>24 dernières heures</option>
+                <option value="7d" {{ request('range') == '7d' ? 'selected' : '' }}>7 derniers jours</option>
+                <option value="30d" {{ request('range') == '30d' ? 'selected' : '' }}>30 derniers jours</option>
+            </select>
+        </div>
+        
     </form>
 </div>
-
 
 {{-- LIGNE 1 : Stat Panels (KPIs) --}}
 <div class="usr-kpi-row">
@@ -47,14 +63,14 @@
 {{-- LIGNE 2 : Graphiques de Tendance --}}
 <div class="grid-2">
     <div class="panel">
-        <div class="panel-header"><p>Portfolio Availability Trend</p></div>
-        <div class="alertChart" style="height: 200px;">
+        <div class="panel-header"><p>Tendance de Disponibilité</p></div>
+        <div class="alertChart" style="height: 250px;">
             <canvas id="availTrendChart"></canvas>
         </div>
     </div>
     <div class="panel">
-        <div class="panel-header"><p>Response Time Trend</p></div>
-        <div class="alertChart" style="height: 200px;">
+        <div class="panel-header"><p>Tendance du Temps de Réponse</p></div>
+        <div class="alertChart" style="height: 250px;">
             <canvas id="respTrendChart"></canvas>
         </div>
     </div>
@@ -63,10 +79,10 @@
 {{-- LIGNE 3 : Tableaux denses avec barres de progression --}}
 <div class="grid-2">
     
-    {{-- Tableau 1 : Disponibilité Système (24h) --}}
+    {{-- Tableau 1 : Disponibilité Système --}}
     <div class="panel">
         <div class="panel-header">
-            <p>System Availability — Rolling 24 Hours</p>
+            <p>Disponibilité Système (24h)</p>
         </div>
         <table class="server-table">
             <thead>
@@ -91,9 +107,9 @@
                         @endphp
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="flex: 1; height: 8px; background: var(--page-bg); border-radius: 4px; overflow: hidden;">
-                                <div style="width: {{ $stat['availability'] }}%; height: 100%; background: {{ $availColor }};"></div>
+                                <div style="width: {{ $stat['availability'] ?? 0 }}%; height: 100%; background: {{ $availColor }};"></div>
                             </div>
-                            <span style="font-size: 12px; font-weight: 600; color: {{ $availColor }}; width: 50px; text-align: right;">{{ $stat['availability'] }}%</span>
+                            <span style="font-size: 12px; font-weight: 600; color: {{ $availColor }}; width: 50px; text-align: right;">{{ $stat['availability'] ?? '—' }}%</span>
                         </div>
                     </td>
                 </tr>
@@ -102,10 +118,10 @@
         </table>
     </div>
 
-    {{-- Tableau 2 : Temps de réponse soutenu (10 min) --}}
+    {{-- Tableau 2 : Temps de réponse soutenu --}}
     <div class="panel">
         <div class="panel-header">
-            <p>Sustained Response Time — 10-Minute Average</p>
+            <p>Temps de Réponse Moyen (10 min)</p>
         </div>
         <table class="server-table">
             <thead>
@@ -120,7 +136,6 @@
                 @php
                     $respMs = $stat['response_time'];
                     $respDisplay = $respMs === '—' ? '—' : $respMs . ' ms';
-                    // On calcule une largeur de barre relative (max 2000ms pour l'affichage)
                     $barWidth = $respMs === '—' ? 0 : min(100, ($respMs / 2000) * 100);
                     $respColor = $respMs === '—' ? 'var(--text-muted)' : ($respMs < 500 ? 'var(--sage-green)' : ($respMs < 1000 ? 'var(--orange)' : 'var(--red)'));
                 @endphp
@@ -148,6 +163,7 @@
         </table>
     </div>
 </div>
+
 {{-- LIGNE 4 : SSL Certificate Days Remaining --}}
 <div class="panel" style="margin-top: 24px;">
     <div class="panel-header">
@@ -161,9 +177,13 @@
             </tr>
         </thead>
         <tbody>
-                        @forelse($sslStats as $ssl)
+            @forelse($sslStats as $ssl)
             <tr>
-                <td><strong>{{ $ssl['name'] }}</strong></td>
+                <td>
+                    <a href="{{ route('monitoring.application.show', $ssl['id']) }}" style="text-decoration: none; color: var(--text-dark); font-weight: 500;">
+                        {{ $ssl['name'] }}
+                    </a>
+                </td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         @php
@@ -194,10 +214,12 @@
         </tbody>
     </table>
 </div>
+
 <script>
     window.availTrendLabels = @json($trendLabels);
     window.availTrendData = @json($availTrend);
     window.respTrendLabels = @json($trendLabels);
     window.respTrendData = @json($respTrend);
 </script>
+
 @endsection

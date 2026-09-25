@@ -42,18 +42,40 @@ class DashboardController extends Controller
         // 4. Agents Actifs
         $activeAgents = Server::whereNotNull('wazuh_agent_id')->count();
         
-        // 5. Vrais Scores de Sécurité et Conformité
+        // 5. Vrais Scores de Sécurité et Conformité (Logique complète App + Serveurs)
         $scoringService = app(\App\Services\ScoringService::class);
+        $wazuhService = app(\App\Services\WazuhService::class);
         $applications = Application::all();
         $servers = Server::all();
 
+        // A. Score des Applications
         $appScores = [];
         foreach ($applications as $app) {
             try { 
                 $appScores[] = $scoringService->getAppScore($app)['score']; 
             } catch (\Exception $e) {}
         }
-        $securityScore = count($appScores) > 0 ? round(array_sum($appScores) / count($appScores)) : 0;
+        $globalAppScore = count($appScores) > 0 ? round(array_sum($appScores) / count($appScores)) : 0;
+
+        // B. Score des Serveurs (Si Wazuh est configuré)
+        $wazuhConfigured = $wazuhService->isConfigured();
+        $globalServerScore = null;
+        
+        if ($wazuhConfigured) {
+            $serverScores = [];
+            foreach ($servers as $server) {
+                try {
+                    $serverScores[] = $scoringService->getServerScore($server)['score'];
+                } catch (\Exception $e) {}
+            }
+            $globalServerScore = count($serverScores) > 0 ? round(array_sum($serverScores) / count($serverScores)) : 0;
+        }
+
+        // C. Score Global final (Moyenne des deux)
+        $securityScore = $globalServerScore !== null 
+            ? round(($globalAppScore + $globalServerScore) / 2) 
+            : $globalAppScore;
+            
         $complianceScore = $securityScore; // Corrélation directe pour le dashboard
 
         // 6. Données pour les Graphiques (Selon la période)
@@ -62,24 +84,19 @@ class DashboardController extends Controller
         $securityLabels = [];
         $securityData = [];
 
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
+        for ($i = 6; $i >= 0; $i--) {
+            $date = \Carbon\Carbon::now()->subDays($i);
             $alertLabels[] = $date->format('d/m');
             $securityLabels[] = $date->format('d/m');
             
-            // VRAIES ALERTES
-            $alertData[] = Alert::whereDate('created_at', $date->format('Y-m-d'))->count();
+            // Compte les vraies alertes critiques créées ce jour-là
+            $alertData[] = \App\Models\Alert::whereDate('created_at', $date->format('Y-m-d'))
+                                ->where('priority', 'critical')
+                                ->count();
             
-            // VRAI HISTORIQUE DE SÉCURITÉ (Si la table existe)
-            $history = SecurityScoreHistory::where('recorded_at', $date->format('Y-m-d'))->first();
-            if ($history) {
-                $securityData[] = $history->score;
-            } else {
-                // Si pas d'historique, on utilise le score actuel pour ne pas avoir de trou
-                $securityData[] = $securityScore; 
-            }
+            // Pour la courbe de sécurité, on affiche le score actuel sur les 7 jours
+            $securityData[] = $securityScore; 
         }
-
         // 7. Derniers Événements & Santé
         $recentEvents = AuditLog::with('user')->latest()->take(4)->get();
         $serversHealth = Server::latest()->take(3)->get();

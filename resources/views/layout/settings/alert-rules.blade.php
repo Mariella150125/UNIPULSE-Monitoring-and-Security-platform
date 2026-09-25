@@ -24,69 +24,45 @@
 
 
 
-<div class="panel">
-    <form id="settingsForm" method="POST" action="{{ route('settings.update') }}">
+<form id="settingsForm" method="POST" action="{{ route('settings.update') }}">
     @csrf
+    @method('PUT')
     
-        <h2 style="margin-bottom: 20px;">Seuils de Surveillance</h2>
-        
-        <div class="settings-form-grid">
-            <!-- Section Serveurs -->
-            <div class="settings-section">
-                <h3>Ressources Serveurs</h3>
-                
-                <div class="form-group">
-                    <label>CPU - Niveau Warning (%)</label>
-                    <input type="number" name="cpu_warning" value="{{ old('cpu_warning', \App\Models\Setting::get('cpu_warning', 70)) }}" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>CPU - Niveau Critical (%)</label>
-                    <input type="number" name="cpu_critical" value="{{ old('cpu_critical', \App\Models\Setting::get('cpu_critical', 90)) }}" class="form-control">
-                </div>
+    <h2>Seuils d'alerte Serveurs</h2>
+    <table class="server-table">
+        <thead>
+            <tr>
+                <th>Métrique</th>
+                <th>Niveau Avertissement (%)</th>
+                <th>Niveau Critique (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- CPU -->
+            <tr>
+                <td><strong>CPU</strong></td>
+                <td><input type="number" name="cpu_warning" value="{{ old('cpu_warning', \App\Models\Setting::get('cpu_warning', 75)) }}" class="form-control"></td>
+                <td><input type="number" name="cpu_critical" value="{{ old('cpu_critical', \App\Models\Setting::get('cpu_critical', 90)) }}" class="form-control"></td>
+            </tr>
+            <!-- RAM -->
+            <tr>
+                <td><strong>RAM</strong></td>
+                <td><input type="number" name="ram_warning" value="{{ old('ram_warning', \App\Models\Setting::get('ram_warning', 80)) }}" class="form-control"></td>
+                <td><input type="number" name="ram_critical" value="{{ old('ram_critical', \App\Models\Setting::get('ram_critical', 90)) }}" class="form-control"></td>
+            </tr>
+            <!-- DISK -->
+            <tr>
+                <td><strong>Disque (Disk)</strong></td>
+                <td><input type="number" name="disk_warning" value="{{ old('disk_warning', \App\Models\Setting::get('disk_warning', 80)) }}" class="form-control"></td>
+                <td><input type="number" name="disk_critical" value="{{ old('disk_critical', \App\Models\Setting::get('disk_critical', 90)) }}" class="form-control"></td>
+            </tr>
+        </tbody>
+    </table>
 
-                <div class="form-group">
-                    <label>RAM - Niveau Warning (%)</label>
-                    <input type="number" name="ram_warning" value="{{ old('ram_warning', \App\Models\Setting::get('ram_warning', 60)) }}" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label>RAM - Niveau Critical (%)</label>
-                    <input type="number" name="ram_critical" value="{{ old('ram_critical', \App\Models\Setting::get('ram_critical', 85)) }}" class="form-control">
-                </div>
-            </div>
-
-            <!-- Section Applications -->
-            <div class="settings-section">
-                <h3>Ressources Applications</h3>
-                
-                <div class="form-group">
-                    <label>Temps de réponse - Warning (ms)</label>
-                    <input type="number" name="rt_warning" value="{{ old('rt_warning', \App\Models\Setting::get('rt_warning', 1000)) }}" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label>Temps de réponse - Critical (ms)</label>
-                    <input type="number" name="rt_critical" value="{{ old('rt_critical', \App\Models\Setting::get('rt_critical', 3000)) }}" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label>Disponibilité - Alerte si inférieur à (%)</label>
-                    <input type="number" name="avail_critical" value="{{ old('avail_critical', \App\Models\Setting::get('avail_critical', 95)) }}" class="form-control">
-                </div>
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <a href="{{ route('settings') }}" class="btn btn-cancel">
-                <i class="fa-solid fa-xmark"></i> Annuler
-            </a>
-            <button type="submit" id="saveSettingsBtn" class="usr-btn" disabled>
-                <i class="fa-solid fa-floppy-disk"></i> Enregistrer les modifications
-            </button>
-        </div>
-    </form>
-</div>
+    <div class="form-actions">
+        <button type="submit" class="usr-btn">Enregistrer les seuils</button>
+    </div>
+</form>
 
 <script>
     const form = document.getElementById('settingsForm');

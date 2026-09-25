@@ -16,6 +16,7 @@ return new class extends Migration
             $table->dateTime('end_time');
             $table->boolean('is_active')->default(true); // Si false, la maintenance est annulée
             $table->timestamps();
+            
         });
     }
 

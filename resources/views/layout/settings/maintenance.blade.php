@@ -24,7 +24,7 @@
 
     <form id="settingsForm" method="POST" action="{{ route('settings.maintenance.store') }}">
         @csrf
-        
+        @method('PUT') 
             <div class="settings-form-grid" style="margin-top: 20px;">
                 <div class="form-group">
                     <label>Type de ressource</label>

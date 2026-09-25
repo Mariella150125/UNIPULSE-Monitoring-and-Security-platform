@@ -3,15 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
-use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class AlertController extends Controller
 {
-    // MF-172 : Afficher la liste des alertes actives
-     public function index(Request $request): View
+    public function index(Request $request): View
     {
+        // ... (ton code existant pour les KPIs et filtres, ne change pas)
         // 1. Gestion de la période
         $period = $request->get('period', '7');
         $startDate = $request->get('start_date');
@@ -46,7 +45,6 @@ class AlertController extends Controller
             'resolved' => Alert::where('status', 'resolved')->whereBetween('updated_at', [$start, $end])->count(),
         ];
 
-        // Calcul MTTR
         $resolvedInPeriod = Alert::where('status', 'resolved')->whereBetween('updated_at', [$start, $end])->get();
         $stats['mttr'] = $resolvedInPeriod->count() > 0 ? round($resolvedInPeriod->avg(fn($a) => $a->created_at->diffInMinutes($a->updated_at))) : 0;
 
@@ -63,7 +61,6 @@ class AlertController extends Controller
         $evolutionInfra = [];
 
         if ($period === '24') {
-            // Mode 24h : groupé par heure
             $alertsInPeriod = Alert::whereBetween('created_at', [$start, $end])
                 ->selectRaw("EXTRACT(HOUR FROM created_at) as hour, source, COUNT(*) as count")
                 ->groupBy('hour', 'source')
@@ -72,15 +69,10 @@ class AlertController extends Controller
             for ($i = 23; $i >= 0; $i--) {
                 $h = \Carbon\Carbon::now()->subHours($i);
                 $evolutionLabels[] = $h->format('H:i');
-                
-                $secuCount = $alertsInPeriod->where('hour', (int)$h->format('H'))->whereIn('source', ['wazuh', 'system'])->sum('count');
-                $infraCount = $alertsInPeriod->where('hour', (int)$h->format('H'))->where('source', 'prometheus')->sum('count');
-                
-                $evolutionSecu[] = $secuCount;
-                $evolutionInfra[] = $infraCount;
+                $evolutionSecu[] = $alertsInPeriod->where('hour', (int)$h->format('H'))->whereIn('source', ['wazuh', 'system'])->sum('count');
+                $evolutionInfra[] = $alertsInPeriod->where('hour', (int)$h->format('H'))->where('source', 'prometheus')->sum('count');
             }
         } else {
-            // Mode jours : groupé par date
             $alertsInPeriod = Alert::whereBetween('created_at', [$start, $end])
                 ->selectRaw("created_at::date as date, source, COUNT(*) as count")
                 ->groupBy('date', 'source')
@@ -89,10 +81,8 @@ class AlertController extends Controller
             $interval = \Carbon\CarbonPeriod::create($start, $end);
             foreach ($interval as $date) {
                 $evolutionLabels[] = $date->format('d/m');
-                $secuCount = $alertsInPeriod->where('date', $date->format('Y-m-d'))->whereIn('source', ['wazuh', 'system'])->sum('count');
-                $infraCount = $alertsInPeriod->where('date', $date->format('Y-m-d'))->where('source', 'prometheus')->sum('count');
-                $evolutionSecu[] = $secuCount;
-                $evolutionInfra[] = $infraCount;
+                $evolutionSecu[] = $alertsInPeriod->where('date', $date->format('Y-m-d'))->whereIn('source', ['wazuh', 'system'])->sum('count');
+                $evolutionInfra[] = $alertsInPeriod->where('date', $date->format('Y-m-d'))->where('source', 'prometheus')->sum('count');
             }
         }
 
@@ -115,16 +105,14 @@ class AlertController extends Controller
             'evolutionLabels', 'evolutionSecu', 'evolutionInfra',
             'majorSourcesLabels', 'majorSourcesData', 'resolvedAlerts'
         ));
-    }   
-// On modifie checkCritical pour qu'il retourne toutes les alertes actives pour la cloche
+    }
+
     public function checkCritical()
     {
-        // On prend toutes les alertes non fermées
         $alerts = Alert::whereNotIn('status', ['resolved', 'closed'])
             ->orderByRaw("CASE priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END")
             ->get();
 
-        // On regarde si parmi elles il y en a une critique (pour le son)
         $hasCritical = $alerts->contains('priority', 'critical');
 
         return response()->json([
@@ -132,7 +120,7 @@ class AlertController extends Controller
             'alerts' => $alerts->map(function ($alert) {
                 return [
                     'id' => $alert->id,
-                    'code' => $alert->code ?? 'ALR-'.$alert->id,
+                    'code' => $alert->code ?? 'ALR-' . $alert->id,
                     'title' => $alert->title,
                     'description' => $alert->description ? substr($alert->description, 0, 40) . '...' : '',
                     'priority' => $alert->priority,
@@ -142,20 +130,30 @@ class AlertController extends Controller
         ]);
     }
 
-    // NOUVELLE MÉTHODE : Afficher le détail d'une alerte
+    // Afficher le détail d'une alerte
     public function show($id)
     {
-        $alert = Alert::findOrFail($id);
+        $alert = Alert::with(['comments.user'])->findOrFail($id);
         
         return view('alerts.show', compact('alert'));
     }
-    // Acquitter une alerte
+
+    // Acquitter une alerte (En cours de traitement)
     public function acknowledge($id)
     {
         $alert = Alert::findOrFail($id);
         $alert->update(['status' => 'acknowledged']);
         
-        return redirect()->back()->with('success', 'Alerte acquittée avec succès.');
+        return redirect()->back()->with('success', 'Alerte acquittée (en cours de traitement).');
+    }
+
+    // Résoudre une alerte (Le problème est réglé)
+    public function resolve($id)
+    {
+        $alert = Alert::findOrFail($id);
+        $alert->update(['status' => 'resolved']);
+        
+        return redirect()->back()->with('success', 'Alerte marquée comme résolue.');
     }
 
     // Assigner une alerte
@@ -169,13 +167,42 @@ class AlertController extends Controller
         return redirect()->back()->with('success', 'Alerte assignée avec succès.');
     }
 
-    // Fermer une alerte
+    // Fermer une alerte (Archivage définitif)
     public function close($id)
     {
         $alert = Alert::findOrFail($id);
         $alert->update(['status' => 'closed']);
         
-        return redirect()->back()->with('success', 'Alerte fermée définitivement.');
+        return redirect()->back()->with('success', 'Alerte fermée et archivée.');
     }
-   
+        // MF-170 : Ignorer (Snooze) une alerte
+    public function snooze(Request $request, $id)
+    {
+        $request->validate(['minutes' => 'required|integer|min:1|max:1440']);
+        $alert = Alert::findOrFail($id);
+        
+        $alert->update([
+            'status' => 'snoozed',
+            'snoozed_until' => now()->addMinutes((int) $request->minutes) // <-- CORRIGÉ ICI
+        ]);
+      
+        
+        return redirect()->back()->with('success', "Alerte ignorée pendant {$request->minutes} minutes.");
+    }
+
+    // MF-165 : Ajouter un commentaire
+    public function comment(Request $request, $id)
+    {
+        $request->validate(['comment' => 'required|string|max:1000']);
+        $alert = Alert::findOrFail($id);
+        
+        // Assurez-vous d'avoir une table 'alert_comments' et le modèle
+        \App\Models\AlertComment::create([
+            'alert_id' => $alert->id,
+            'user_id' => auth()->id(),
+            'comment' => $request->comment
+        ]);
+        
+        return redirect()->back()->with('success', 'Commentaire ajouté à l\'historique.');
+    }
 }

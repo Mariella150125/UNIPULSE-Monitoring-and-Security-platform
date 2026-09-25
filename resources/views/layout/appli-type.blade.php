@@ -104,42 +104,43 @@
 
                         <td>
 
-                            <div class="table-actions">
+                           <td>
+                                <div class="action-dropdown">
+                                    <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                    </button>
+                                    <div class="action-dropdown-menu">
+                                        <a href="#" class="dropdown-item">
+                                            <i class="fa-solid fa-pen"></i> Modifier
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        
+                                        @if($type->status)
+                                            <form action="{{ route('application-types.deactivate', $type) }}" method="POST">
+                                                @csrf @method('PATCH')
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fa-solid fa-ban" style="color: var(--orange);"></i> Désactiver
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form action="{{ route('application-types.activate', $type) }}" method="POST">
+                                                @csrf @method('PATCH')
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fa-solid fa-check" style="color: var(--sage-green);"></i> Activer
+                                                </button>
+                                            </form>
+                                        @endif
 
-                                <button
-                                    type="button"
-                                    class="icon-action"
-                                    title="Modifier"
-                                >
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-
-                                @if($type->status)
-
-                                    <form
-                                        action="{{ route(
-                                            'application-types.destroy',
-                                            $type
-                                        ) }}"
-                                        method="POST"
-                                    >
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button
-                                            type="submit"
-                                            class="icon-action danger"
-                                            title="Désactiver"
-                                        >
-                                            <i class="fa-solid fa-ban"></i>
-                                        </button>
-
-                                    </form>
-
-                                @endif
-
-                            </div>
+                                        <div class="dropdown-divider"></div>
+                                        <form action="{{ route('application-types.destroy', $type) }}" method="POST" onsubmit="return confirm('Supprimer définitivement ce type ?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="dropdown-item text-red">
+                                                <i class="fa-solid fa-trash"></i> Supprimer
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
 
                         </td>
 

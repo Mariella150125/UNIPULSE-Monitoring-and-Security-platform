@@ -20,67 +20,83 @@ class SecurityController extends Controller
         foreach ($applications as $app) {
             $scoreData = $scoringService->getAppScore($app);
             $appScores[] = [
-                'id' => $app->id,
-                'name' => $app->name,
-                'score' => $scoreData['score'],
-                'level' => $scoreData['level'],
-                'color' => $scoreData['color']
+                'id' => $app->id, 'name' => $app->name, 'score' => $scoreData['score'],
+                'level' => $scoreData['level'], 'color' => $scoreData['color']
             ];
         }
-
+        
         $serverScores = [];
         foreach ($servers as $server) {
             $scoreData = $scoringService->getServerScore($server);
             $serverScores[] = [
-                'id' => $server->id,
-                'name' => $server->name,
-                'score' => $scoreData['score'],
-                'level' => $scoreData['level'],
-                'color' => $scoreData['color']
+                'id' => $server->id, 'name' => $server->name, 'score' => $scoreData['score'],
+                'level' => $scoreData['level'], 'color' => $scoreData['color']
             ];
         }
-
+        // OWASP TOP 10 
         $topVulnerableApps = collect($appScores)->sortBy('score')->take(10)->values()->toArray();
         $topCriticalServers = collect($serverScores)->sortBy('score')->take(10)->values()->toArray();
-
-                // RÈGLE 17 : Gestion des scores partiels
-        // Si on a des apps, on calcule le score global basé sur les apps
         $globalAppScore = count($appScores) > 0 ? round(collect($appScores)->avg('score')) : 0;
-        
-        // Si Wazuh n'est pas configuré, on n'affiche pas un faux score de 100, mais on indique que c'est partiel
         $wazuhService = app(\App\Services\WazuhService::class);
-        $wazuhConfigured = $wazuhService->isConfigured(); 
-        $globalServerScore = $wazuhConfigured ? round(collect($serverScores)->avg('score')) : null;
-
-        // Le score global n'est calculé que si on a les deux, sinon c'est le score partiel App
+        $globalServerScore = $wazuhService->isConfigured() ? round(collect($serverScores)->avg('score')) : null;
         $globalSecurityScore = $globalServerScore !== null ? round(($globalAppScore + $globalServerScore) / 2) : $globalAppScore;
-        $chartLabels = [];
-        $chartData = [];
-        $chartColors = [];
-
+        
+        $chartLabels = []; $chartData = []; $chartColors = [];
         foreach (collect($appScores)->sortBy('score')->take(5) as $app) {
-            $chartLabels[] = $app['name'];
-            $chartData[] = $app['score'];
-            $chartColors[] = $app['color'];
+            $chartLabels[] = $app['name']; $chartData[] = $app['score']; $chartColors[] = $app['color'];
         }
         foreach (collect($serverScores)->sortBy('score')->take(5) as $server) {
-            $chartLabels[] = $server['name'];
-            $chartData[] = $server['score'];
-            $chartColors[] = $server['color'];
+            $chartLabels[] = $server['name']; $chartData[] = $server['score']; $chartColors[] = $server['color'];
         }
 
+        // --- LOGIQUE MIXTE : BDD + CALCUL RÉEL ---
         $owaspCategories = OwaspCategory::where('is_active', true)->get()->toArray();
 
+        // Dictionnaire des checks automatisés par la plateforme
+        $automatedChecksMap = [
+            'A02' => ['HTTPS obligatoire', 'Certificat SSL valide'],
+            'A05' => ['En-têtes HTTP de sécurité'],
+            'A06' => ['Dépendances vulnérables', 'Version des dépendances'],
+            'A09' => ['Journalisation'],
+        ];
+
+        $failedChecks = [];
+        foreach ($applications as $app) {
+            $scoreData = $scoringService->getAppScore($app);
+            foreach ($scoreData['checks'] as $check) {
+                if (!$check['is_passed']) $failedChecks[] = $check['name'];
+            }
+        }
+
+        // On assigne le statut à chaque catégorie de la BDD
+        foreach ($owaspCategories as &$cat) {
+            $code = $cat['code'];
+            if (array_key_exists($code, $automatedChecksMap)) {
+                $isFailed = false;
+                foreach ($automatedChecksMap[$code] as $checkName) {
+                    if (in_array($checkName, $failedChecks)) { $isFailed = true; break; }
+                }
+                $cat['status'] = $isFailed ? 'Non conforme' : 'Conforme';
+            } else {
+                $cat['status'] = 'Hors périmètre';
+            }
+        }
+        // -----------------------------------------
+
         return view('security.compliance', compact(
-            'appScores', 'serverScores', 'topVulnerableApps', 'topCriticalServers',
-            'globalAppScore', 'globalServerScore', 'globalSecurityScore',
-            'owaspCategories', 'chartLabels', 'chartData', 'chartColors'
+            'appScores', 'serverScores', 'globalAppScore', 'globalServerScore', 'globalSecurityScore',
+            'owaspCategories', 'chartLabels', 'chartData', 'chartColors','topVulnerableApps', // <-- AJOUTÉ ICI
+            'topCriticalServers'
         ));
     }
-    public function recommendations(ScoringService $scoringService): View
+    public function recommendations(ScoringService $scoringService, $id = null): View
     {
-        // Injection de dépendance propre
-        $applications = Application::all();
+        // Si un ID est passé, on filtre. Sinon, on prend tout.
+        $query = Application::query();
+        if ($id) {
+            $query->where('id', $id);
+        }
+        $applications = $query->get();
         
         $allRecommendations = [];
 

@@ -134,29 +134,32 @@
         </div>
 
         <div style="padding:20px 24px;">
-            @forelse ($logs as $log)
-                <div class="history-item">
-                    <span class="status-dot {{ $log->success ? 'online' : 'offline' }}"></span>
-                    <div>
-                        <strong>
-                            {{ $log->success ? 'Connexion réussie' : 'Échec de connexion' }}
-                            @if ($log->duration_ms)
-                                <span style="font-weight:400;color:var(--text-muted);font-size:11px;">({{ $log->duration_ms }} ms)</span>
-                            @endif
-                        </strong>
-                        <p>
-                            {{ $log->executed_at->diffForHumans() }}
-                            @if (!$log->success && $log->error_message)
-                                — {{ Str::limit($log->error_message, 100) }}
-                            @endif
-                        </p>
+            <!-- ON AJOUTE CET ID ICI -->
+            <div id="history-list">
+                @forelse ($logs as $log)
+                    <div class="history-item">
+                        <span class="status-dot {{ $log->success ? 'online' : 'offline' }}"></span>
+                        <div>
+                            <strong>
+                                {{ $log->success ? 'Connexion réussie' : 'Échec de connexion' }}
+                                @if ($log->duration_ms)
+                                    <span style="font-weight:400;color:var(--text-muted);font-size:11px;">({{ $log->duration_ms }} ms)</span>
+                                @endif
+                            </strong>
+                            <p>
+                                {{ $log->executed_at->diffForHumans() }}
+                                @if (!$log->success && $log->error_message)
+                                    — {{ Str::limit($log->error_message, 100) }}
+                                @endif
+                            </p>
+                        </div>
                     </div>
-                </div>
-            @empty
-                <div class="history-item">
-                    <div><p style="color:var(--text-muted);">Aucun historique.</p></div>
-                </div>
-            @endforelse
+                @empty
+                    <div class="history-item" id="no-logs">
+                        <div><p style="color:var(--text-muted);">Aucun historique.</p></div>
+                    </div>
+                @endforelse
+            </div>
         </div>
     </div>
 </div>
