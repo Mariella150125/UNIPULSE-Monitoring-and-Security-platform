@@ -68,29 +68,54 @@
 </div>
 
 {{-- OWASP TOP 10 AVEC CORRÉLATION --}}
+{{-- OWASP TOP 10 AVEC CORRÉLATION --}}
 <div class="panel" style="margin-top: 24px;">
-    <div class="panel-header"><p>Correspondance OWASP Top 10 (Guidelines externes)</p></div>
+    <div class="panel-header">
+        <p>Couverture OWASP Top 10 (SRS)</p>
+        <a href="{{ route('owasp-categories.index') }}" class="usr-btn-1" style="padding: 8px 15px; font-size: 12px;">
+            <i class="fa-solid fa-gear"></i> Gérer le Top 10
+        </a>
+    </div>
     <table class="server-table">
-        <thead><tr><th>Catégorie</th><th>Description</th><th>Statut</th><th>Guideline</th></tr></thead>
-         <tbody>
+        <thead>
+            <tr>
+                <th>Catégorie</th>
+                <th>Description</th>
+                <th>Statut Réel</th>
+                <th>Référence OWASP</th>
+            </tr>
+        </thead>
+        <tbody>
             @forelse($owaspCategories as $cat)
             <tr>
                 <td><strong>{{ $cat['code'] }}</strong></td>
-                <td>{{ $cat['name'] }}</td>
-                <td><span class="status-dot online"></span> {{ $cat['status'] }}</td>
-                <td><a href="{{ $cat['guideline'] }}" target="_blank" class="usr-btn-1" style="padding: 5px 10px; font-size: 12px;">Voir Guideline</a></td>
+                <td>{{ $cat['name'] }} <br><small style="color: var(--text-muted);">{{ $cat['description'] }}</small></td>
+                <td>
+                    @if($cat['status'] == 'Conforme')
+                        <span class="status-dot online"></span> Conforme
+                    @elseif($cat['status'] == 'Non conforme')
+                        <span class="status-dot offline"></span> Non conforme
+                    @else
+                        <span class="status-dot" style="background: var(--text-muted);"></span> 
+                        <small style="color: var(--text-muted);">Hors périmètre</small>
+                    @endif
+                </td>
+                <td>
+                    <a href="{{ $cat['url'] }}" target="_blank" class="usr-btn-1" style="padding: 5px 10px; font-size: 12px;">
+                        <i class="fa-solid fa-up-right-from-square"></i> Voir sur OWASP.org
+                    </a>
+                </td>
             </tr>
             @empty
             <tr>
                 <td colspan="4" style="text-align:center; padding: 20px; color: var(--text-muted);">
-                    Aucune catégorie OWASP active pour le moment.
+                    Aucune catégorie OWASP active. Ajoutez-en via le bouton "Gérer le Top 10".
                 </td>
             </tr>
             @endforelse
         </tbody>
     </table>
 </div>
-
 <script>
     window.securityLabels = @json($chartLabels);
     window.securityData = @json($chartData);

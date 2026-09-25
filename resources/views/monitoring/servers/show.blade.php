@@ -23,7 +23,15 @@
         <div class="kpi-card">
             <div class="kpi-icon c-sage"><i class="fa-solid fa-circle-check"></i></div>
             <p class="kpi-label">Statut Système</p>
-            <p class="kpi-value" style="font-size: 20px;">En ligne</p>
+            <p class="kpi-value" style="font-size: 20px;">
+                @if($server->global_status == 'healthy')
+                    <span style="color: var(--sage-green);">En ligne</span>
+                @elseif($server->global_status == 'critical')
+                    <span style="color: var(--red);">Critique</span>
+                @else
+                    <span style="color: var(--text-muted);">Non évalué</span>
+                @endif
+            </p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-teal"><i class="fa-solid fa-clock"></i></div>
@@ -155,7 +163,7 @@
     <div class="panel">
         <div class="panel-header">
             <p>Utilisation CPU</p>
-            <select class="filter-btn" data-chart-range>
+            <select class="filter-btn chart-range-select" data-metric="cpu" data-chart-id="serverCpuChart">
                 <option value="30min">30 dernières minutes</option>
                 <option value="24h" selected>24 dernières heures</option>
                 <option value="48h">48 dernières heures</option>
@@ -172,7 +180,7 @@
     <div class="panel" style="margin-top: 24px;">
         <div class="panel-header">
             <p>Consommation RAM</p>
-            <select class="filter-btn" data-chart-range>
+            <select class="filter-btn chart-range-select" data-metric="ram" data-chart-id="serverRamChart">
                 <option value="30min">30 dernières minutes</option>
                 <option value="24h" selected>24 dernières heures</option>
                 <option value="48h">48 dernières heures</option>
@@ -189,7 +197,7 @@
     <div class="panel" style="margin-top: 24px;">
         <div class="panel-header">
             <p>Utilisation Disque</p>
-            <select class="filter-btn" data-chart-range>
+            <select class="filter-btn chart-range-select" data-metric="disk" data-chart-id="serverDiskChart">
                 <option value="30min">30 dernières minutes</option>
                 <option value="24h" selected>24 dernières heures</option>
                 <option value="48h">48 dernières heures</option>
@@ -206,7 +214,7 @@
     <div class="panel" style="margin-top: 24px;">
         <div class="panel-header">
             <p>Trafic Réseau</p>
-            <select class="filter-btn" data-chart-range>
+            <select class="filter-btn chart-range-select" data-metric="network" data-chart-id="serverNetworkChart">
                 <option value="30min">30 dernières minutes</option>
                 <option value="24h" selected>24 dernières heures</option>
                 <option value="48h">48 dernières heures</option>
@@ -305,11 +313,90 @@
 </div>
 
 <script>
-    window.serverTimeLabels = @json($timeLabels);
-    window.serverCpuHistory = @json($cpuHistory);
-    window.serverRamHistory = @json($ramHistory);
-    window.serverDiskHistory = @json($diskHistory);
-    window.serverNetworkHistory = @json($networkHistory);
+    // --- GESTION INDÉPENDANTE DES GRAPHIQUES ---
+    document.addEventListener('DOMContentLoaded', function () {
+        const serverId = '{{ $server->id }}';
+
+        // 1. On définit une couleur différente pour chaque métrique
+        const chartColors = {
+            cpu: '#1d4a40',     // Vert foncé
+            ram: '#e08e3e',     // Orange
+            disk: '#c0392b',    // Rouge
+            network: '#56825E'  // Vert clair
+        };
+
+        // Fonction pour initialiser ou récupérer un graphique
+        function getChart(canvasId, label, color) {
+            let chart = Chart.getChart(canvasId);
+            if (chart) return chart;
+
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return null;
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: color + '20', // Opacité à 20% pour le remplissage
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 2
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Fonction pour charger les données via AJAX
+        function loadHistory(metric, canvasId, range = '24h') {
+            // 2. On récupère la bonne couleur selon la métrique
+            const color = chartColors[metric] || '#1d4a40';
+            const chart = getChart(canvasId, metric.toUpperCase(), color);
+            if (!chart) return;
+
+            // Afficher "Chargement..."
+            chart.data.labels = [];
+            chart.data.datasets[0].data = [];
+            chart.update();
+
+            fetch(`/monitoring/servers/${serverId}/history?metric=${metric}&range=${range}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        chart.data.labels = data.labels;
+                        chart.data.datasets[0].data = data.values;
+                        chart.update();
+                    }
+                })
+                .catch(e => console.error('Erreur chargement graphique:', e));
+        }
+
+        // Attacher un écouteur d'événement à CHAQUE selecteur indépendamment
+        document.querySelectorAll('.chart-range-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const metric = this.dataset.metric;
+                const canvasId = this.dataset.chartId;
+                const range = this.value;
+                
+                loadHistory(metric, canvasId, range);
+            });
+
+            // Charger les données initiales (24h par défaut) au chargement de la page
+            const metric = select.dataset.metric;
+            const canvasId = select.dataset.chartId;
+            loadHistory(metric, canvasId, select.value);
+        });
+    });
 </script>
 
 @endsection

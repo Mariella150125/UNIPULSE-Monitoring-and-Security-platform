@@ -136,57 +136,7 @@
 
 </div>
 
-{{-- TEST DE CONNEXION --}}
-<div style="margin-top:24px;">
-    <button
-        type="button"
-        class="btn btn-primary"
-        id="test-btn"
-        onclick="testConnector('{{ $connector->id }}', this)"
-    >
-        <i class="fa-solid fa-plug"></i>
-        Tester la connexion
-    </button>
-    <span id="test-result" style="margin-left:12px;font-size:13px;"></span>
-</div>
 
-{{-- HISTORIQUE --}}
-<div style="margin-top:32px;">
-    <div class="entity-details">
-        <div class="entity-details-header">
-            <div>
-                <h2 style="margin:0;font-size:16px;">Historique des connexions</h2>
-                <p style="margin:4px 0 0;font-size:13px;color:var(--text-muted);">20 derniers tests</p>
-            </div>
-        </div>
-
-        <div style="padding:20px 24px;">
-            @forelse ($logs as $log)
-                <div class="history-item">
-                    <span class="status-dot {{ $log->success ? 'online' : 'offline' }}"></span>
-                    <div>
-                        <strong>
-                            {{ $log->success ? 'Connexion réussie' : 'Échec de connexion' }}
-                            @if ($log->duration_ms)
-                                <span style="font-weight:400;color:var(--text-muted);font-size:11px;">({{ $log->duration_ms }} ms)</span>
-                            @endif
-                        </strong>
-                        <p>
-                            {{ $log->executed_at->diffForHumans() }}
-                            @if (!$log->success && $log->error_message)
-                                — {{ Str::limit($log->error_message, 100) }}
-                            @endif
-                        </p>
-                    </div>
-                </div>
-            @empty
-                <div class="history-item">
-                    <div><p style="color:var(--text-muted);">Aucun historique.</p></div>
-                </div>
-            @endforelse
-        </div>
-    </div>
-</div>
 
 </div>
 </div>

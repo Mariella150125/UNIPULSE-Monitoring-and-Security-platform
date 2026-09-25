@@ -3009,6 +3009,149 @@ form.entity-details .form-actions {
     margin: 4px 0;
 }
 /* ==========================================================
+   CORRECTION CLOCHE NOTIFICATION & FILTRES
+   ========================================================== */
+
+/* 1. La cloche de notification */
+.notif-wrapper {
+    position: relative;
+    z-index: 1000; /* Force la cloche à passer au-dessus des autres éléments */
+}
+
+.notif-btn {
+    background: #fff; /* Fond blanc forcé pour le bouton */
+    position: relative;
+    z-index: 1001;
+}
+
+.notif-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 360px;
+    background: #ffffff; /* Fond blanc forcé pour le menu déroulant */
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 9999; /* Le menu doit être au-dessus de TOUT sur la page */
+    overflow: hidden;
+    display: none; /* Caché par défaut */
+}
+
+.notif-dropdown.open {
+    display: block; /* Affiché quand on clique */
+}
+
+.notif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: #ffffff; /* Fond blanc */
+}
+
+.notif-list {
+    max-height: 400px;
+    overflow-y: auto;
+    background: #ffffff; /* Fond blanc */
+}
+
+.notif-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    text-decoration: none;
+    color: inherit;
+    background: #ffffff; /* Fond blanc pour chaque ligne */
+    transition: background 0.15s ease;
+}
+
+.notif-item:hover {
+    background: var(--page-bg); /* Fond gris léger au survol */
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.notif-icon.critical {
+    background: rgba(192, 57, 43, 0.1);
+    color: var(--red);
+}
+
+.notif-icon.high {
+    background: rgba(224, 142, 62, 0.1);
+    color: var(--orange);
+}
+
+.notif-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.notif-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.notif-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* 2. Correction pour les filtres (Groupe, Période) */
+.filter-group-wrapper {
+    position: relative;
+    z-index: 10;
+}
+
+.filter-group-wrapper label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.filter-group-wrapper select {
+    background: #fff; /* Fond blanc forcé */
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    appearance: none; /* Enlève le style par défaut du navigateur */
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238a9490' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    width: 100%;
+}
+
+.filter-group-wrapper select:focus {
+    border-color: var(--sage-green);
+    box-shadow: 0 0 0 3px rgba(86, 130, 94, 0.10);
+}
+/* ==========================================================
    STYLE DE L'IMPRESSION / EXPORT PDF
    ========================================================== */
 @media print {

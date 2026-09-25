@@ -7,24 +7,12 @@ use Illuminate\Http\Request;
 
 class ServerGroupController extends Controller
 {
-    /**
-     * Afficher les groupes de serveurs.
-     */
     public function index()
     {
-        $serverGroups = ServerGroup::with('servers')
-            ->orderBy('name')
-            ->get();
-
-        return view(
-            'administration.servers.server-group',
-            compact('serverGroups')
-        );
+        $serverGroups = ServerGroup::with('servers')->orderBy('name')->get();
+        return view('administration.servers.server-group', compact('serverGroups'));
     }
 
-    /**
-     * Ajouter un groupe de serveurs.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -33,34 +21,23 @@ class ServerGroupController extends Controller
         ]);
 
         ServerGroup::create($validated);
-
-        return redirect()
-            ->route('server-groups.index')
-            ->with(
-                'success',
-                'Groupe de serveurs ajouté avec succès.'
-            );
+        return redirect()->route('server-groups.index')->with('success', 'Groupe de serveurs ajouté avec succès.');
     }
 
-    /**
-     * Modifier un groupe de serveurs.
-     */
-    public function update(
-        Request $request,
-        ServerGroup $serverGroup
-    ) {
+    public function update(Request $request, ServerGroup $serverGroup)
+    {
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:server_groups,name,' . $serverGroup->id,
             'description' => 'nullable|string',
         ]);
 
         $serverGroup->update($validated);
+        return redirect()->route('server-groups.index')->with('success', 'Groupe modifié avec succès.');
+    }
 
-        return redirect()
-            ->route('server-groups.index')
-            ->with(
-                'success',
-                'Groupe de serveurs modifié avec succès.'
-            );
+    public function destroy(ServerGroup $serverGroup)
+    {
+        $serverGroup->delete();
+        return redirect()->route('server-groups.index')->with('success', 'Groupe supprimé avec succès.');
     }
 }

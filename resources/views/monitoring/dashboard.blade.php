@@ -42,12 +42,14 @@
     </div>
 
     {{-- Conformité / Sécurité --}}
+        {{-- Conformité / Sécurité --}}
     <div class="kpi-card">
         <div class="kpi-icon c-red"><i class="fa-solid fa-shield-halved"></i></div>
         <p class="kpi-label">Niveau Sécurité</p>
-        <p class="kpi-value">HIGH</p>
-        <div class="kpi-change positive">
-            <i class="fa-solid fa-check"></i> Conforme
+        <p class="kpi-value">{{ $securityScore }}%</p>
+        <div class="kpi-change {{ $securityScore >= 70 ? 'positive' : 'negative' }}">
+            <i class="fa-solid fa-arrow-{{ $securityScore >= 70 ? 'up' : 'down' }}"></i>
+            {{ $securityLevel }}
         </div>
     </div>
 </div>
@@ -73,18 +75,16 @@
                 @forelse ($criticalAlerts as $alert)
                 <tr>
                     <td>
-                        @if(isset($alert->level))
-                            <span class="badge badge-critical">{{ $alert->level }}</span>
+                        @if($alert->status == 'open')
+                            <span class="badge badge-critical">CRITIQUE</span>
                         @else
-                            <span class="status-dot offline"></span> Échec Webhook
+                            <span class="badge badge-major">HAUTE</span>
                         @endif
                     </td>
                     <td>
-                        @if(isset($alert->message))
-                            {{ $alert->message }}
-                        @else
-                            {{ $alert->payload }}
-                        @endif
+                        <a href="{{ route('alerts.show', $alert->id) }}" style="color: var(--teal); text-decoration: none;">
+                            {{ $alert->title }}
+                        </a>
                     </td>
                     <td>{{ $alert->created_at->diffForHumans() }}</td>
                 </tr>
@@ -134,21 +134,21 @@
     </a>
 </div>
 {{-- LIGNE 4 : Carte de Dépendances (MF-38) --}}
-<div class="panel dependency-panel">
+<div class="panel dependency-panel" style="margin-top: 24px;">
     <div class="panel-header">
         <p>Carte de Dépendances (Serveurs & Applications)</p>
     </div>
-    {{-- Conteneur de la carte --}}
-    <div id="dependency-network" class="dependency-network-container"></div>
+    
+    {{-- 1. Le conteneur DOIT avoir une hauteur fixe, sinon il est invisible --}}
+    <div id="dependency-network" style="height: 500px; width: 100%; background: var(--page-bg); border-radius: 0 0 24px 24px;"></div>
 </div>
-
 {{-- Importation de la librairie Vis.js (CDN) --}}
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
 {{-- Passage des données de PHP au JavaScript externe --}}
 <script>
-    window.dependencyNodes = @json($dependencyNodes);
-    window.dependencyEdges = @json($dependencyEdges);
+   window.dependencyNodes = {!! $dependencyNodes !!};
+    window.dependencyEdges = {!! $dependencyEdges !!};
 </script>
 
 @endsection

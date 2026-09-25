@@ -14,40 +14,40 @@ class ScaScannerService
      * @param string $language Le langage (php, laravel, node.js, etc.)
      * @return array
      */
-    public function scanDependencies(string $appUrl, string $language = 'php'): array
+        public function scanDependencies(string $appUrl, string $language = 'php'): ?array
     {
-        // Détermination du fichier et de l'écosystème
-        $ecosystem = (strtolower($language) === 'php' || strtolower($language) === 'laravel') ? 'Packagist' : 'npm';
-        $fileName = $ecosystem === 'Packagist' ? 'composer.lock' : 'package-lock.json';
-        
-        // On construit l'URL du fichier de dépendances
-        $fileUrl = rtrim($appUrl, '/') . '/' . $fileName;
+        // Liste des fichiers de dépendances à chercher, peu importe le langage
+        $filesToTry = [
+            'composer.lock' => 'Packagist',
+            'package-lock.json' => 'npm',
+            'requirements.txt' => 'PyPI'
+        ];
 
-        try {
-            // On tente de télécharger le fichier
-            $response = Http::timeout(5)->withoutVerifying()->get($fileUrl);
+        foreach ($filesToTry as $fileName => $ecosystem) {
+            $fileUrl = rtrim($appUrl, '/') . '/' . $fileName;
 
-            // Si le fichier est bloqué (403, 404) ou inaccessible
-            if (!$response->successful()) {
-                return []; // Aucune faille trouvée car fichier inaccessible
-            }
+            try {
+                $response = Http::timeout(5)->withoutVerifying()->get($fileUrl);
 
-            $lockData = $response->json();
-            if (!$lockData) return [];
+                if (!$response->successful()) {
+                    continue; // Fichier introuvable, on essaie le suivant
+                }
 
-            $packages = $lockData['packages'] ?? [];
-            $vulnerabilities = [];
+                $lockData = $response->json();
+                if (!$lockData) {
+                    // Si c'est du texte (requirements.txt), on le lit différemment
+                    $lockData = $response->body();
+                }
 
-            // On limite à 15 packages pour ne pas dépasser le timeout de la page
-            $packagesToScan = array_slice($packages, 0, 15);
+                $packages = $lockData['packages'] ?? [];
+                $vulnerabilities = [];
+                $packagesToScan = array_slice($packages, 0, 15); // Limité pour ne pas dépasser le timeout
 
-            foreach ($packagesToScan as $package) {
-                $name = $package['name'] ?? null;
-                $version = ltrim($package['version'] ?? '', 'v');
+                foreach ($packagesToScan as $package) {
+                    $name = $package['name'] ?? null;
+                    $version = ltrim($package['version'] ?? '', 'v');
+                    if (!$name || !$version) continue;
 
-                if (!$name || !$version) continue;
-
-                // Requête vers l'API officielle OSV
                 $osvResponse = Http::timeout(3)->post('https://api.osv.dev/v1/query', [
                     'package' => [
                         'name' => $name,
@@ -83,11 +83,15 @@ class ScaScannerService
                 }
             }
 
+            // Si on a trouvé un fichier et l'a scanné, on renvoie le résultat (même si 0 failles)
             return $vulnerabilities;
 
-        } catch (\Exception $e) {
-            // En cas de timeout ou erreur réseau
-            return [];
+            } catch (\Exception $e) {
+                continue; // Erreur réseau, on essaie le fichier suivant
+            }
         }
+
+        // Si aucun fichier n'a été trouvé
+        return null;
     }
 }

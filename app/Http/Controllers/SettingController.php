@@ -31,13 +31,26 @@ class SettingController extends Controller
     // LA FONCTION MAGIQUE QUI SAUVEGARDE TOUT
     public function update(Request $request): RedirectResponse
     {
-        //dd($request->except(['_token', '_method']));
         try {
+            // On liste toutes les cases à cocher possibles
+            $checkboxes = [
+                'critical_popup', 'critical_email', 'critical_slack',
+                'high_popup', 'high_email', 'high_slack',
+                'med_popup', 'med_email', 'med_slack',
+                'low_popup', 'low_email', 'low_slack',
+                'wazuh_active', 'prom_active'
+            ];
+
+            // On force la valeur à '0' si la case n'a pas été cochée
+            foreach ($checkboxes as $cb) {
+                $request->merge([$cb => $request->has($cb) ? '1' : '0']);
+            }
+
             $data = $request->except(['_token', '_method']);
 
             foreach ($data as $key => $value) {
                 if (is_array($value)) {
-                    $value = json_encode($value); // Si on a des tableaux (commes les scopes)
+                    $value = json_encode($value);
                 }
                 if (empty($value)) {
                     $value = '0'; 
@@ -45,11 +58,10 @@ class SettingController extends Controller
                 Setting::set($key, $value);
             }
 
-            return redirect()->back()->with('success', 'Les paramètres ont été enregistrés avec succès.');
+            return redirect()->route('settings')->with('success', 'Les paramètres ont été enregistrés avec succès.');
 
         } catch (\Exception $e) {
-            // Si Laravel plante pour une raison quelconque, on prévient l'utilisateur
-            return redirect()->back()->with('error', 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage());
+            return redirect()->route('settings')->with('error', 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage());
         }
     }
     // Afficher la page de paramétrage des connecteurs
@@ -58,7 +70,11 @@ class SettingController extends Controller
         return view('layout.settings.connectors');
     }
 
-    // Si tu as besoin de sauvegarder ces paramètres, tu peux utiliser 
-    // la fonction update() générique qu'on a créée précédemment, 
-    // qui stocke tout dans la table `settings`.
+    public function index()
+    {
+        // Si vous avez des paramètres en base de données, vous pouvez les récupérer ici
+        // Exemple : $settings = \App\Models\Setting::all();
+        
+        return view('layout.settings'); // Assurez-vous d'avoir cette vue
+    }
 }

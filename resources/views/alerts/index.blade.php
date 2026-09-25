@@ -6,6 +6,7 @@
     <h1>Centre d'Alertes</h1>
     <p>Surveillance temps réel, corrélation et historique des incidents.</p>
 </div>
+
 <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
     <form action="{{ route('alerts.index') }}" method="GET" id="periodForm" style="display: flex; gap: 10px; align-items: center;">
         <select name="period" id="periodSelect" onchange="toggleCustomDates()" class="form-control" style="width: auto;">
@@ -26,6 +27,7 @@
         </button>
     </form>
 </div>
+
 {{-- KPIs --}}
 <div class="usr-kpi-row">
     <div class="kpi-card">
@@ -92,7 +94,7 @@
     <div class="panel-header">
         <p>Alertes Actives & Corrélées</p>
     </div>
-    <table class="server-table">
+    <table class="server-table" id="activeAlertsTable">
         <thead>
             <tr>
                 <th>ID</th>
@@ -113,7 +115,12 @@
                     @elseif($alert->priority == 'high') <span class="badge badge-major">HAUTE</span>
                     @else <span class="badge">MOYENNE</span> @endif
                 </td>
-                <td><strong>{{ $alert->title }}</strong></td>
+                <td>
+                    {{-- NOM DE L'ALERTE CLIQUABLE --}}
+                    <a href="{{ route('alerts.show', $alert->id) }}" style="color: var(--teal); text-decoration: none;">
+                        <strong>{{ $alert->title }}</strong>
+                    </a>
+                </td>
                 <td><span class="badge">{{ strtoupper($alert->source) }}</span></td>
                 <td>{{ $alert->description }}</td>
                 <td>
@@ -128,38 +135,34 @@
                         </button>
                         <div class="action-dropdown-menu">
                             
-                            {{-- 1. VOIR LE DÉTAIL --}}
                             <a href="{{ route('alerts.show', $alert->id) }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Voir détail
                             </a>
 
-                        {{-- 2. ACQUITTER --}}
                             @if($alert->status == 'open')
                             <form action="{{ route('alerts.acknowledge', $alert->id) }}" method="POST">
                                 @csrf 
-                                @method('PUT')  <-- TRÈS IMPORTANT !
+                                @method('PUT')
                                 <button type="submit" class="dropdown-item">
                                     <i class="fa-solid fa-check" style="color: var(--sage-green);"></i> Acquitter
                                 </button>
                             </form>
                             @endif
-                            {{-- 3. ASSIGNER (Lien vers la page de détail pour choisir l'utilisateur) --}}
+
                             @if($alert->status != 'closed')
                             <a href="{{ route('alerts.show', $alert->id) }}" class="dropdown-item">
                                 <i class="fa-solid fa-user-plus"></i> Assigner
                             </a>
                             @endif
 
-                            {{-- Séparateur --}}
                             @if($alert->status != 'closed')
                             <div class="dropdown-divider"></div>
                             @endif
 
-                            {{-- 4. FERMER --}}
                             @if($alert->status != 'closed')
                             <form action="{{ route('alerts.close', $alert->id) }}" method="POST">
                                 @csrf 
-                                @method('PUT')  <-- TRÈS IMPORTANT !
+                                @method('PUT')
                                 <button type="submit" class="dropdown-item text-red">
                                     <i class="fa-solid fa-xmark"></i> Fermer
                                 </button>
@@ -286,8 +289,7 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
-</script>
-<script>
+
     function toggleCustomDates() {
         const select = document.getElementById('periodSelect');
         const customDates = document.getElementById('customDates');

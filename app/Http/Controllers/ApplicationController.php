@@ -34,31 +34,43 @@ class ApplicationController extends Controller
             $query->where('status', $request->status);
         }
 
-        $applications = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        // ->fragment('apps-table') pour que la pagination descende sur le tableau
+        $applications = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString()->fragment('apps-table');
         $maintenance = Application::where('status', 'maintenance')->count();
         $applicationTypes = ApplicationType::where('status', true)->orderBy('name')->get();
         $servers = Server::orderBy('name')->get();
         $users = User::orderBy('name')->get();
         $activeApplications = Application::where('status', 'active')->count();
 
-        // --- NOUVEAU : CALCUL DE LA DISPONIBILITÉ PAR APPLICATION ---
+        $environment = $request->get('environment'); // Récupère le filtre env pour le graphique
+        $criticalIssues = \App\Models\Alert::where('priority', 'critical')
+            ->whereIn('source', ['health-check', 'webhook']) // Filtre sur les alertes d'applications
+            ->whereNotIn('status', ['resolved', 'closed'])
+            ->count();
+        // --- CALCUL DE LA DISPONIBILITÉ PAR APPLICATION (Corrigé pour PostgreSQL) ---
         $appIds = $applications->pluck('id');
-        // On calcule la moyenne de is_available (true=100%, false=0%) pour chaque application
         $availabilities = ApplicationAvailability::whereIn('application_id', $appIds)
-            ->selectRaw('application_id, AVG(CASE WHEN is_available = true THEN 100 ELSE 0 END) as percent')
+            ->selectRaw('application_id, AVG(CASE WHEN is_available IS TRUE THEN 100 ELSE 0 END) as percent')
             ->groupBy('application_id')
             ->pluck('percent', 'application_id');
 
-        // --- NOUVEAU : DONNÉES POUR LE GRAPHIQUE GLOBAL ---
-        $availabilityStats = ApplicationAvailability::query()
-            ->where('checked_at', '>=', now()->subDays(7))
-            ->selectRaw('DATE(checked_at) as date')
-            ->selectRaw('AVG(CASE WHEN is_available = true THEN 100 ELSE 0 END) as availability')
-            ->groupByRaw('DATE(checked_at)')
+        // --- DONNÉES POUR LE GRAPHIQUE GLOBAL (AVEC FILTRE ENV) ---
+        $availabilityQuery = ApplicationAvailability::query()
+            ->join('applications', 'application_availability.application_id', '=', 'applications.id')
+            ->where('application_availability.checked_at', '>=', now()->subDays(7));
+
+        // On applique le filtre d'environnement s'il est sélectionné
+        if ($environment) {
+            $availabilityQuery->where('applications.environment', $environment);
+        }
+
+        $availabilityStats = $availabilityQuery
+            ->selectRaw('DATE(application_availability.checked_at) as date')
+            ->selectRaw('AVG(CASE WHEN application_availability.is_available IS TRUE THEN 100 ELSE 0 END) as availability')
+            ->groupByRaw('DATE(application_availability.checked_at)')
             ->orderBy('date')
             ->get();
 
-        // On formate les données pour Chart.js
         $availabilityLabels = $availabilityStats->pluck('date')->map(fn($date) => \Carbon\Carbon::parse($date)->format('d/m'))->values()->toArray();
         $availabilityData = $availabilityStats->pluck('availability')->map(fn($val) => round($val, 2))->values()->toArray();
 
@@ -68,11 +80,11 @@ class ApplicationController extends Controller
         $lastSync = Application::whereNotNull('last_sync_at')->max('last_sync_at');
 
         $applicationGroups = \App\Models\ApplicationGroup::orderBy('name')->get();
-        // On envoie $availabilities, $availabilityLabels et $availabilityData à la vue
+        
         return view('administration.applis.appli', compact(
             'applications', 'applicationTypes', 'servers', 'users',
             'activeApplications', 'environmentStats', 'availabilityStats', 'lastSync', 'maintenance', 'applicationGroups',
-            'availabilities', 'availabilityLabels', 'availabilityData'
+            'availabilities', 'availabilityLabels', 'availabilityData','criticalIssues'
         ));
     }
 
@@ -111,9 +123,8 @@ class ApplicationController extends Controller
             'scrape_interval' => 'nullable|string|max:50',
             'url_health_check' => 'nullable|url|max:500',
             'wazuh_enabled' => 'nullable|boolean',
-            'wazuh_agent_id' => 'nullable|string|max:255', // <-- AJOUTÉ
-            'wazuh_group' => 'nullable|string|max:255',    // <-- AJOUTÉ
-            // NOUVEAUX CHAMPS FRONTEND ET BDD
+            'wazuh_agent_id' => 'nullable|string|max:255',
+            'wazuh_group' => 'nullable|string|max:255',
             'frontend_language' => 'nullable|string|max:100',
             'frontend_framework' => 'nullable|string|max:100',
             'frontend_url' => 'nullable|url|max:255',
@@ -164,7 +175,8 @@ class ApplicationController extends Controller
 
         $application->save();
 
-        return redirect()->route('appli.index')->with('success', 'Application ' . $identifiant . ' ajoutée avec succès.');
+        // Redirige vers le tableau (ancre)
+        return redirect()->route('appli.index')->with('success', 'Application ' . $identifiant . ' ajoutée avec succès.')->withFragment('apps-table');
     }
 
     public function show(string $id)
@@ -214,9 +226,8 @@ class ApplicationController extends Controller
             'scrape_interval' => 'nullable|string|max:50',
             'url_health_check' => 'nullable|url|max:500',
             'wazuh_enabled' => 'nullable|boolean',
-            'wazuh_agent_id' => 'nullable|string|max:255', // <-- AJOUTÉ
-            'wazuh_group' => 'nullable|string|max:255',    // <-- AJOUTÉ
-            // NOUVEAUX CHAMPS FRONTEND ET BDD
+            'wazuh_agent_id' => 'nullable|string|max:255',
+            'wazuh_group' => 'nullable|string|max:255',
             'frontend_language' => 'nullable|string|max:100',
             'frontend_framework' => 'nullable|string|max:100',
             'frontend_url' => 'nullable|url|max:255',
@@ -254,7 +265,8 @@ class ApplicationController extends Controller
 
         $application->update($validated);
 
-        return redirect()->route('appli.index')->with('success', 'Application modifiée avec succès.');
+        // Redirige vers le tableau (ancre)
+        return redirect()->route('appli.index')->with('success', 'Application modifiée avec succès.')->withFragment('apps-table');
     }
 
     /**
@@ -269,7 +281,7 @@ class ApplicationController extends Controller
     public function destroy(string $id)
     {
         $application = Application::findOrFail($id)->delete();
-        return redirect()->route('appli.index')->with('success', 'Application supprimée avec succès.');
+        return redirect()->route('appli.index')->with('success', 'Application supprimée avec succès.')->withFragment('apps-table');
     }
 
     public function environmentChartData()

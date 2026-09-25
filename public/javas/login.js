@@ -683,38 +683,65 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function runTest(id, btn) {
-        if (!btn) return;
-        const original = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
-        btn.disabled = true;
-        const resultCard = document.getElementById('test-result-card');
-        if (resultCard) resultCard.style.display = 'none';
-        try {
-            const r = await fetch('/connecteurs/' + id + '/test', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await r.json();
-            const content = document.getElementById('test-result-content');
-            if (!content) return;
-            if (data.success) {
-                content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><span class="status-dot online" style="width:14px;height:14px;"></span><strong style="font-size:16px;color:var(--sage-green);">Connexion réussie</strong></div><div><strong>Temps de réponse</strong><p>' + data.response_time + ' ms</p></div><div><strong>Nouveau statut</strong><p>' + (data.status === 'connected' ? 'Connecté' : data.status) + '</p></div><div><strong>Vérifié à</strong><p>' + (data.last_check_at || '—') + '</p></div>' + (data.metadata ? '<div><strong>Détails</strong><pre style="background:var(--input-bg);padding:10px;border-radius:6px;font-size:13px;overflow-x:auto;">' + JSON.stringify(data.metadata, null, 2) + '</pre></div>' : '');
-            } else {
-                content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><span class="status-dot offline" style="width:14px;height:14px;"></span><strong style="font-size:16px;color:var(--red);">Échec de connexion</strong></div><div><strong>Erreur</strong><p style="color:var(--red);">' + data.message + '</p></div><div><strong>Nouveau statut</strong><p>' + (data.status === 'error' ? 'En erreur' : data.status) + '</p></div>';
+    if (!btn) return;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Test en cours...';
+    btn.disabled = true;
+    const resultCard = document.getElementById('test-result-card');
+    if (resultCard) resultCard.style.display = 'none';
+    try {
+        const r = await fetch('/connecteurs/' + id + '/test', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
             }
-            if (resultCard) resultCard.style.display = '';
-        } catch (e) {
-            const content = document.getElementById('test-result-content');
-            if (content) content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><span class="status-dot offline" style="width:14px;height:14px;"></span><strong style="color:var(--red);">Erreur réseau</strong></div><p style="color:var(--text-muted);margin-top:8px;">Impossible de contacter le serveur.</p>';
-            if (resultCard) resultCard.style.display = '';
-        } finally {
-            btn.innerHTML = original;
-            btn.disabled = false;
+        });
+        const data = await r.json();
+        const content = document.getElementById('test-result-content');
+        if (!content) return;
+        
+        // Affichage du résultat principal
+        if (data.success) {
+            content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><span class="status-dot online" style="width:14px;height:14px;"></span><strong style="font-size:16px;color:var(--sage-green);">Connexion réussie</strong></div><div><strong>Temps de réponse</strong><p>' + data.response_time + ' ms</p></div><div><strong>Nouveau statut</strong><p>' + (data.status === 'connected' ? 'Connecté' : data.status) + '</p></div><div><strong>Vérifié à</strong><p>' + (data.last_check_at || '—') + '</p></div>' + (data.metadata ? '<div><strong>Détails</strong><pre style="background:var(--input-bg);padding:10px;border-radius:6px;font-size:13px;overflow-x:auto;">' + JSON.stringify(data.metadata, null, 2) + '</pre></div>' : '');
+        } else {
+            content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><span class="status-dot offline" style="width:14px;height:14px;"></span><strong style="font-size:16px;color:var(--red);">Échec de connexion</strong></div><div><strong>Erreur</strong><p style="color:var(--red);">' + data.message + '</p></div><div><strong>Nouveau statut</strong><p>' + (data.status === 'error' ? 'En erreur' : data.status) + '</p></div>';
         }
+        if (resultCard) resultCard.style.display = '';
+
+        // MISE À JOUR DE L'HISTORIQUE EN DIRECT
+        if (data.last_log) {
+            const historyList = document.getElementById('history-list');
+            const noLogs = document.getElementById('no-logs');
+            if (noLogs) noLogs.remove(); // Enlève le message "Aucun historique"
+
+            const newLog = document.createElement('div');
+            newLog.className = 'history-item';
+            newLog.innerHTML = `
+                <span class="status-dot ${data.last_log.success ? 'online' : 'offline'}"></span>
+                <div>
+                    <strong>
+                        ${data.last_log.success ? 'Connexion réussie' : 'Échec de connexion'}
+                        ${data.last_log.duration_ms ? `<span style="font-weight:400;color:var(--text-muted);font-size:11px;">(${data.last_log.duration_ms} ms)</span>` : ''}
+                    </strong>
+                    <p>
+                        ${data.last_log.executed_at}
+                        ${!data.last_log.success && data.last_log.error_message ? ` — ${data.last_log.error_message}` : ''}
+                    </p>
+                </div>
+            `;
+            historyList.prepend(newLog); // Ajoute en haut de la liste
+        }
+
+    } catch (e) {
+        const content = document.getElementById('test-result-content');
+        if (content) content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><span class="status-dot offline" style="width:14px;height:14px;"></span><strong style="color:var(--red);">Erreur réseau</strong></div><p style="color:var(--text-muted);margin-top:8px;">Impossible de contacter le serveur Laravel.</p>';
+        if (resultCard) resultCard.style.display = '';
+    } finally {
+        btn.innerHTML = original;
+        btn.disabled = false;
     }
+}
 
     function togglePasswordVisibility(inputId, btn) {
         const input = document.getElementById(inputId);
@@ -1319,8 +1346,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const cpuBar = document.getElementById(`cpu-bar-${serverId}`);
                     cpuBar.style.width = `${cpuPct}%`;
                     cpuBar.className = 'metric-bar';
-                    if (cpuPct > 65) cpuBar.classList.add('critical');
-                    else if (cpuPct > 65) cpuBar.classList.add('warning');
+                    if (cpuPct > 80) cpuBar.classList.add('critical');
+                    else if (cpuPct > 60) cpuBar.classList.add('warning');
 
                     const ramVal = data.memory !== null ? `${data.memory.toFixed(1)} %` : '-- %';
                     const ramPct = data.memory !== null ? data.memory : 0;
@@ -1409,6 +1436,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (data.disk > 80) diskBar.classList.add('critical');
                     else if (data.disk > 60) diskBar.classList.add('warning');
                 }
+                //--NETWORK
+                const netEl = document.getElementById('network-value');
+                if (netEl) {
+                    netEl.textContent = data.network !== null ? `${data.network.toFixed(2)} MB/s` : '-- MB/s';
+                }
 
             } catch (error) {
                 console.error('Erreur monitoring:', error);
@@ -1462,18 +1494,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    // 1. Au clic sur un onglet, on mémorise son nom dans l'URL
+       // 1. Au clic sur un onglet, on mémorise son nom dans l'URL
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             tabContents.forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
+            
+            // SÉCURITÉ : On vérifie que l'onglet existe avant d'ajouter la classe
+            const tabElement = document.getElementById('tab-' + tab);
+            if (tabElement) {
+                tabElement.classList.add('active');
+            }
+            
             history.replaceState(null, null, '#tab-' + tab); // Mémorise l'onglet
         });
     });
-
     // 2. Au chargement de la page, on lit l'URL pour réouvrir le bon onglet
     const initialTab = window.location.hash ? window.location.hash.replace('#tab-', '') : 'overview';
     const activeTabBtn = document.querySelector(`.tab-btn[data-tab="${initialTab}"]`);
@@ -1617,7 +1654,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-    // Graphique Tendance Disponibilité
+        // Graphique Tendance Disponibilité
     const availTrendCtx = document.getElementById('availTrendChart');
     if (availTrendCtx && typeof Chart !== 'undefined') {
         new Chart(availTrendCtx, {
@@ -1625,7 +1662,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: window.availTrendLabels || [],
                 datasets: [{
-                    label: 'Disponibilité (%)',
+                    label: 'Disponibilité (%)', // C'est la "nomination" qui s'affichera
                     data: window.availTrendData || [],
                     borderColor: '#56825E',
                     backgroundColor: 'rgba(86, 130, 94, 0.1)',
@@ -1634,8 +1671,10 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { min: 90, max: 100, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } }
+                plugins: { 
+                    legend: { display: true, position: 'top' } // Affiche la nomination
+                },
+                scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } }
             }
         });
     }
@@ -1648,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: window.respTrendLabels || [],
                 datasets: [{
-                    label: 'Temps de réponse (ms)',
+                    label: 'Temps de réponse (ms)', // C'est la "nomination"
                     data: window.respTrendData || [],
                     borderColor: '#1d4a40',
                     backgroundColor: 'rgba(29, 74, 64, 0.1)',
@@ -1657,11 +1696,12 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'ms' } }, x: { grid: { display: false } } }
+                plugins: { 
+                    legend: { display: true, position: 'top' } // Affiche la nomination
+                },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => v + ' ms' } }, x: { grid: { display: false } } }
             }
         });
-        
     }
     /* ==========================================================
        CARTE DE DÉPENDANCES (MF-38)
@@ -1752,7 +1792,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 scales: {
                     y: { 
-                        beginAtZero: true, 
+                        beginAtZero: unit === '%', 
                         grid: { color: '#eef1ef' }, 
                         ticks: { callback: v => v + unit } 
                     },
@@ -1779,6 +1819,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 1. Initialisation des 4 graphiques
     const serverCpuCtx = document.getElementById('serverCpuChart');
     if (serverCpuCtx && typeof Chart !== 'undefined') {
+        Chart.getChart(serverCpuCtx)?.destroy();
         new Chart(serverCpuCtx, {
             type: 'line',
             data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'CPU (%)', data: window.serverCpuHistory || [], borderColor: '#1d4a40', backgroundColor: 'rgba(29, 74, 64, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
@@ -1788,6 +1829,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const serverRamCtx = document.getElementById('serverRamChart');
     if (serverRamCtx && typeof Chart !== 'undefined') {
+        Chart.getChart(serverRamCtx)?.destroy();
         new Chart(serverRamCtx, {
             type: 'line',
             data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'RAM (%)', data: window.serverRamHistory || [], borderColor: '#e08e3e', backgroundColor: 'rgba(224, 142, 62, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
@@ -1797,6 +1839,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const serverDiskCtx = document.getElementById('serverDiskChart');
     if (serverDiskCtx && typeof Chart !== 'undefined') {
+        Chart.getChart(serverDiskCtx)?.destroy();
         new Chart(serverDiskCtx, {
             type: 'line',
             data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'Disque (%)', data: window.serverDiskHistory || [], borderColor: '#c0392b', backgroundColor: 'rgba(192, 57, 43, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
@@ -1806,6 +1849,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const serverNetworkCtx = document.getElementById('serverNetworkChart');
     if (serverNetworkCtx && typeof Chart !== 'undefined') {
+        Chart.getChart(serverNetworkCtx)?.destroy();
         new Chart(serverNetworkCtx, {
             type: 'line',
             data: { labels: window.serverTimeLabels || [], datasets: [{ label: 'Réseau (MB/s)', data: window.serverNetworkHistory || [], borderColor: '#56825E', backgroundColor: 'rgba(86, 130, 94, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
@@ -1857,12 +1901,19 @@ document.addEventListener('DOMContentLoaded', function () {
             if (netChart) { netChart.data.labels = newLabels; netChart.data.datasets[0].data = newNetData; netChart.update(); }
         });
     });    
-    /* ==========================================================
-       GRAPHIQUE POSTURE SÉCURITÉ (DEMI-CERCLE)
-       ========================================================== */
+   /* ==========================================================
+   GRAPHIQUE POSTURE SÉCURITÉ (DEMI-CERCLE)
+   ========================================================== */
     const securityCtx = document.getElementById('securityChart');
     if (securityCtx && typeof Chart !== 'undefined') {
         
+        // 1. On détruit l'ancien graphique s'il existe déjà sur ce canvas
+        let existingChart = Chart.getChart(securityCtx);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+        // 2. On crée le nouveau
         const hexColors = (window.securityColors || []).map(c => {
             if (c.includes('sage')) return '#56825E';
             if (c.includes('orange')) return '#e08e3e';
@@ -1885,9 +1936,9 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true, 
                 maintainAspectRatio: false,
-                cutout: '70%',         // Cohérent avec tes autres donuts
-                circumference: 180,    // Demi-cercle (180 degrés)
-                rotation: 270,         // Commence à gauche et va vers la droite
+                cutout: '70%',
+                circumference: 180,
+                rotation: 270,
                 plugins: { 
                     legend: { display: false },
                     tooltip: {
@@ -1916,22 +1967,20 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(checkCriticalAlerts, 30000);
     checkCriticalAlerts(); // Lancer une fois au chargement
     const notifToggle = document.getElementById('notif-toggle');
-        const notifDropdown = document.getElementById('notif-dropdown');
+    const notifDropdown = document.getElementById('notif-dropdown');
 
-        // Ouvrir/Fermer le menu
-        if (notifToggle) {
-            notifToggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-                notifDropdown.style.display = notifDropdown.style.display === 'none' ? 'block' : 'none';
-            });
+    if (notifToggle) {
+        notifToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('open');
+        });
 
-            // Fermer si on clique en dehors
-            document.addEventListener('click', function(e) {
-                if (!notifDropdown.contains(e.target) && !notifToggle.contains(e.target)) {
-                    notifDropdown.style.display = 'none';
-                }
-            });
-        }
+        document.addEventListener('click', function(e) {
+            if (!notifDropdown.contains(e.target) && !notifToggle.contains(e.target)) {
+                notifDropdown.classList.remove('open');
+            }
+        });
+    }
 
         // Fonction pour charger les alertes dans le menu
         function loadAlertsInTopbar() {
@@ -2100,5 +2149,81 @@ document.addEventListener('DOMContentLoaded', function () {
                 Notification.requestPermission();
             }
         }
-    
+    // Fonction pour charger les alertes dans le menu
+    function loadAlertsInTopbar() {
+        const notifCount = document.getElementById('notif-count');
+        const notifList = document.getElementById('notif-list');
+        
+        // SÉCURITÉ : Si les éléments n'existent pas, on arrête la fonction proprement
+        if (!notifCount || !notifList) return;
+
+        fetch('/alerts/check-critical')
+            .then(response => response.json())
+            .then(data => {
+                let activeAlerts = data.alerts || [];
+                let count = activeAlerts.length;
+
+                if (count > 0) {
+                    notifCount.textContent = count;
+                    notifCount.style.display = 'flex'; // Affiche le badge
+                } else {
+                    notifCount.style.display = 'none'; // Cache le badge si 0 alerte
+                }
+
+                // Construire la liste
+                if (count > 0) {
+                    notifList.innerHTML = activeAlerts.map(alert => `
+                        <a href="/alerts/${alert.id}" style="display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border-color); text-decoration: none; color: inherit;">
+                            <div style="color: ${alert.priority === 'critical' ? 'var(--red)' : 'var(--orange)'};">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <strong style="display: block; font-size: 14px;">${alert.title}</strong>
+                                <small style="color: var(--text-muted);">${alert.source || 'Système'} - ${alert.code || 'ALR-'+alert.id}</small>
+                            </div>
+                        </a>
+                    `).join('');
+                } else {
+                    notifList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);"><i class="fa-solid fa-check-circle" style="color: var(--sage-green); font-size: 24px; margin-bottom: 10px; display: block;"></i>Aucune alerte active.</div>';
+                }
+            })
+            .catch(error => console.error('Erreur:', error));
+    }
+    /* ==========================================================
+       GRAPHIQUE ÉVOLUTION SÉCURITÉ (DASHBOARD PRINCIPAL)
+       ========================================================== */
+    const ctxDashboardSecurity = document.getElementById('dashboardSecurityChart');
+    if (ctxDashboardSecurity && typeof Chart !== 'undefined') {
+        
+        // On détruit l'ancien s'il existe
+        let existingChart = Chart.getChart(ctxDashboardSecurity);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+        new Chart(ctxDashboardSecurity, {
+            type: 'line',
+            data: {
+                labels: window.dashboardSecurityLabels || [],
+                datasets: [{
+                    label: 'Score de sécurité (%)',
+                    data: window.dashboardSecurityData || [],
+                    borderColor: '#56825E',
+                    backgroundColor: 'rgba(86, 130, 94, 0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'top' } },
+                scales: {
+                    y: { min: 0, max: 100, grid: { display: false }, ticks: { callback: v => v + '%' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
 }); // Fin du DOMContentLoaded (et fin du fichier)

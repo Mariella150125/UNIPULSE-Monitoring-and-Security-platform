@@ -248,5 +248,8 @@
         </p>
 
         @include('administration.servers.server-modal')
-
+<script>
+    window.dashboardAlertLabels = @json($alertLabels);
+    window.dashboardAlertData = @json($alertData);
+</script>
 @endsection

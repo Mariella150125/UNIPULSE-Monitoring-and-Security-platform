@@ -59,9 +59,33 @@ class ConnectorController extends Controller
     /**
      * Créer un connecteur.
      */
-    public function store(StoreConnectorRequest $request)
+    public function store(Request $request)
     {
-        $this->service->create(data: $request->validated(), userId: Auth::id());
+        $validated = $request->validate([
+            'type' => 'required|in:prometheus,wazuh',
+            'name' => 'required|string|max:255',
+            'base_url' => 'required|string|max:255',
+            'api_port' => 'nullable|integer|min:1|max:65535',
+            'auth_username' => 'nullable|string|max:255',
+            'auth_password' => 'nullable|string|max:255',
+            'extra_config' => 'nullable|string',
+        ]);
+
+        $connector = new Connector();
+        $connector->type = $validated['type'];
+        $connector->name = $validated['name'];
+        $connector->base_url = $validated['base_url'];
+        $connector->api_port = $validated['api_port'] ?? null;
+        $connector->auth_username = $validated['auth_username'] ?? null;
+        $connector->created_by = Auth::id();
+        $connector->updated_by = Auth::id(); // <-- AJOUTE CETTE LIGNE
+        
+        // Chiffrement explicite du mot de passe
+        if (!empty($validated['auth_password'])) {
+            $connector->encryptPassword($validated['auth_password']);
+        }
+        
+        $connector->save();
 
         return redirect()->route('connectors.index')->with('success', 'Connecteur créé avec succès.');
     }
@@ -75,6 +99,15 @@ class ConnectorController extends Controller
         $logs = $connector->recentLogs(20);
 
         return view('administration.connectors.show', compact('connector', 'logs'));
+    }
+        // Changer le statut (Activer / Désactiver)
+    public function changeStatus(Request $request, $id)
+    {
+        $connector = Connector::findOrFail($id);
+        $connector->status = $request->input('status', 'never_tested');
+        $connector->save();
+
+        return redirect()->back()->with('success', 'Statut du connecteur mis à jour avec succès.');
     }
 
     /**
@@ -145,6 +178,7 @@ class ConnectorController extends Controller
             return response()->json(['success' => false, 'message' => 'Non autorisé.'], 403);
         }
 
+        // Appelle le service qui fait le test ET sauvegarde le log en BDD
         $result = $this->service->testConnection($connector);
 
         return response()->json([
@@ -154,6 +188,7 @@ class ConnectorController extends Controller
             'status'        => $result->status,
             'metadata'      => $result->metadata,
             'last_check_at' => $connector->fresh()->last_check_at?->diffForHumans(),
+            'last_log'      => $result->last_log, // <-- On renvoie le log au JS
         ]);
     }
 

@@ -35,6 +35,7 @@ class Connector extends Model
         'name',
         'base_url',
         'auth_username',
+        'auth_password',
         'auth_password_encrypted',
         'api_port',
         'extra_config',
@@ -45,6 +46,18 @@ class Connector extends Model
         'created_by',
         'updated_by',
     ];
+
+    public function setAuthPasswordAttribute($value)
+    {
+        if (!empty($value)) {
+            $this->attributes['auth_password_encrypted'] = Crypt::encryptString($value);
+        }
+    }
+
+    public function getAuthPasswordAttribute()
+    {
+        return $this->decryptPassword();
+    }
 
     // ──────────────────────────────────────────
     //  RELATIONS
@@ -170,13 +183,5 @@ class Connector extends Model
             'last_success_at'    => null,
             'last_error_message' => null,
         ]);
-    }
-    public function changeStatus(Request $request, $id)
-    {
-        $connector = Connector::findOrFail($id);
-        $connector->status = $request->input('status', 'never_tested');
-        $connector->save();
-
-        return redirect()->back()->with('success', 'Statut du connecteur mis à jour avec succès.');
     }
 }

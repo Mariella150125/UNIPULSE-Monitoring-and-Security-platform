@@ -65,13 +65,22 @@
                                 {{ $group->servers->count() }}
                             </td>
                             <td>
-                                <div class="table-actions">
-                                    <button type="button" class="icon-action" title="Modifier">
-                                        <i class="fa-solid fa-pen"></i>
+                                <div class="action-dropdown">
+                                    <button class="icon-btn action-dropdown-toggle" title="Actions">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
                                     </button>
-                                    <button type="button" class="icon-action" title="Supprimer">
-                                        <i class="fa-solid fa-trash" style="color: var(--red);"></i>
-                                    </button>
+                                    <div class="action-dropdown-menu">
+                                        <a href="#" class="dropdown-item">
+                                            <i class="fa-solid fa-pen"></i> Modifier
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        <form action="{{ route('server-groups.destroy', $group) }}" method="POST" onsubmit="return confirm('Supprimer ce groupe ?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="dropdown-item text-red">
+                                                <i class="fa-solid fa-trash"></i> Supprimer
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </td>
                         </tr>

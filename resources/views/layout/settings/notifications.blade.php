@@ -11,7 +11,7 @@
 </div>
 
 @if(session('success'))
-    <div class="success-message">
+    <div class="success-message" id="success-message">
         <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
     </div>
 @endif
@@ -25,7 +25,7 @@
 <div class="panel">
     <form id="settingsForm" method="POST" action="{{ route('settings.update') }}">
         @csrf
-        
+        @method('PUT') 
         <h2 style="margin-bottom: 20px;">Matrice de notification</h2>
         
         <table class="server-table">
@@ -66,9 +66,12 @@
         </table>
 
         <div class="form-actions">
+            {{-- BOUTON ANNULER QUI RENVOIE AUX SETTINGS GENERAL --}}
             <a href="{{ route('settings') }}" class="btn btn-cancel">
                 <i class="fa-solid fa-xmark"></i> Annuler
             </a>
+            
+            {{-- BOUTON ENREGISTRER --}}
             <button type="submit" id="saveSettingsBtn" class="usr-btn" disabled>
                 <i class="fa-solid fa-floppy-disk"></i> Enregistrer les modifications
             </button>
@@ -80,13 +83,20 @@
     const form = document.getElementById('settingsForm');
     const saveBtn = document.getElementById('saveSettingsBtn');
     if (form && saveBtn) {
+        // Activer le bouton si on change une case ou un champ
         form.addEventListener('input', function() {
             saveBtn.disabled = false;
             saveBtn.classList.add('btn-active-state');
         });
-        form.addEventListener('change', function() { // Pour les checkboxes
+        form.addEventListener('change', function() {
             saveBtn.disabled = false;
             saveBtn.classList.add('btn-active-state');
+        });
+
+        // Gérer la soumission pour l'animation du bouton
+        form.addEventListener('submit', function() {
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+            saveBtn.disabled = true;
         });
     }
 </script>

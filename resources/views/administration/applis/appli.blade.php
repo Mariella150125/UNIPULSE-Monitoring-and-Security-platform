@@ -32,25 +32,25 @@
     <div class="usr-kpi-row">
         <div class="kpi-card">
             <div class="kpi-icon c-teal"><i class="fa-solid fa-table-cells-large"></i></div>
-            <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 2.5%</span>
+          
             <p class="kpi-label">Total Applications</p>
             <p class="kpi-value"> {{ $applications->total() }}</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-sage"><i class="fa-solid fa-circle-check"></i></div>
-            <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 1.8%</span>
+
             <p class="kpi-label">Active Applications</p>
             <p class="kpi-value">{{ $activeApplications }}</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <span class="kpi-change positive"><i class="fa-solid fa-arrow-down"></i> 0.5%</span>
+      
             <p class="kpi-label">Critical Issues</p>
-            <p class="kpi-value">--</p>
+            <p class="kpi-value">{{ $criticalIssues }}</p>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon c-orange"><i class="fa-solid fa-cloud"></i></div>
-            <span class="kpi-change positive"><i class="fa-solid fa-arrow-up"></i> 0.2%</span>
+    
             <p class="kpi-label">App en maintenance</p>
             <p class="kpi-value">{{ $maintenance}}</p>
         </div>
@@ -62,12 +62,12 @@
             
             <div class="panel-header">
                 <p>Application Availability</p>
-                <select class="period-btn" id="environmentFilter">
-                    <option value="">Tous</option>
-                    <option value="production">Production</option>
-                    <option value="staging">Staging</option>
-                    <option value="development">Development</option>
-                    <option value="test">Test</option>
+                <select class="period-btn" id="environmentFilter" onchange="applyEnvFilter()">
+                    <option value="" {{ request('environment') == '' ? 'selected' : '' }}>Tous</option>
+                    <option value="production" {{ request('environment') == 'production' ? 'selected' : '' }}>Production</option>
+                    <option value="staging" {{ request('environment') == 'staging' ? 'selected' : '' }}>Staging</option>
+                    <option value="development" {{ request('environment') == 'development' ? 'selected' : '' }}>Development</option>
+                    <option value="test" {{ request('environment') == 'test' ? 'selected' : '' }}>Test</option>
                 </select>
             </div>
             <div class="alertChart">
@@ -91,7 +91,7 @@
 
    
     {{-- ─── Tableau ─── --}}
-    <div class="panel">
+    <div class="panel" id="apps-table">
         {{-- RECHERCHE + FILTRES --}}
         <form method="GET" action="{{ route('appli.index') }}" class="search-filter-form">
             <div class="panel-header">
@@ -501,5 +501,21 @@
     // Pont de données : PHP génère le JSON et le donne au JavaScript
     window.availabilityLabels = @json($availabilityLabels);
     window.availabilityData = @json($availabilityData);
+</script>
+<script>
+    function applyEnvFilter() {
+        const env = document.getElementById('environmentFilter').value;
+        const url = new URL(window.location.href);
+        
+        // On met à jour le paramètre "environment" dans l'URL
+        if (env) {
+            url.searchParams.set('environment', env);
+        } else {
+            url.searchParams.delete('environment');
+        }
+        
+        // On recharge la page avec la nouvelle URL
+        window.location.href = url.toString();
+    }
 </script>
 @endsection

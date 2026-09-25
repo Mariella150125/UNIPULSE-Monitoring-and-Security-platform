@@ -78,12 +78,32 @@ class ConnectorService
             $connector->markAsError($result->message);
         }
 
+        // --- SAUVEGARDE DU LOG EN BASE DE DONNÉES ---
+        // (Assurez-vous d'avoir le modèle ConnectorLog et sa table)
+        \App\Models\ConnectorLog::create([
+            'connector_id'  => $connector->id,
+            'success'        => $result->success,
+            'duration_ms'   => (int) round($result->responseTimeMs),
+            'error_message' => $result->success ? null : $result->message,
+            'executed_at'   => now(),
+        ]);
+
+        // On récupère le dernier log pour le renvoyer au contrôleur (pour l'AJAX)
+        $lastLog = $connector->recentLogs(1)->first();
+
         return (object) [
             'success'       => $result->success,
             'message'       => $result->message,
             'response_time' => $result->responseTimeMs,
             'metadata'      => $result->metadata,
             'status'        => $connector->fresh()->status,
+            // On renvoie le log pour que JavaScript puisse l'ajouter à l'écran
+            'last_log'      => $lastLog ? [
+                'success'       => $lastLog->success,
+                'duration_ms'   => $lastLog->duration_ms,
+                'executed_at'   => 'À l\'instant',
+                'error_message' => $lastLog->error_message ? \Illuminate\Support\Str::limit($lastLog->error_message, 100) : null,
+            ] : null,
         ];
     }
 }

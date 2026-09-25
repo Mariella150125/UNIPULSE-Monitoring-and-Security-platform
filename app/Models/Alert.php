@@ -34,4 +34,8 @@ class Alert extends Model
     {
         return $this->morphTo();
     }
+    public function comments()
+    {
+        return $this->hasMany(\App\Models\AlertComment::class)->latest();
+    }
 }

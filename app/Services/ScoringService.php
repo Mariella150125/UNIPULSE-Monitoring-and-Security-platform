@@ -4,26 +4,28 @@ namespace App\Services;
 
 use App\Models\Application;
 use App\Models\Server;
-use App\Services\WazuhService;
 use Illuminate\Support\Facades\Http;
 
 class ScoringService
 {
     protected $wazuhService;
+    protected $scaService;
 
-    public function __construct(WazuhService $wazuhService)
+    public function __construct(WazuhService $wazuhService, ScaScannerService $scaService)
     {
         $this->wazuhService = $wazuhService;
+        $this->scaService = $scaService;
     }
 
     public function getAppScore(Application $app): array
     {
+        set_time_limit(60); // Autorise 60s par application
         $score = 0;
         $checks = [];
 
         // 1. HTTPS obligatoire (Poids: 10)
         $isHttps = $app->url && str_starts_with($app->url, 'https://');
-        $checks[] = $this->createCheck('HTTPS obligatoire', 10, $isHttps, 'Activer la redirection HTTP vers HTTPS.', 'https://owasp.org/www-project-application-security-verification-standard/');
+        $checks[] = $this->createCheck('HTTPS obligatoire', 10, $isHttps, 'Activer la redirection HTTP vers HTTPS.', 'https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html', 'A02: Cryptographic Failures');
         $score += $isHttps ? 10 : 0;
 
         $isAvailable = false;
@@ -47,8 +49,15 @@ class ScoringService
                 $port = $parsedUrl['port'] ?? 443;
 
                 if ($host) {
-                    $context = stream_context_create(["ssl" => ["capture_peer_cert" => true]]);
-                    $stream = @stream_socket_client("ssl://{$host}:{$port}", $errno, $errstr, 3, STREAM_CLIENT_CONNECT, $context);
+                    $context = stream_context_create([
+                        "ssl" => [
+                            "capture_peer_cert" => true,
+                            "verify_peer" => false,
+                            "verify_peer_name" => false,
+                        ]
+                    ]);
+                    
+                    $stream = @stream_socket_client("ssl://{$host}:{$port}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
                     
                     if ($stream) {
                         $params = stream_context_get_params($stream);
@@ -82,11 +91,11 @@ class ScoringService
         }
 
         // Contrôle Disponibilité (Poids: 10)
-        $checks[] = $this->createCheck('Disponibilité HTTPS', 10, $isAvailable, 'Vérifier que l\'application répond en HTTP 200.', 'https://owasp.org/www-project-application-security-verification-standard/');
+        $checks[] = $this->createCheck('Disponibilité HTTPS', 10, $isAvailable, 'Vérifier que l\'application répond en HTTP 200.', 'https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html', 'A05: Security Misconfiguration');
         $score += $isAvailable ? 10 : 0;
 
         // Contrôle Certificat SSL (Poids: 10)
-        $checks[] = $this->createCheck('Certificat SSL valide', 10, $sslValid, 'Renouveler ou corriger le certificat SSL (non expiré).', 'https://owasp.org/www-project-application-security-verification-standard/');
+        $checks[] = $this->createCheck('Certificat SSL valide', 10, $sslValid, 'Renouveler ou corriger le certificat SSL (non expiré).', 'https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html', 'A02: Cryptographic Failures');
         $score += $sslValid ? 10 : 0;
 
         // Contrôle En-têtes HTTP (Poids: 15)
@@ -95,17 +104,40 @@ class ScoringService
             $missing = array_keys(array_filter($headersDetails, function($v) { return !$v; }));
             if (!empty($missing)) $headersStatus .= ' (Manquants: ' . implode(', ', $missing) . ')';
         }
-        $checks[] = $this->createCheck('En-têtes de sécurité (HSTS, CSP, X-Frame)', 15, $headersValid, 'Activer les en-têtes de sécurité essentiels.', 'https://owasp.org/www-project-secure-headers/', $headersStatus);
+        $checks[] = $this->createCheck('En-têtes de sécurité (HSTS, CSP, X-Frame)', 15, $headersValid, 'Activer les en-têtes de sécurité essentiels.', 'https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html', 'A05: Security Misconfiguration', $headersStatus);
         $score += $headersValid ? 15 : 0;
 
-        // Contrôle Dépendances (Règle 5 : Non évalué sans SCA)
-        $checks[] = $this->createCheck('Analyse des dépendances (SCA)', 20, false, 'Intégrer un outil d\'analyse des dépendances (composer.lock).', 'https://owasp.org/www-project-dependency-check/', 'Non évalué');
+        // Contrôle Dépendances vulnérables (Vraie analyse SCA via l'API OSV)
+        $isDepsSecure = false;
+        $depsStatus = 'Non évalué';
+        
+        if ($app->url) {
+            $scaVulns = $this->scaService->scanDependencies($app->url, $app->language ?? 'php');
+            
+            if ($scaVulns === null) {
+                // Le scanner n'a pas trouvé le fichier lock (composer.lock / package-lock.json)
+                $isDepsSecure = false;
+                $depsStatus = 'Non conforme (Dépendances non surveillées / fichier introuvable)';
+            } elseif (empty($scaVulns)) {
+                // Le scanner a trouvé le fichier et il n'y a pas de failles
+                $isDepsSecure = true;
+                $depsStatus = 'Conforme (Aucune faille détectée)';
+            } else {
+                // Le scanner a trouvé le fichier et il y a des failles
+                $isDepsSecure = false;
+                $depsStatus = 'Non conforme (' . count($scaVulns) . ' vulnérabilités)';
+            }
+        }
+        // ATTENTION : Le nom 'Dépendances vulnérables' doit correspondre exactement à ce qu'on cherche dans la vue Blade
+        $checks[] = $this->createCheck('Dépendances vulnérables', 20, $isDepsSecure, 'Mettre à jour les dépendances vulnérables (CVE) ou exposer le fichier de lock pour le scan.', 'https://owasp.org/www-project-dependency-check/', 'A06: Vulnerable and Outdated Components', $depsStatus);
+        $score += $isDepsSecure ? 20 : 0;
         
         // Autres contrôles (Non évalués)
-        $checks[] = $this->createCheck('Authentification sécurisée', 10, false, 'Renforcer la politique d\'authentification.', 'https://owasp.org/www-project-authentication-cheat-sheet/', 'Non évalué');
-        $checks[] = $this->createCheck('Journalisation', 10, false, 'Activer les logs d\'erreurs et d\'audit.', 'https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html', 'Non évalué');
-        $checks[] = $this->createCheck('Configuration sécurisée', 10, false, 'Désactiver les services inutiles.', 'https://owasp.org/www-project-secure-configuration/', 'Non évalué');
-        $checks[] = $this->createCheck('Gestion des erreurs', 5, false, 'Cacher les informations sensibles.', 'https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html', 'Non évalué');
+        $checks[] = $this->createCheck('Versions des dépendances', 10, false, 'Maintenir les dépendances à jour.', 'https://owasp.org/www-project-dependency-check/', 'A06: Vulnerable and Outdated Components', 'Non évalué');
+        $checks[] = $this->createCheck('Authentification sécurisée', 10, false, 'Renforcer la politique d\'authentification.', 'https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html', 'A07: Identification and Authentication Failures', 'Non évalué');
+        $checks[] = $this->createCheck('Journalisation', 10, false, 'Activer les logs d\'erreurs et d\'audit.', 'https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html', 'A09: Security Logging and Monitoring Failures', 'Non évalué');
+        $checks[] = $this->createCheck('Configuration sécurisée', 10, false, 'Désactiver les services inutiles.', 'https://cheatsheetseries.owasp.org/cheatsheets/Configuration_Cheat_Sheet.html', 'A05: Security Misconfiguration', 'Non évalué');
+        $checks[] = $this->createCheck('Gestion des erreurs', 5, false, 'Cacher les informations sensibles.', 'https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html', 'A05: Security Misconfiguration', 'Non évalué');
 
         $level = $this->getEvaluationLevel($score);
 
@@ -134,14 +166,15 @@ class ScoringService
         ];
     }
 
-    private function createCheck($name, $weight, $is_passed, $remediation, $guideline, $status = null) {
+    private function createCheck($name, $weight, $is_passed, $remediation, $guideline, $owasp = null, $status = null) {
         return [
             'name' => $name,
             'weight' => $weight,
             'status' => $status ?? ($is_passed ? 'Conforme' : 'Non conforme'),
             'is_passed' => $is_passed,
             'remediation' => $remediation,
-            'guideline' => $guideline
+            'guideline' => $guideline,
+            'owasp' => $owasp
         ];
     }
 

@@ -4,22 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Server;
 use App\Models\Application;
-use App\Models\WebhookDelivery;
-use App\Models\Log;
+use App\Models\Alert;
+use App\Services\ScoringService;
 use Illuminate\Http\Request;
 
 class MonitoringDashboardController extends Controller
 {
-    public function index()
+    public function index(ScoringService $scoringService)
     {
         $servers = Server::all();
         $apps = Application::all();
+
         // 1. Calcul Serveurs (en %)
-        $totalServers = Server::count();
-        $healthyServers = Server::where('global_status', 'healthy')->count();
         $totalServers = $servers->count();
         $healthyServers = $servers->where('global_status', 'healthy')->count();
-        
+        $criticalServers = $servers->where('global_status', 'critical')->count();
+ $maintenanceServers = $servers->where('global_status', 'maintenance')->count();
+ $warningServers = $servers->where('global_status', 'warning')->count(); 
         $totalServersWeight = 0;
         $healthyServersWeight = 0;
         foreach ($servers as $server) {
@@ -31,10 +32,9 @@ class MonitoringDashboardController extends Controller
                 $healthyServersWeight += $weight;
             }
         }
-        // Le % prend en compte la criticité
         $serverHealthPercent = $totalServersWeight > 0 ? round(($healthyServersWeight / $totalServersWeight) * 100) : 0;
 
-        // --- 2. Applications ---
+        // 2. Applications
         $totalApps = $apps->count();
         $activeApps = $apps->where('status', 'active')->count();
         
@@ -49,40 +49,37 @@ class MonitoringDashboardController extends Controller
                 $activeAppsWeight += $weight;
             }
         }
-        // Le % prend en compte la criticité
         $appHealthPercent = $totalAppsWeight > 0 ? round(($activeAppsWeight / $totalAppsWeight) * 100) : 0;
 
-        // --- 3. Health Score Global ---
-        // Moyenne des deux pourcentages pondérés(criticité , serveurs sains et applications)
+        // 3. Health Score Global
         $globalHealthScore = ($totalServersWeight + $totalAppsWeight > 0) ? round(($serverHealthPercent + $appHealthPercent) / 2) : 100;
-        // 4. Alertes Critiques (Récupérées des logs ou des webhooks échoués)
-        $criticalAlerts = Log::whereIn('level', ['ERROR', 'CRITICAL'])
-            ->with('application')
-            ->latest('created_at')
+
+        // 4. VRAI Niveau de Sécurité (Calculé via ScoringService)
+        $appScores = [];
+        foreach ($apps as $app) {
+            try { 
+                $appScores[] = $scoringService->getAppScore($app)['score']; 
+            } catch (\Exception $e) {}
+        }
+        $securityScore = count($appScores) > 0 ? round(array_sum($appScores) / count($appScores)) : 0;
+        $securityLevel = $securityScore >= 90 ? 'EXCELLENT' : ($securityScore >= 70 ? 'MOYEN' : ($securityScore >= 50 ? 'FAIBLE' : 'CRITIQUE'));
+
+        // 5. VRAIES Alertes Critiques (Depuis le modèle Alert)
+        $criticalAlerts = Alert::where('priority', 'critical')
+            ->whereNotIn('status', ['resolved', 'closed'])
+            ->latest()
             ->limit(5)
             ->get();
 
-        // Si pas de logs, on prend les livraisons de webhooks échouées
-        if ($criticalAlerts->isEmpty()) {
-            $criticalAlerts = WebhookDelivery::where('success', false)
-                ->latest('delivered_at')
-                ->limit(5)
-                ->get();
-        }
-            // 5. Données pour la Carte de Dépendances (MF-38)
-        $servers = Server::with('applications')->get();
+        // 6. Carte de Dépendances
+        $serversWithApps = Server::with('applications')->get();
         $nodes = [];
         $edges = [];
 
-        foreach ($servers as $server) {
-            // On crée la bulle du Serveur (en forme de carré)
+        foreach ($serversWithApps as $server) {
             $nodes[] = ['id' => 'server_' . $server->id, 'label' => $server->name, 'shape' => 'box', 'color' => '#1d4a40', 'font' => ['color' => 'white', 'size' => 14]];
-            
             foreach ($server->applications as $app) {
-                // On crée la bulle de l'Application (en forme de cercle)
                 $nodes[] = ['id' => 'app_' . $app->id, 'label' => $app->name, 'shape' => 'dot', 'color' => '#56825E', 'size' => 15];
-                
-                // On relie l'application à son serveur
                 $edges[] = ['from' => 'app_' . $app->id, 'to' => 'server_' . $server->id, 'color' => '#8a9490'];
             }
         }
@@ -93,7 +90,8 @@ class MonitoringDashboardController extends Controller
         return view('monitoring.dashboard', compact(
             'totalServers', 'healthyServers', 'serverHealthPercent',
             'totalApps', 'activeApps', 'appHealthPercent',
-            'globalHealthScore', 'criticalAlerts','dependencyNodes','dependencyEdges'
+            'globalHealthScore', 'securityScore', 'securityLevel', 
+            'criticalAlerts', 'dependencyNodes', 'dependencyEdges','warningServers', 'criticalServers', 'maintenanceServers'
         ));
     }
 }

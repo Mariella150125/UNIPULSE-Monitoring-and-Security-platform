@@ -208,7 +208,7 @@
         {{ $connectors->withQueryString()->links() }}
     </div>
     <p class="sync-time">
-        Dernière synchronisation : {{ $lastSync ? $lastSync->diffForHumans() : 'Jamais' }}
+        Dernière synchronisation : {{ $lastSync ? \Carbon\Carbon::parse($lastSync)->diffForHumans() : 'Jamais' }}
     </p>
 
     @include('administration.connectors.connect-modal')
